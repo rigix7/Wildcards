@@ -12,10 +12,12 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket } from "@/lib/polymarket";
 import { getUSDCBalance } from "@/lib/polygon";
 import { useWallet } from "@/providers/PrivyProvider";
+import { useSafeWallet } from "@/hooks/useSafeWallet";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord } from "@shared/schema";
 
 export default function HomePage() {
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
+  const { safeAddress, isDeployed: isSafeDeployed, isDeploying: isSafeDeploying, deploy: deploySafe } = useSafeWallet();
   const walletLoading = !isReady;
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
@@ -246,6 +248,10 @@ export default function HomePage() {
         isConnected={isConnected}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
+        safeAddress={safeAddress}
+        isSafeDeployed={isSafeDeployed}
+        isSafeDeploying={isSafeDeploying}
+        onDeploySafe={deploySafe}
       />
 
       <ToastContainer />

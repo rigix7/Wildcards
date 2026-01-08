@@ -266,25 +266,26 @@ export async function registerRoutes(
   app.post("/api/polymarket/relay", async (req, res) => {
     try {
       const { method, path, body } = req.body;
+      const httpMethod = (method || "POST").toUpperCase();
       
       if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
         return res.status(500).json({ error: "Builder credentials not configured" });
       }
       
       const timestamp = Date.now();
-      const bodyString = body ? JSON.stringify(body) : "";
+      const bodyString = (httpMethod === "GET" || !body) ? "" : JSON.stringify(body);
       const signature = buildHmacSignature(
         BUILDER_CREDENTIALS.secret,
         timestamp,
-        method || "POST",
+        httpMethod,
         path || "/",
         bodyString
       );
       
       // Make the actual call to Polymarket relayer from server
       const relayerUrl = `https://relayer-v2.polymarket.com${path}`;
-      const relayerResponse = await fetch(relayerUrl, {
-        method: method || "POST",
+      const fetchOptions: RequestInit = {
+        method: httpMethod,
         headers: {
           "Content-Type": "application/json",
           "POLY_BUILDER_SIGNATURE": signature,
@@ -292,14 +293,59 @@ export async function registerRoutes(
           "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
           "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
         },
-        body: bodyString || undefined,
-      });
+      };
       
-      const data = await relayerResponse.json();
+      // Only include body for non-GET requests
+      if (httpMethod !== "GET" && bodyString) {
+        fetchOptions.body = bodyString;
+      }
+      
+      const relayerResponse = await fetch(relayerUrl, fetchOptions);
+      
+      // Handle empty responses
+      const text = await relayerResponse.text();
+      const data = text ? JSON.parse(text) : {};
       res.status(relayerResponse.status).json(data);
     } catch (error) {
       console.error("Relay error:", error);
       res.status(500).json({ error: "Failed to relay request" });
+    }
+  });
+
+  // Builder signing endpoint - for RelayClient remote signing
+  // Returns HMAC signature and headers for builder authentication
+  app.post("/api/polymarket/sign", async (req, res) => {
+    try {
+      const { method, path, body } = req.body;
+
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret || !BUILDER_CREDENTIALS.passphrase) {
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+
+      if (!method || !path) {
+        return res.status(400).json({ error: "Missing required parameters: method, path" });
+      }
+
+      const sigTimestamp = Date.now().toString();
+      const bodyString = typeof body === "string" ? body : (body ? JSON.stringify(body) : "");
+
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        parseInt(sigTimestamp),
+        method,
+        path,
+        bodyString
+      );
+
+      res.json({
+        POLY_BUILDER_SIGNATURE: signature,
+        POLY_BUILDER_TIMESTAMP: sigTimestamp,
+        POLY_BUILDER_API_KEY: BUILDER_CREDENTIALS.key,
+        POLY_BUILDER_PASSPHRASE: BUILDER_CREDENTIALS.passphrase,
+      });
+    } catch (error) {
+      console.error("Signing error:", error);
+      res.status(500).json({ error: "Failed to sign message" });
     }
   });
 
