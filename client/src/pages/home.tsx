@@ -56,21 +56,21 @@ export default function HomePage() {
       setLiveMarketsLoading(true);
       try {
         const events = await fetchGammaEvents(activeTagIds);
-        const markets = events
+        const markets: Market[] = events
           .map(gammaEventToMarket)
-          .filter((m): m is Market & { polymarketId: string; conditionId: string } => m !== null)
+          .filter((m) => m !== null)
           .map(m => ({
-            id: m.id,
-            title: m.title,
-            description: m.description,
-            category: m.category as "sports" | "politics" | "crypto" | "entertainment",
-            sport: m.sport,
-            league: m.league,
-            startTime: m.startTime,
-            status: m.status as "open" | "closed" | "settled",
-            outcomes: m.outcomes,
-            volume: m.volume,
-            liquidity: m.liquidity,
+            id: m!.id,
+            title: m!.title,
+            description: m!.description || "",
+            category: m!.category as "sports" | "politics" | "crypto" | "entertainment",
+            sport: m!.sport,
+            league: m!.league,
+            startTime: m!.startTime,
+            status: m!.status as "open" | "closed" | "settled",
+            outcomes: m!.outcomes,
+            volume: m!.volume,
+            liquidity: m!.liquidity,
           }));
         setLiveMarkets(markets);
       } catch (error) {

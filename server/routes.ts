@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import { insertMarketSchema, insertPlayerSchema, insertBetSchema, insertTradeSchema } from "@shared/schema";
 
@@ -257,8 +258,18 @@ export async function registerRoutes(
 
   app.patch("/api/admin/settings", async (req, res) => {
     try {
-      const updates = req.body;
-      const settings = await storage.updateAdminSettings(updates);
+      const partialSchema = z.object({
+        demoMode: z.boolean().optional(),
+        mockDataEnabled: z.boolean().optional(),
+        activeTagIds: z.array(z.string()).optional(),
+      });
+      
+      const parsed = partialSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid settings data" });
+      }
+      
+      const settings = await storage.updateAdminSettings(parsed.data);
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update admin settings" });
