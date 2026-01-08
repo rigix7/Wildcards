@@ -181,6 +181,12 @@ export async function registerRoutes(
         potentialPayout: amount * odds,
         walletAddress: walletAddress || undefined,
       });
+
+      // Award WILD points: 1 WILD per $1 bet
+      if (walletAddress) {
+        await storage.addWildPoints(walletAddress, amount);
+      }
+
       res.status(201).json(bet);
     } catch (error) {
       res.status(500).json({ error: "Failed to create bet" });
