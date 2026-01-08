@@ -158,7 +158,7 @@ export async function registerRoutes(
 
   app.post("/api/bets", async (req, res) => {
     try {
-      const { marketId, outcomeId, amount, odds } = req.body;
+      const { marketId, outcomeId, amount, odds, walletAddress } = req.body;
       if (!marketId || !outcomeId || !amount || !odds) {
         return res.status(400).json({ error: "marketId, outcomeId, amount, and odds required" });
       }
@@ -169,6 +169,7 @@ export async function registerRoutes(
         amount,
         odds,
         potentialPayout: amount * odds,
+        walletAddress: walletAddress || undefined,
       });
       res.status(201).json(bet);
     } catch (error) {

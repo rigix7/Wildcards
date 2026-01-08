@@ -11,62 +11,11 @@ import { DashboardView } from "@/components/views/DashboardView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket } from "@/lib/polymarket";
 import { getUSDCBalance } from "@/lib/polygon";
+import { useWalletContext } from "@/providers/WalletProvider";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord } from "@shared/schema";
 
-// Check if Privy is available
-const hasPrivyAppId = !!import.meta.env.VITE_PRIVY_APP_ID;
-
-// Wrapper component that uses Privy hooks
-function HomeWithPrivy() {
-  // These imports are safe because we only render this component when Privy is available
-  const { usePrivy, useWallets } = require("@privy-io/react-auth");
-  const { authenticated, login, logout } = usePrivy();
-  const { wallets } = useWallets();
-  const walletAddress = wallets?.[0]?.address || "";
-
-  return (
-    <HomeContent
-      authenticated={authenticated}
-      walletAddress={walletAddress}
-      onLogin={login}
-      onLogout={logout}
-    />
-  );
-}
-
-// Fallback component without Privy
-function HomeWithoutPrivy() {
-  const [fakeAuth, setFakeAuth] = useState(false);
-  const [fakeAddress, setFakeAddress] = useState("");
-
-  const handleLogin = () => {
-    setFakeAuth(true);
-    setFakeAddress("0x0000000000000000000000000000000000000000");
-  };
-
-  const handleLogout = () => {
-    setFakeAuth(false);
-    setFakeAddress("");
-  };
-
-  return (
-    <HomeContent
-      authenticated={fakeAuth}
-      walletAddress={fakeAddress}
-      onLogin={handleLogin}
-      onLogout={handleLogout}
-    />
-  );
-}
-
-interface HomeContentProps {
-  authenticated: boolean;
-  walletAddress: string;
-  onLogin: () => void;
-  onLogout: () => void;
-}
-
-function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeContentProps) {
+export default function HomePage() {
+  const { isConnected, address, login, logout } = useWalletContext();
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{ marketId: string; outcomeId: string } | undefined>();
@@ -84,8 +33,8 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
   });
 
   const { data: walletRecord } = useQuery<WalletRecord>({
-    queryKey: ["/api/wallet", walletAddress],
-    enabled: !!walletAddress,
+    queryKey: ["/api/wallet", address],
+    enabled: !!address,
   });
 
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
@@ -100,18 +49,18 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
     queryKey: ["/api/bets"],
   });
 
-  // Fetch real USDC balance when wallet is connected
+  // Fetch real USDC balance when wallet is connected (skip for demo addresses)
   useEffect(() => {
     const fetchBalance = async () => {
-      if (walletAddress && walletAddress !== "0x0000000000000000000000000000000000000000") {
-        const balance = await getUSDCBalance(walletAddress);
+      if (address && !address.startsWith("0xDemo")) {
+        const balance = await getUSDCBalance(address);
         setUsdcBalance(balance);
       } else {
         setUsdcBalance(0);
       }
     };
     fetchBalance();
-  }, [walletAddress]);
+  }, [address]);
 
   useEffect(() => {
     const loadLiveMarkets = async () => {
@@ -158,22 +107,22 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
   // Build wallet object from real data
   const wildBalance = walletRecord?.wildPoints || 0;
   const wallet: Wallet = useMemo(() => ({
-    address: walletAddress || "",
+    address: address || "",
     usdcBalance: usdcBalance,
     wildBalance: wildBalance,
     totalValue: usdcBalance + wildBalance,
-  }), [walletAddress, usdcBalance, wildBalance]);
+  }), [address, usdcBalance, wildBalance]);
 
   const placeBetMutation = useMutation({
     mutationFn: async (data: { marketId: string; outcomeId: string; amount: number; odds: number }) => {
       return apiRequest("POST", "/api/bets", {
         ...data,
-        walletAddress: walletAddress,
+        walletAddress: address,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/wallet", walletAddress] });
+      queryClient.invalidateQueries({ queryKey: ["/api/wallet", address] });
       showToast("Bet placed successfully! +1 WILD per $1", "success");
       setSelectedBet(undefined);
     },
@@ -209,7 +158,7 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
   });
 
   const handlePlaceBet = (marketId: string, outcomeId: string, odds: number) => {
-    if (!authenticated) {
+    if (!isConnected) {
       showToast("Connect wallet to place bets", "info");
       setIsWalletOpen(true);
       return;
@@ -232,12 +181,12 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
   };
 
   const handleConnect = () => {
-    onLogin();
+    login();
     setIsWalletOpen(false);
   };
 
   const handleDisconnect = () => {
-    onLogout();
+    logout();
     setIsWalletOpen(false);
     showToast("Wallet disconnected", "info");
   };
@@ -249,7 +198,7 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
           usdcBalance={wallet.usdcBalance}
           wildBalance={wallet.wildBalance}
           onWalletClick={() => setIsWalletOpen(true)}
-          isConnected={authenticated}
+          isConnected={isConnected}
         />
 
         <main className="flex-1 overflow-hidden">
@@ -278,7 +227,7 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
           )}
           {activeTab === "dash" && (
             <DashboardView
-              wallet={authenticated ? wallet : null}
+              wallet={isConnected ? wallet : null}
               bets={bets}
               trades={trades}
               isLoading={betsLoading || tradesLoading}
@@ -292,8 +241,8 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
       <WalletDrawer
         isOpen={isWalletOpen}
         onClose={() => setIsWalletOpen(false)}
-        wallet={authenticated ? wallet : null}
-        isConnected={authenticated}
+        wallet={isConnected ? wallet : null}
+        isConnected={isConnected}
         onConnect={handleConnect}
         onDisconnect={handleDisconnect}
       />
@@ -301,11 +250,4 @@ function HomeContent({ authenticated, walletAddress, onLogin, onLogout }: HomeCo
       <ToastContainer />
     </div>
   );
-}
-
-export default function HomePage() {
-  if (hasPrivyAppId) {
-    return <HomeWithPrivy />;
-  }
-  return <HomeWithoutPrivy />;
 }
