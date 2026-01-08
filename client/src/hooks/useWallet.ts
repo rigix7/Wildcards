@@ -18,7 +18,12 @@ interface WalletState {
   logout: () => Promise<void>;
   isLoading: boolean;
   hasInjectedProvider: boolean;
-  signTypedData: (domain: object, types: object, value: object) => Promise<string | null>;
+  signTypedData: (
+    domain: Record<string, unknown>, 
+    types: Record<string, Array<{ name: string; type: string }>>, 
+    value: object,
+    primaryType?: string
+  ) => Promise<string | null>;
 }
 
 export function useWallet(): WalletState {
@@ -101,9 +106,10 @@ export function useWallet(): WalletState {
   }, []);
   
   const signTypedData = useCallback(async (
-    domain: object, 
-    types: object, 
-    value: object
+    domain: Record<string, unknown>, 
+    types: Record<string, Array<{ name: string; type: string }>>, 
+    value: object,
+    primaryType?: string
   ): Promise<string | null> => {
     if (!hasInjectedProvider || !address) {
       console.error("No wallet connected for signing");
@@ -111,18 +117,31 @@ export function useWallet(): WalletState {
     }
     
     try {
-      // EIP-712 typed data signing
+      // Build EIP712Domain dynamically based on the domain object
+      const domainTypeMap: Record<string, string> = {
+        name: "string",
+        version: "string",
+        chainId: "uint256",
+        verifyingContract: "address",
+        salt: "bytes32",
+      };
+      
+      const eip712Domain = Object.keys(domain)
+        .filter(key => domain[key] !== undefined)
+        .map(key => ({
+          name: key,
+          type: domainTypeMap[key] || "string",
+        }));
+      
+      // Determine primary type - use provided or first key in types
+      const resolvedPrimaryType = primaryType || Object.keys(types)[0];
+      
       const typedData = {
         types: {
-          EIP712Domain: [
-            { name: "name", type: "string" },
-            { name: "version", type: "string" },
-            { name: "chainId", type: "uint256" },
-            { name: "verifyingContract", type: "address" },
-          ],
+          EIP712Domain: eip712Domain,
           ...types,
         },
-        primaryType: Object.keys(types)[0],
+        primaryType: resolvedPrimaryType,
         domain,
         message: value,
       };
