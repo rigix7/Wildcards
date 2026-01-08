@@ -1,7 +1,5 @@
 import { apiRequest } from "./queryClient";
 
-const GAMMA_API_BASE = "https://gamma-api.polymarket.com";
-
 export interface GammaTag {
   id: string;
   label: string;
@@ -41,24 +39,21 @@ export interface GammaEvent {
   tags: GammaTag[];
 }
 
+// Fetch sports tags via server proxy (bypasses CORS)
 export async function fetchGammaTags(): Promise<GammaTag[]> {
   try {
-    const response = await fetch(`${GAMMA_API_BASE}/tags`);
+    const response = await fetch("/api/polymarket/tags");
     if (!response.ok) {
       throw new Error(`Failed to fetch tags: ${response.status}`);
     }
-    const tags = await response.json();
-    return tags.filter((tag: GammaTag) => 
-      ["sports", "nba", "nfl", "mlb", "nhl", "soccer", "football", "basketball", "tennis", "mma", "boxing", "golf", "esports"].some(
-        keyword => tag.label?.toLowerCase().includes(keyword) || tag.slug?.toLowerCase().includes(keyword)
-      )
-    );
+    return response.json();
   } catch (error) {
     console.error("Error fetching Gamma tags:", error);
     return [];
   }
 }
 
+// Fetch events via server proxy (bypasses CORS)
 export async function fetchGammaEvents(tagIds: string[]): Promise<GammaEvent[]> {
   if (!tagIds.length) return [];
   
@@ -66,9 +61,7 @@ export async function fetchGammaEvents(tagIds: string[]): Promise<GammaEvent[]> 
     const allEvents: GammaEvent[] = [];
     
     for (const tagId of tagIds) {
-      const response = await fetch(
-        `${GAMMA_API_BASE}/events?tag_id=${tagId}&active=true&closed=false&limit=10`
-      );
+      const response = await fetch(`/api/polymarket/events?tag_id=${tagId}`);
       
       if (response.ok) {
         const events: GammaEvent[] = await response.json();
@@ -162,9 +155,13 @@ export function gammaEventToMarket(event: GammaEvent): {
   };
 }
 
-export async function signPolymarketRequest(method: string, path: string, body?: unknown) {
-  return apiRequest<{
-    headers: Record<string, string>;
-    note?: string;
-  }>("POST", "/api/polymarket/sign", { method, path, body });
+// Relay request to Polymarket via server (server handles credentials)
+export async function relayToPolymarket(path: string, method: string = "POST", body?: unknown) {
+  return apiRequest<unknown>("POST", "/api/polymarket/relay", { method, path, body });
+}
+
+// Check if Polymarket builder is configured
+export async function checkPolymarketStatus(): Promise<{ builderConfigured: boolean; relayerUrl: string }> {
+  const response = await fetch("/api/polymarket/status");
+  return response.json();
 }

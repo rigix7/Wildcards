@@ -11,11 +11,11 @@ import { DashboardView } from "@/components/views/DashboardView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket } from "@/lib/polymarket";
 import { getUSDCBalance } from "@/lib/polygon";
-import { useWalletContext } from "@/providers/WalletProvider";
+import { useWallet } from "@/hooks/useWallet";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord } from "@shared/schema";
 
 export default function HomePage() {
-  const { isConnected, address, login, logout } = useWalletContext();
+  const { isConnected, address, login, logout, isLoading: walletLoading } = useWallet();
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{ marketId: string; outcomeId: string } | undefined>();
