@@ -8,6 +8,7 @@ import {
   trades,
   walletRecords,
   adminSettings,
+  futures,
   type Market,
   type InsertMarket,
   type Player,
@@ -19,6 +20,8 @@ import {
   type Wallet,
   type AdminSettings,
   type WalletRecord,
+  type Futures,
+  type InsertFutures,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -50,6 +53,11 @@ export interface IStorage {
 
   getAdminSettings(): Promise<AdminSettings>;
   updateAdminSettings(updates: Partial<AdminSettings>): Promise<AdminSettings>;
+
+  getFutures(): Promise<Futures[]>;
+  getFuturesById(id: string): Promise<Futures | undefined>;
+  createFutures(future: InsertFutures): Promise<Futures>;
+  deleteFutures(id: string): Promise<boolean>;
 
   seedInitialData(): Promise<void>;
 }
@@ -261,6 +269,45 @@ export class DatabaseStorage implements IStorage {
       .where(eq(adminSettings.id, current.id))
       .returning();
     return updated;
+  }
+
+  async getFutures(): Promise<Futures[]> {
+    return await db.select().from(futures);
+  }
+
+  async getFuturesById(id: string): Promise<Futures | undefined> {
+    const [future] = await db.select().from(futures).where(eq(futures.id, id));
+    return future || undefined;
+  }
+
+  async createFutures(future: InsertFutures): Promise<Futures> {
+    const id = randomUUID();
+    const createdAt = new Date().toISOString();
+    const [newFuture] = await db.insert(futures).values({
+      id,
+      polymarketSlug: future.polymarketSlug,
+      polymarketEventId: future.polymarketEventId,
+      title: future.title,
+      description: future.description,
+      imageUrl: future.imageUrl,
+      startDate: future.startDate,
+      endDate: future.endDate,
+      status: future.status || "active",
+      marketData: future.marketData as {
+        question: string;
+        outcomes: Array<{ label: string; probability: number; odds: number }>;
+        volume: number;
+        liquidity: number;
+        conditionId: string;
+      } | undefined,
+      createdAt,
+    }).returning();
+    return newFuture;
+  }
+
+  async deleteFutures(id: string): Promise<boolean> {
+    await db.delete(futures).where(eq(futures.id, id));
+    return true;
   }
 
   async seedInitialData(): Promise<void> {

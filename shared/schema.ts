@@ -78,6 +78,26 @@ export const adminSettings = pgTable("admin_settings", {
   lastUpdated: text("last_updated").notNull(),
 });
 
+export const futures = pgTable("futures", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  polymarketSlug: text("polymarket_slug").notNull(),
+  polymarketEventId: text("polymarket_event_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
+  status: text("status").notNull().default("active"),
+  marketData: jsonb("market_data").$type<{
+    question: string;
+    outcomes: Array<{ label: string; probability: number; odds: number }>;
+    volume: number;
+    liquidity: number;
+    conditionId: string;
+  }>(),
+  createdAt: text("created_at").notNull(),
+});
+
 // ============ ZOD SCHEMAS & TYPES ============
 
 export const insertMarketSchema = createInsertSchema(markets).omit({ id: true });
@@ -98,6 +118,10 @@ export type Trade = typeof trades.$inferSelect;
 
 export type WalletRecord = typeof walletRecords.$inferSelect;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+
+export const insertFuturesSchema = createInsertSchema(futures).omit({ id: true, createdAt: true });
+export type InsertFutures = z.infer<typeof insertFuturesSchema>;
+export type Futures = typeof futures.$inferSelect;
 
 // ============ LEGACY ZOD SCHEMAS (for API validation) ============
 

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertMarketSchema, insertPlayerSchema, insertBetSchema, insertTradeSchema } from "@shared/schema";
+import { insertMarketSchema, insertPlayerSchema, insertBetSchema, insertTradeSchema, insertFuturesSchema } from "@shared/schema";
 import { buildHmacSignature, type BuilderApiKeyCreds } from "@polymarket/builder-signing-sdk";
 
 // Polymarket Builder credentials (server-side only)
@@ -444,6 +444,81 @@ export async function registerRoutes(
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update admin settings" });
+    }
+  });
+
+  // Futures CRUD endpoints
+  app.get("/api/futures", async (req, res) => {
+    try {
+      const futuresList = await storage.getFutures();
+      res.json(futuresList);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch futures" });
+    }
+  });
+
+  app.post("/api/futures", async (req, res) => {
+    try {
+      const parsed = insertFuturesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const future = await storage.createFutures(parsed.data);
+      res.status(201).json(future);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create futures" });
+    }
+  });
+
+  app.delete("/api/futures/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteFutures(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Futures not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete futures" });
+    }
+  });
+
+  // Fetch Polymarket event by slug - for adding futures
+  app.get("/api/polymarket/event-by-slug", async (req, res) => {
+    try {
+      const slug = req.query.slug as string;
+      if (!slug) {
+        return res.status(400).json({ error: "slug parameter required" });
+      }
+
+      // Try fetching as event slug first
+      let response = await fetch(`${GAMMA_API_BASE}/events/slug/${encodeURIComponent(slug)}`);
+      
+      if (response.ok) {
+        const event = await response.json();
+        return res.json({ type: "event", data: event });
+      }
+
+      // Try fetching as market slug
+      response = await fetch(`${GAMMA_API_BASE}/markets/slug/${encodeURIComponent(slug)}`);
+      
+      if (response.ok) {
+        const market = await response.json();
+        return res.json({ type: "market", data: market });
+      }
+
+      // Try fetching by event ID (if numeric)
+      if (/^\d+$/.test(slug)) {
+        response = await fetch(`${GAMMA_API_BASE}/events/${slug}`);
+        if (response.ok) {
+          const event = await response.json();
+          return res.json({ type: "event", data: event });
+        }
+      }
+
+      res.status(404).json({ error: "Event or market not found" });
+    } catch (error) {
+      console.error("Error fetching by slug:", error);
+      res.status(500).json({ error: "Failed to fetch event" });
     }
   });
 
