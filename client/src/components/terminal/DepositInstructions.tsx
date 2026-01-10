@@ -89,10 +89,17 @@ export function DepositInstructions({ safeAddress, onClose }: DepositInstruction
             <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
               <span className="text-[10px] font-bold text-white">$</span>
             </div>
-            <div>
-              <p className="text-xs text-white font-medium">USDC.e</p>
-              <p className="text-[10px] text-zinc-500">Bridged USDC on Polygon</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-white font-medium">USDC.e (Bridged USDC)</p>
+              <p className="text-[10px] text-zinc-500 font-mono break-all">
+                0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+              </p>
             </div>
+          </div>
+          <div className="mt-2 bg-amber-500/10 border border-amber-500/20 rounded p-2">
+            <p className="text-[10px] text-amber-400">
+              <span className="font-bold">This is the token contract address</span> - use it to add USDC.e to your wallet or verify on exchanges. Do NOT send funds to this address.
+            </p>
           </div>
         </div>
       </div>
@@ -103,6 +110,7 @@ export function DepositInstructions({ safeAddress, onClose }: DepositInstruction
           <div>
             <p className="text-xs font-medium text-red-400">Do NOT Send</p>
             <ul className="text-[10px] text-red-400/80 mt-1 space-y-0.5 list-disc list-inside">
+              <li>Funds to the USDC.e token contract address above</li>
               <li>ETH, MATIC, or any other cryptocurrency</li>
               <li>USDC on Ethereum mainnet (use bridge first)</li>
               <li>USDT, DAI, or other stablecoins</li>
