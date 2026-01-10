@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, RefreshCw, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, RefreshCw, Check, X, Link2, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaTags, type GammaTag } from "@/lib/polymarket";
-import type { Market, Player, InsertMarket, InsertPlayer, AdminSettings } from "@shared/schema";
+import type { Market, Player, InsertMarket, InsertPlayer, AdminSettings, Futures } from "@shared/schema";
 
 const playerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,12 +34,27 @@ const playerFormSchema = z.object({
 
 type PlayerFormData = z.infer<typeof playerFormSchema>;
 
+function extractSlugFromInput(input: string): string {
+  const trimmed = input.trim();
+  
+  if (trimmed.includes("polymarket.com")) {
+    const match = trimmed.match(/polymarket\.com\/event\/([^/?#]+)/);
+    if (match) return match[1];
+    const marketMatch = trimmed.match(/polymarket\.com\/([^/?#]+)/);
+    if (marketMatch) return marketMatch[1];
+  }
+  
+  return trimmed;
+}
+
 export default function AdminPage() {
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<"polymarket" | "markets" | "players">("polymarket");
+  const [activeSection, setActiveSection] = useState<"matchday" | "futures" | "players">("matchday");
   const [gammaTags, setGammaTags] = useState<GammaTag[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
+  const [futuresSlug, setFuturesSlug] = useState("");
+  const [fetchingEvent, setFetchingEvent] = useState(false);
 
   const playerForm = useForm<PlayerFormData>({
     resolver: zodResolver(playerFormSchema),
@@ -60,6 +75,10 @@ export default function AdminPage() {
 
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
     queryKey: ["/api/players"],
+  });
+
+  const { data: futuresList = [], isLoading: futuresLoading } = useQuery<Futures[]>({
+    queryKey: ["/api/futures"],
   });
 
   const { data: adminSettings } = useQuery<AdminSettings>({
@@ -89,7 +108,7 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (activeSection === "polymarket" && gammaTags.length === 0) {
+    if (activeSection === "matchday" && gammaTags.length === 0) {
       loadGammaTags();
     }
   }, [activeSection]);
@@ -102,25 +121,139 @@ export default function AdminPage() {
     updateSettingsMutation.mutate({ activeTagIds: newTags });
   };
 
-  const createMarketMutation = useMutation({
-    mutationFn: async (market: InsertMarket) => {
-      return apiRequest("POST", "/api/markets", market);
+  const createFuturesMutation = useMutation({
+    mutationFn: async (future: {
+      polymarketSlug: string;
+      polymarketEventId?: string;
+      title: string;
+      description?: string;
+      imageUrl?: string;
+      startDate?: string;
+      endDate?: string;
+      marketData?: {
+        question: string;
+        outcomes: Array<{ label: string; probability: number; odds: number }>;
+        volume: number;
+        liquidity: number;
+        conditionId: string;
+      };
+    }) => {
+      return apiRequest("POST", "/api/futures", future);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/markets"] });
-      toast({ title: "Market created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/futures"] });
+      toast({ title: "Future event added" });
+      setFuturesSlug("");
+    },
+    onError: () => {
+      toast({ title: "Failed to add futures event", variant: "destructive" });
     },
   });
 
-  const deleteMarketMutation = useMutation({
+  const deleteFuturesMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/markets/${id}`);
+      return apiRequest("DELETE", `/api/futures/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/markets"] });
-      toast({ title: "Market deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/futures"] });
+      toast({ title: "Future event removed" });
     },
   });
+
+  const handleAddFutures = async () => {
+    if (!futuresSlug.trim()) {
+      toast({ title: "Please enter a Polymarket event slug or URL", variant: "destructive" });
+      return;
+    }
+
+    setFetchingEvent(true);
+    try {
+      const slug = extractSlugFromInput(futuresSlug);
+      const response = await fetch(`/api/polymarket/event-by-slug?slug=${encodeURIComponent(slug)}`);
+      
+      if (!response.ok) {
+        toast({ title: "Event not found on Polymarket", variant: "destructive" });
+        return;
+      }
+
+      const result = await response.json();
+      const eventData = result.data;
+
+      if (result.type === "event") {
+        const market = eventData.markets?.[0];
+        let marketData = undefined;
+        
+        if (market) {
+          try {
+            const prices = JSON.parse(market.outcomePrices || "[]");
+            const outcomes = JSON.parse(market.outcomes || "[]");
+            marketData = {
+              question: market.question || eventData.title,
+              outcomes: outcomes.map((label: string, i: number) => {
+                const prob = parseFloat(prices[i] || "0");
+                return {
+                  label,
+                  probability: prob,
+                  odds: prob > 0 ? Math.round((1 / prob) * 100) / 100 : 99,
+                };
+              }),
+              volume: parseFloat(market.volume || "0"),
+              liquidity: parseFloat(market.liquidity || "0"),
+              conditionId: market.conditionId || "",
+            };
+          } catch (e) {
+            console.error("Failed to parse market data:", e);
+          }
+        }
+
+        await createFuturesMutation.mutateAsync({
+          polymarketSlug: slug,
+          polymarketEventId: eventData.id,
+          title: eventData.title,
+          description: eventData.description,
+          imageUrl: eventData.image,
+          startDate: eventData.startDate,
+          endDate: eventData.endDate,
+          marketData,
+        });
+      } else if (result.type === "market") {
+        let marketData = undefined;
+        try {
+          const prices = JSON.parse(eventData.outcomePrices || "[]");
+          const outcomes = JSON.parse(eventData.outcomes || "[]");
+          marketData = {
+            question: eventData.question,
+            outcomes: outcomes.map((label: string, i: number) => {
+              const prob = parseFloat(prices[i] || "0");
+              return {
+                label,
+                probability: prob,
+                odds: prob > 0 ? Math.round((1 / prob) * 100) / 100 : 99,
+              };
+            }),
+            volume: parseFloat(eventData.volume || "0"),
+            liquidity: parseFloat(eventData.liquidity || "0"),
+            conditionId: eventData.conditionId || "",
+          };
+        } catch (e) {
+          console.error("Failed to parse market data:", e);
+        }
+
+        await createFuturesMutation.mutateAsync({
+          polymarketSlug: slug,
+          polymarketEventId: eventData.id,
+          title: eventData.question || slug,
+          description: eventData.description,
+          marketData,
+        });
+      }
+    } catch (error) {
+      console.error("Error adding futures:", error);
+      toast({ title: "Failed to fetch event details", variant: "destructive" });
+    } finally {
+      setFetchingEvent(false);
+    }
+  };
 
   const createPlayerMutation = useMutation({
     mutationFn: async (player: InsertPlayer) => {
@@ -143,26 +276,6 @@ export default function AdminPage() {
       toast({ title: "Player deleted" });
     },
   });
-
-  const handleCreateSampleMarket = () => {
-    const sampleMarket: InsertMarket = {
-      title: `Lakers vs Warriors`,
-      description: "NBA Regular Season",
-      category: "sports",
-      sport: "NBA",
-      league: "Basketball",
-      startTime: new Date(Date.now() + 86400000).toISOString(),
-      status: "open",
-      outcomes: [
-        { id: "1", label: "Lakers", odds: 2.1, probability: 0.48 },
-        { id: "2", label: "Draw", odds: 15.0, probability: 0.07 },
-        { id: "3", label: "Warriors", odds: 1.85, probability: 0.54 },
-      ],
-      volume: Math.floor(Math.random() * 500000) + 100000,
-      liquidity: Math.floor(Math.random() * 200000) + 50000,
-    };
-    createMarketMutation.mutate(sampleMarket);
-  };
 
   const onSubmitPlayer = (data: PlayerFormData) => {
     const fundingPercentage = Math.round((data.fundingCurrent / data.fundingTarget) * 100);
@@ -207,18 +320,18 @@ export default function AdminPage() {
 
         <div className="flex gap-2 mb-6 flex-wrap">
           <Button
-            variant={activeSection === "polymarket" ? "default" : "secondary"}
-            onClick={() => setActiveSection("polymarket")}
-            data-testid="button-section-polymarket"
+            variant={activeSection === "matchday" ? "default" : "secondary"}
+            onClick={() => setActiveSection("matchday")}
+            data-testid="button-section-matchday"
           >
-            Polymarket Tags
+            Match Day
           </Button>
           <Button
-            variant={activeSection === "markets" ? "default" : "secondary"}
-            onClick={() => setActiveSection("markets")}
-            data-testid="button-section-markets"
+            variant={activeSection === "futures" ? "default" : "secondary"}
+            onClick={() => setActiveSection("futures")}
+            data-testid="button-section-futures"
           >
-            Demo Markets ({markets.length})
+            Futures ({futuresList.length})
           </Button>
           <Button
             variant={activeSection === "players" ? "default" : "secondary"}
@@ -229,13 +342,13 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        {activeSection === "polymarket" && (
+        {activeSection === "matchday" && (
           <div className="space-y-4">
             <div className="flex justify-between items-center gap-2 flex-wrap">
               <div>
-                <h2 className="text-lg font-bold">Polymarket Sports Tags</h2>
+                <h2 className="text-lg font-bold">Match Day - Leagues</h2>
                 <p className="text-sm text-zinc-500">
-                  Select which sports/leagues appear in the Predict tab (live events)
+                  Select leagues to auto-populate upcoming games in the Predict tab
                 </p>
               </div>
               <Button
@@ -245,15 +358,15 @@ export default function AdminPage() {
                 data-testid="button-refresh-tags"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loadingTags ? "animate-spin" : ""}`} />
-                Refresh Tags
+                Refresh
               </Button>
             </div>
 
             {loadingTags ? (
-              <div className="text-zinc-500">Loading tags from Polymarket...</div>
+              <div className="text-zinc-500">Loading leagues from Polymarket...</div>
             ) : gammaTags.length === 0 ? (
               <Card className="p-8 text-center text-zinc-500">
-                No sports tags found. Click "Refresh Tags" to load from Polymarket.
+                No leagues found. Click "Refresh" to load from Polymarket.
               </Card>
             ) : (
               <div className="grid gap-2">
@@ -277,7 +390,7 @@ export default function AdminPage() {
                         <div>
                           <div className="font-bold">{tag.label}</div>
                           <div className="text-sm text-zinc-500">
-                            ID: {tag.id} | Slug: {tag.slug}
+                            Slug: {tag.slug}
                           </div>
                         </div>
                       </div>
@@ -292,7 +405,9 @@ export default function AdminPage() {
 
             {(adminSettings?.activeTagIds?.length || 0) > 0 && (
               <div className="mt-4 p-4 bg-zinc-900 rounded-md">
-                <div className="text-sm text-zinc-400 mb-2">Active Tags ({adminSettings?.activeTagIds?.length}):</div>
+                <div className="text-sm text-zinc-400 mb-2">
+                  Active Leagues ({adminSettings?.activeTagIds?.length}) - Games will auto-populate:
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {adminSettings?.activeTagIds?.map(id => {
                     const tag = gammaTags.find(t => t.id === id);
@@ -308,51 +423,89 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeSection === "markets" && (
+        {activeSection === "futures" && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center gap-2 flex-wrap">
-              <div>
-                <h2 className="text-lg font-bold">Demo Markets</h2>
-                <p className="text-sm text-zinc-500">
-                  Manually added markets (shown when no Polymarket tags selected)
-                </p>
-              </div>
-              <Button
-                onClick={handleCreateSampleMarket}
-                disabled={createMarketMutation.isPending}
-                data-testid="button-create-market"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Sample Market
-              </Button>
+            <div>
+              <h2 className="text-lg font-bold">Futures - Long-term Events</h2>
+              <p className="text-sm text-zinc-500">
+                Add Polymarket events by slug or URL for long-term betting
+              </p>
             </div>
 
-            {marketsLoading ? (
+            <Card className="p-4 space-y-4">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Paste Polymarket event URL or slug (e.g., super-bowl-winner-2026)"
+                    value={futuresSlug}
+                    onChange={(e) => setFuturesSlug(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddFutures()}
+                    data-testid="input-futures-slug"
+                  />
+                </div>
+                <Button
+                  onClick={handleAddFutures}
+                  disabled={fetchingEvent || !futuresSlug.trim()}
+                  data-testid="button-add-futures"
+                >
+                  {fetchingEvent ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4 mr-2" />
+                      Add
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-600">
+                Examples: "super-bowl-winner-2026" or "https://polymarket.com/event/super-bowl-winner-2026"
+              </p>
+            </Card>
+
+            {futuresLoading ? (
               <div className="text-zinc-500">Loading...</div>
-            ) : markets.length === 0 ? (
+            ) : futuresList.length === 0 ? (
               <Card className="p-8 text-center text-zinc-500">
-                No markets yet. Click "Add Sample Market" to create one.
+                No futures events yet. Add one using a Polymarket event link above.
               </Card>
             ) : (
               <div className="space-y-2">
-                {markets.map((market) => (
+                {futuresList.map((future) => (
                   <Card
-                    key={market.id}
-                    className="p-4 flex justify-between items-center gap-2"
-                    data-testid={`admin-market-${market.id}`}
+                    key={future.id}
+                    className="p-4 flex justify-between items-start gap-4"
+                    data-testid={`futures-${future.id}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold truncate">{market.title}</div>
-                      <div className="text-sm text-zinc-500">
-                        {market.sport} | Vol: ${(market.volume / 1000).toFixed(1)}K
+                      <div className="font-bold truncate">{future.title}</div>
+                      <div className="text-sm text-zinc-500 truncate">
+                        Slug: {future.polymarketSlug}
                       </div>
+                      {future.marketData?.outcomes && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {future.marketData.outcomes.slice(0, 3).map((outcome, i) => (
+                            <span
+                              key={i}
+                              className="text-xs px-2 py-1 bg-zinc-800 rounded"
+                            >
+                              {outcome.label}: {(outcome.probability * 100).toFixed(0)}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {future.endDate && (
+                        <div className="text-xs text-zinc-600 mt-1">
+                          Ends: {new Date(future.endDate).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="destructive"
                       size="icon"
-                      onClick={() => deleteMarketMutation.mutate(market.id)}
-                      disabled={deleteMarketMutation.isPending}
-                      data-testid={`button-delete-market-${market.id}`}
+                      onClick={() => deleteFuturesMutation.mutate(future.id)}
+                      disabled={deleteFuturesMutation.isPending}
+                      data-testid={`button-delete-futures-${future.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
