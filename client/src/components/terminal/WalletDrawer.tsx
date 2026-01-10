@@ -1,7 +1,8 @@
-import { X, Copy, ExternalLink, Wallet, Check, Shield, Loader2 } from "lucide-react";
+import { X, Copy, ExternalLink, Wallet, Check, Shield, Loader2, ChevronLeft, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Wallet as WalletType } from "@shared/schema";
+import { DepositInstructions } from "./DepositInstructions";
 
 function SafeAddressDisplay({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
@@ -73,6 +74,8 @@ export function WalletDrawer({
   isSafeDeploying,
   onDeploySafe,
 }: WalletDrawerProps) {
+  const [showDepositInstructions, setShowDepositInstructions] = useState(false);
+
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -91,19 +94,39 @@ export function WalletDrawer({
       <div className="fixed bottom-0 left-0 right-0 z-50 max-w-[430px] mx-auto animate-slide-up">
         <div className="bg-zinc-900 border-t border-zinc-800 rounded-t-2xl">
           <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-            <h2 className="font-bold text-white">Wallet</h2>
+            {showDepositInstructions ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setShowDepositInstructions(false)}
+                  className="w-8 h-8"
+                  data-testid="button-back-deposit"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <h2 className="font-bold text-white">How to Deposit</h2>
+              </div>
+            ) : (
+              <h2 className="font-bold text-white">Wallet</h2>
+            )}
             <Button
               size="icon"
               variant="ghost"
-              onClick={onClose}
+              onClick={() => {
+                setShowDepositInstructions(false);
+                onClose();
+              }}
               data-testid="button-close-drawer"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
 
-          <div className="p-4 space-y-4">
-            {isConnected && wallet ? (
+          <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            {showDepositInstructions && safeAddress ? (
+              <DepositInstructions safeAddress={safeAddress} />
+            ) : isConnected && wallet ? (
               <>
                 <div className="flex items-center justify-between bg-zinc-950 rounded-lg p-3 border border-zinc-800">
                   <div className="flex items-center gap-3">
@@ -169,7 +192,19 @@ export function WalletDrawer({
                       )}
                     </div>
                     {isSafeDeployed && safeAddress ? (
-                      <SafeAddressDisplay address={safeAddress} />
+                      <>
+                        <SafeAddressDisplay address={safeAddress} />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full mt-2 text-xs border-zinc-700"
+                          onClick={() => setShowDepositInstructions(true)}
+                          data-testid="button-how-to-deposit"
+                        >
+                          <HelpCircle className="w-3 h-3 mr-1" />
+                          How to Deposit
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         size="sm"
@@ -191,7 +226,7 @@ export function WalletDrawer({
                     )}
                     <p className="text-[10px] text-zinc-600 mt-2">
                       {isSafeDeployed 
-                        ? "Gasless trading enabled. Deposit USDC to start betting."
+                        ? "Gasless trading enabled. Deposit USDC.e (Polygon) to start."
                         : "One-time activation for gasless trading on Polymarket"}
                     </p>
                   </div>

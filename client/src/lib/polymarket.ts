@@ -260,9 +260,22 @@ export async function deploySafeWithProvider(
     };
   } catch (error) {
     console.error("Deploy Safe error:", error);
+    
+    let errorMessage = "Failed to activate wallet";
+    if (error instanceof Error) {
+      const errorStr = error.message.toLowerCase();
+      if (errorStr.includes("401") || errorStr.includes("unauthorized") || errorStr.includes("invalid authorization")) {
+        errorMessage = "Authentication failed. Please verify your Polymarket Builder API credentials (Key, Secret, and Passphrase) are configured correctly.";
+      } else if (errorStr.includes("invalid remote url")) {
+        errorMessage = "Configuration error. Please refresh and try again.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "Failed to deploy Safe" 
+      error: errorMessage
     };
   }
 }
