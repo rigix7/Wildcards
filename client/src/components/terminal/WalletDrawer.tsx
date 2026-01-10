@@ -73,25 +73,11 @@ export function WalletDrawer({
   isSafeDeploying,
   onDeploySafe,
 }: WalletDrawerProps) {
-  const [copied, setCopied] = useState(false);
-
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
-  };
-
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  const copyAddress = async () => {
-    if (wallet?.address) {
-      await navigator.clipboard.writeText(wallet.address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
   };
 
   if (!isOpen) return null;
@@ -126,40 +112,12 @@ export function WalletDrawer({
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">Connected</div>
-                      <div className="text-[11px] font-mono text-zinc-500">
-                        {truncateAddress(wallet.address)}
+                      <div className="text-[11px] text-zinc-500">
+                        {isSafeDeployed ? "Trading Wallet Active" : "Wallet Ready"}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={copyAddress}
-                      className="w-8 h-8"
-                      data-testid="button-copy-address"
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-wild-scout" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-zinc-400" />
-                      )}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() =>
-                        window.open(
-                          `https://polygonscan.com/address/${wallet.address}`,
-                          "_blank"
-                        )
-                      }
-                      className="w-8 h-8"
-                      data-testid="button-view-explorer"
-                    >
-                      <ExternalLink className="w-4 h-4 text-zinc-400" />
-                    </Button>
-                  </div>
+                  <div className="w-2 h-2 rounded-full bg-wild-scout animate-pulse" />
                 </div>
 
                 <div className="space-y-3">

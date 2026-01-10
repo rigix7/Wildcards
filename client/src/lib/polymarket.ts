@@ -205,9 +205,12 @@ export async function getRelayClient(
     transport: custom(provider as Parameters<typeof custom>[0]),
   }) as WalletClient;
 
+  const signingUrl = `${window.location.origin}/api/polymarket/sign`;
+  console.log("Using signing URL:", signingUrl);
+  
   const builderConfig = new BuilderConfig({
     remoteBuilderConfig: {
-      url: "/api/polymarket/sign",
+      url: signingUrl,
     },
   });
 
