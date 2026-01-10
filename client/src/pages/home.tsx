@@ -13,7 +13,7 @@ import { fetchGammaEvents, gammaEventToMarket } from "@/lib/polymarket";
 import { getUSDCBalance } from "@/lib/polygon";
 import { useWallet } from "@/providers/PrivyProvider";
 import { useSafeWallet } from "@/hooks/useSafeWallet";
-import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord } from "@shared/schema";
+import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures } from "@shared/schema";
 
 export default function HomePage() {
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
@@ -52,6 +52,10 @@ export default function HomePage() {
     queryKey: ["/api/bets"],
   });
 
+  const { data: futures = [], isLoading: futuresLoading } = useQuery<Futures[]>({
+    queryKey: ["/api/futures"],
+  });
+
   // Fetch real USDC balance when wallet is connected (skip for demo addresses)
   useEffect(() => {
     const fetchBalance = async () => {
@@ -83,14 +87,16 @@ export default function HomePage() {
             id: m!.id,
             title: m!.title,
             description: m!.description || "",
-            category: m!.category as "sports" | "politics" | "crypto" | "entertainment",
+            category: m!.category,
             sport: m!.sport,
             league: m!.league,
             startTime: m!.startTime,
-            status: m!.status as "open" | "closed" | "settled",
+            endTime: null,
+            status: m!.status,
             outcomes: m!.outcomes,
             volume: m!.volume,
             liquidity: m!.liquidity,
+            imageUrl: null,
           }));
         setLiveMarkets(markets);
       } catch (error) {
@@ -208,7 +214,9 @@ export default function HomePage() {
           {activeTab === "predict" && (
             <PredictView
               markets={markets}
+              futures={futures}
               isLoading={marketsLoading}
+              futuresLoading={futuresLoading}
               onPlaceBet={handlePlaceBet}
               selectedBet={selectedBet}
             />
