@@ -165,3 +165,116 @@ export async function checkPolymarketStatus(): Promise<{ builderConfigured: bool
   const response = await fetch("/api/polymarket/status");
   return response.json();
 }
+
+// ============================================================
+// RelayClient integration for Safe wallet deployment
+// ============================================================
+
+import { RelayClient, RelayerTxType } from "@polymarket/builder-relayer-client";
+import { deriveSafe } from "@polymarket/builder-relayer-client/dist/builder/derive";
+import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
+import { BuilderConfig } from "@polymarket/builder-signing-sdk";
+import { createWalletClient, custom, type WalletClient } from "viem";
+import { polygon } from "viem/chains";
+
+const RELAYER_URL = "https://relayer-v2.polymarket.com/";
+const CHAIN_ID = 137;
+
+let relayClientInstance: RelayClient | null = null;
+let lastEoaAddress: string | null = null;
+let cachedSafeAddress: string | null = null;
+
+function deriveSafeAddress(eoaAddress: string): string {
+  const config = getContractConfig(CHAIN_ID);
+  return deriveSafe(eoaAddress, config.SafeContracts.SafeFactory);
+}
+
+export async function getRelayClient(
+  eoaAddress: `0x${string}`,
+  provider: unknown
+): Promise<{ client: RelayClient; safeAddress: string }> {
+  const safeAddress = deriveSafeAddress(eoaAddress);
+  
+  if (relayClientInstance && lastEoaAddress === eoaAddress) {
+    return { client: relayClientInstance, safeAddress };
+  }
+
+  const walletClient = createWalletClient({
+    account: eoaAddress,
+    chain: polygon,
+    transport: custom(provider as Parameters<typeof custom>[0]),
+  }) as WalletClient;
+
+  const builderConfig = new BuilderConfig({
+    remoteBuilderConfig: {
+      url: "/api/polymarket/sign",
+    },
+  });
+
+  relayClientInstance = new RelayClient(
+    RELAYER_URL,
+    CHAIN_ID,
+    walletClient,
+    builderConfig,
+    RelayerTxType.SAFE
+  );
+  lastEoaAddress = eoaAddress;
+  cachedSafeAddress = safeAddress;
+
+  return { client: relayClientInstance, safeAddress };
+}
+
+export function clearRelayClient(): void {
+  relayClientInstance = null;
+  lastEoaAddress = null;
+  cachedSafeAddress = null;
+}
+
+export async function deploySafeWithProvider(
+  eoaAddress: `0x${string}`,
+  provider: unknown
+): Promise<{ success: boolean; safeAddress?: string; error?: string }> {
+  try {
+    const { client, safeAddress } = await getRelayClient(eoaAddress, provider);
+    console.log("Derived Safe address:", safeAddress);
+    
+    const isDeployed = await client.getDeployed(safeAddress);
+    console.log("Already deployed:", isDeployed);
+    
+    if (isDeployed) {
+      return { success: true, safeAddress };
+    }
+    
+    console.log("Deploying Safe wallet...");
+    const response = await client.deploy();
+    const result = await response?.wait();
+    
+    console.log("Deploy result:", result);
+    
+    return { 
+      success: true, 
+      safeAddress: result?.proxyAddress || safeAddress 
+    };
+  } catch (error) {
+    console.error("Deploy Safe error:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to deploy Safe" 
+    };
+  }
+}
+
+export async function checkSafeWithProvider(
+  eoaAddress: `0x${string}`,
+  provider: unknown
+): Promise<{ deployed: boolean; safeAddress: string }> {
+  try {
+    const { client, safeAddress } = await getRelayClient(eoaAddress, provider);
+    const deployed = await client.getDeployed(safeAddress);
+    
+    return { deployed, safeAddress };
+  } catch (error) {
+    console.error("Check Safe error:", error);
+    return { deployed: false, safeAddress: "" };
+  }
+}

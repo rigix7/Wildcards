@@ -9,6 +9,7 @@ interface WalletContextType {
   login: () => void;
   logout: () => Promise<void>;
   isLoading: boolean;
+  getProvider: () => Promise<unknown | null>;
 }
 
 interface PrivyInnerProviderProps {
@@ -53,6 +54,16 @@ function WalletContextProvider({
     ensurePolygonChain();
   }, [wallet, walletsReady, authenticated]);
 
+  const getProvider = async (): Promise<unknown | null> => {
+    if (!wallet) return null;
+    try {
+      return await wallet.getEthereumProvider();
+    } catch (error) {
+      console.error("Failed to get provider:", error);
+      return null;
+    }
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -62,6 +73,7 @@ function WalletContextProvider({
         login,
         logout,
         isLoading,
+        getProvider,
       }}
     >
       {children}

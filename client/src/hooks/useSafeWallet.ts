@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/providers/PrivyProvider";
 import { 
-  deploySafe, 
-  getSafeStatus, 
   saveSession, 
   loadSession, 
   clearSession,
   type SafeSession 
 } from "@/lib/safe";
+import {
+  deploySafeWithProvider,
+  checkSafeWithProvider,
+  clearRelayClient,
+} from "@/lib/polymarket";
 
 export interface SafeWalletState {
   isLoading: boolean;
@@ -18,7 +21,7 @@ export interface SafeWalletState {
 }
 
 export function useSafeWallet() {
-  const { authenticated, eoaAddress, isReady } = useWallet();
+  const { authenticated, eoaAddress, isReady, getProvider } = useWallet();
   const [state, setState] = useState<SafeWalletState>({
     isLoading: true,
     isDeploying: false,
@@ -48,7 +51,13 @@ export function useSafeWallet() {
         return;
       }
 
-      const status = await getSafeStatus(eoaAddress);
+      const provider = await getProvider();
+      if (!provider) {
+        setState(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
+      const status = await checkSafeWithProvider(eoaAddress as `0x${string}`, provider);
       
       if (status.deployed && status.safeAddress) {
         const newSession: SafeSession = {
@@ -70,7 +79,7 @@ export function useSafeWallet() {
         setState({
           isLoading: false,
           isDeploying: false,
-          safeAddress: null,
+          safeAddress: status.safeAddress || null,
           isDeployed: false,
           error: null,
         });
@@ -83,7 +92,7 @@ export function useSafeWallet() {
         error: "Failed to check Safe status",
       }));
     }
-  }, [eoaAddress]);
+  }, [eoaAddress, getProvider]);
 
   useEffect(() => {
     if (isReady && authenticated && eoaAddress) {
@@ -97,6 +106,7 @@ export function useSafeWallet() {
         error: null,
       });
       clearSession();
+      clearRelayClient();
     }
   }, [isReady, authenticated, eoaAddress, checkDeployment]);
 
@@ -109,7 +119,13 @@ export function useSafeWallet() {
     setState(prev => ({ ...prev, isDeploying: true, error: null }));
 
     try {
-      const result = await deploySafe(eoaAddress);
+      const provider = await getProvider();
+      if (!provider) {
+        setState(prev => ({ ...prev, isDeploying: false, error: "No wallet provider" }));
+        return false;
+      }
+
+      const result = await deploySafeWithProvider(eoaAddress as `0x${string}`, provider);
       
       if (result.success && result.safeAddress) {
         const newSession: SafeSession = {
@@ -132,7 +148,7 @@ export function useSafeWallet() {
         setState(prev => ({
           ...prev,
           isDeploying: false,
-          error: result.error || "Deployment failed",
+          error: result.error || "Activation failed",
         }));
         return false;
       }
@@ -141,14 +157,15 @@ export function useSafeWallet() {
       setState(prev => ({
         ...prev,
         isDeploying: false,
-        error: "Failed to deploy Safe wallet",
+        error: "Failed to activate wallet",
       }));
       return false;
     }
-  }, [eoaAddress]);
+  }, [eoaAddress, getProvider]);
 
   const reset = useCallback(() => {
     clearSession();
+    clearRelayClient();
     setState({
       isLoading: false,
       isDeploying: false,

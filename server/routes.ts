@@ -269,6 +269,7 @@ export async function registerRoutes(
       const httpMethod = (method || "POST").toUpperCase();
       
       if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        console.log("Builder credentials check - key:", !!BUILDER_CREDENTIALS.key, "secret:", !!BUILDER_CREDENTIALS.secret);
         return res.status(500).json({ error: "Builder credentials not configured" });
       }
       
@@ -284,6 +285,8 @@ export async function registerRoutes(
       
       // Make the actual call to Polymarket relayer from server
       const relayerUrl = `https://relayer-v2.polymarket.com${path}`;
+      console.log(`Relay request: ${httpMethod} ${relayerUrl}`);
+      
       const fetchOptions: RequestInit = {
         method: httpMethod,
         headers: {
@@ -301,11 +304,22 @@ export async function registerRoutes(
       }
       
       const relayerResponse = await fetch(relayerUrl, fetchOptions);
-      
-      // Handle empty responses
       const text = await relayerResponse.text();
-      const data = text ? JSON.parse(text) : {};
-      res.status(relayerResponse.status).json(data);
+      
+      console.log(`Relay response: ${relayerResponse.status} - ${text.substring(0, 200)}`);
+      
+      // Try to parse as JSON, otherwise return raw text as error
+      try {
+        const data = text ? JSON.parse(text) : {};
+        res.status(relayerResponse.status).json(data);
+      } catch {
+        // Response is not JSON (likely HTML error page)
+        res.status(relayerResponse.status).json({ 
+          error: "Polymarket API error", 
+          status: relayerResponse.status,
+          message: text.substring(0, 500) 
+        });
+      }
     } catch (error) {
       console.error("Relay error:", error);
       res.status(500).json({ error: "Failed to relay request" });

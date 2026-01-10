@@ -7,6 +7,7 @@ interface WalletContextType {
   login: () => void;
   logout: () => Promise<void>;
   isLoading: boolean;
+  getProvider: () => Promise<unknown | null>;
 }
 
 export const WalletContext = createContext<WalletContextType>({
@@ -16,6 +17,7 @@ export const WalletContext = createContext<WalletContextType>({
   login: () => {},
   logout: async () => {},
   isLoading: true,
+  getProvider: async () => null,
 });
 
 export function useWallet() {
@@ -34,6 +36,7 @@ function LoadingFallback({ children }: { children: ReactNode }) {
         login: () => {},
         logout: async () => {},
         isLoading: true,
+        getProvider: async () => null,
       }}
     >
       {children}
@@ -55,6 +58,7 @@ export function PrivyWalletProvider({ children }: { children: ReactNode }) {
           login: () => console.warn("Privy not configured"),
           logout: async () => {},
           isLoading: false,
+          getProvider: async () => null,
         }}
       >
         {children}
