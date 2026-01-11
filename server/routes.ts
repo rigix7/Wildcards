@@ -391,7 +391,7 @@ export async function registerRoutes(
   });
 
   // Fetch sports with hierarchical market types for granular selection
-  // Returns sports with nested market type options (moneyline, spreads, totals, etc.)
+  // Returns sports with nested market type options fetched dynamically from each league's events
   app.get("/api/polymarket/tags", async (req, res) => {
     try {
       const response = await fetch(`${GAMMA_API_BASE}/sports`);
@@ -445,10 +445,20 @@ export async function registerRoutes(
         points: "Player Points",
         rebounds: "Player Rebounds",
         assists: "Player Assists",
+        threes: "Player 3-Pointers",
+        steals: "Player Steals",
+        blocks: "Player Blocks",
+        passing_yards: "Passing Yards",
+        rushing_yards: "Rushing Yards",
+        receiving_yards: "Receiving Yards",
+        touchdowns: "Touchdowns",
+        strikeouts: "Pitcher Strikeouts",
+        hits: "Player Hits",
+        home_runs: "Home Runs",
+        goals: "Goals",
+        shots: "Shots",
+        saves: "Saves",
       };
-      
-      // Core market types available for most sports
-      const coreMarketTypes = ["moneyline", "spreads", "totals"];
       
       interface RawSport {
         id: number;
@@ -458,19 +468,63 @@ export async function registerRoutes(
         image?: string;
       }
       
-      // Transform sports into hierarchical structure with market type options
-      const categorizedSports = sports.map((sport: RawSport) => ({
-        id: `series_${sport.series || sport.id}`,
-        slug: sport.sport,
-        label: sportLabels[sport.sport] || sport.sport.toUpperCase(),
-        sport: sport.sport.toUpperCase(),
-        seriesId: sport.series || String(sport.id),
-        image: sport.image,
-        marketTypes: coreMarketTypes.map(mt => ({
-          id: `${sport.series || sport.id}_${mt}`,
+      interface RawMarket {
+        sportsMarketType?: string;
+        question?: string;
+      }
+      
+      interface RawEvent {
+        markets?: RawMarket[];
+      }
+      
+      // Fetch actual market types from each sport's events
+      const categorizedSports = await Promise.all(sports.map(async (sport: RawSport) => {
+        const seriesId = sport.series || String(sport.id);
+        const foundMarketTypes = new Set<string>();
+        
+        try {
+          const eventsUrl = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=20`;
+          const eventsResponse = await fetch(eventsUrl);
+          
+          if (eventsResponse.ok) {
+            const events: RawEvent[] = await eventsResponse.json();
+            
+            // Extract unique sportsMarketType values from all markets
+            for (const event of events) {
+              if (event.markets) {
+                for (const market of event.markets) {
+                  if (market.sportsMarketType) {
+                    foundMarketTypes.add(market.sportsMarketType);
+                  }
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`Error fetching events for sport ${sport.sport}:`, err);
+        }
+        
+        // If no market types found from events, provide defaults based on sport type
+        if (foundMarketTypes.size === 0) {
+          foundMarketTypes.add("moneyline");
+        }
+        
+        // Convert found market types to structured options
+        const marketTypes = Array.from(foundMarketTypes).map(mt => ({
+          id: `${seriesId}_${mt}`,
           type: mt,
-          label: marketTypeLabels[mt] || mt,
-        })),
+          label: marketTypeLabels[mt] || mt.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+        }));
+        
+        return {
+          id: `series_${seriesId}`,
+          slug: sport.sport,
+          label: sportLabels[sport.sport] || sport.sport.toUpperCase(),
+          sport: sport.sport.toUpperCase(),
+          seriesId,
+          image: sport.image,
+          marketTypes,
+        };
       }));
       
       res.json(categorizedSports);

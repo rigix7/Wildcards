@@ -207,18 +207,21 @@ export async function fetchGammaEvents(tagIds: string[]): Promise<GammaEvent[]> 
         
         // Process each event
         const processedEvents = events.map(event => {
-          // If we have specific market types, filter markets to only those types
+          // If we have specific market types AND markets exist, filter to those types
+          // BUT if market doesn't have sportsMarketType field, include it anyway
           if (marketTypes.size > 0 && event.markets?.length) {
             const filteredMarkets = event.markets.filter((market: any) => {
-              const mType = market.sportsMarketType || "moneyline";
-              return marketTypes.has(mType);
+              // If market has no sportsMarketType, include it (show all markets for event)
+              if (!market.sportsMarketType) return true;
+              // Otherwise filter by requested market types
+              return marketTypes.has(market.sportsMarketType);
             });
-            return { ...event, markets: filteredMarkets };
+            return { ...event, markets: filteredMarkets.length > 0 ? filteredMarkets : event.markets };
           }
           return event;
         });
         
-        // Only include events with valid markets
+        // Only include events with valid markets (must have outcomes/prices)
         const validEvents = processedEvents.filter(event => {
           if (!event.markets?.length) return false;
           const market = event.markets[0];

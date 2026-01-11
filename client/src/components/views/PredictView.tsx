@@ -81,6 +81,21 @@ function extractLeagueFromMarket(market: Market): string {
   return market.league?.toUpperCase() || market.sport?.toUpperCase() || "OTHER";
 }
 
+function formatTickerTitle(title: string, league?: string): string {
+  // Try to extract team names from title like "Team A vs Team B - Winner"
+  const vsMatch = title.match(/(.+?)\s+(?:vs\.?|v\.?)\s+(.+?)(?:\s+-|\s+\||\s+:|\?|$)/i);
+  if (vsMatch) {
+    const team1 = vsMatch[1].trim().split(" ").slice(-2).join(" ");
+    const team2 = vsMatch[2].trim().split(" ").slice(0, 2).join(" ");
+    const prefix = league ? `${league}: ` : "";
+    return `${prefix}${team1} vs ${team2}`;
+  }
+  // Fallback: truncate and add league prefix
+  const prefix = league ? `${league}: ` : "";
+  const shortTitle = title.length > 30 ? title.slice(0, 30) + "..." : title;
+  return `${prefix}${shortTitle}`;
+}
+
 function PriceTicker({ markets }: { markets: Market[] }) {
   const [offset, setOffset] = useState(0);
   
@@ -95,24 +110,33 @@ function PriceTicker({ markets }: { markets: Market[] }) {
   
   const tickerItems = markets.slice(0, 10).map((market) => {
     const outcomes = Array.isArray(market.outcomes) ? market.outcomes : [];
-    const firstOutcome = outcomes[0];
+    // Find the "Yes" outcome, or fallback to first outcome
+    const yesOutcome = outcomes.find(o => 
+      o.label?.toLowerCase() === "yes" || 
+      o.label?.toLowerCase().includes("win") ||
+      o.label?.toLowerCase().includes("over")
+    ) || outcomes[0];
+    
+    const probability = yesOutcome?.probability || 0;
+    const displayPct = Math.round(probability * 100);
+    
     return {
-      title: market.title,
-      odds: firstOutcome?.odds || 0,
-      probability: firstOutcome?.probability || 0,
+      title: formatTickerTitle(market.title, market.league ?? undefined),
+      probability: displayPct,
+      isLive: market.status === "open",
     };
   });
   
   return (
     <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
       <div 
-        className="flex whitespace-nowrap py-2 px-3 gap-6"
+        className="flex whitespace-nowrap py-2 px-3 gap-8"
         style={{ transform: `translateX(-${offset}%)`, transition: 'transform 0.05s linear' }}
       >
         {[...tickerItems, ...tickerItems].map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 text-xs">
-            <span className="text-zinc-400 truncate max-w-[150px]">{item.title}</span>
-            <span className="text-wild-gold font-mono font-bold">{item.odds.toFixed(2)}</span>
+            <span className="text-zinc-400">{item.title}</span>
+            <span className="text-wild-gold font-mono font-bold">YES {item.probability}%</span>
           </div>
         ))}
       </div>
