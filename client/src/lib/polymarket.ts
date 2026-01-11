@@ -50,6 +50,48 @@ export interface GammaEvent {
   tags: GammaTag[];
 }
 
+// Helper to convert sport slug to human-readable label
+function humanizeSportSlug(slug: string): string {
+  const labels: Record<string, string> = {
+    nba: "NBA",
+    nfl: "NFL",
+    mlb: "MLB",
+    nhl: "NHL",
+    mls: "MLS",
+    epl: "Premier League",
+    lal: "La Liga",
+    bun: "Bundesliga",
+    sea: "Serie A",
+    fl1: "Ligue 1",
+    ucl: "Champions League",
+    uel: "Europa League",
+    cbb: "College Basketball",
+    cfb: "College Football",
+    wnba: "WNBA",
+    ipl: "IPL Cricket",
+    mma: "UFC/MMA",
+    atp: "ATP Tennis",
+    wta: "WTA Tennis",
+    cs2: "Counter-Strike 2",
+    lol: "League of Legends",
+    dota2: "Dota 2",
+    val: "Valorant",
+  };
+  return labels[slug.toLowerCase()] || slug.toUpperCase();
+}
+
+// Raw Polymarket sports API response type
+interface RawPolymarketSport {
+  id: number;
+  sport: string;
+  image?: string;
+  resolution?: string;
+  ordering?: string;
+  tags?: string;
+  series?: string;
+  createdAt?: string;
+}
+
 // Fetch sports directly from Polymarket /sports endpoint
 export async function fetchPolymarketSports(): Promise<PolymarketSport[]> {
   try {
@@ -57,7 +99,17 @@ export async function fetchPolymarketSports(): Promise<PolymarketSport[]> {
     if (!response.ok) {
       throw new Error(`Failed to fetch sports: ${response.status}`);
     }
-    return response.json();
+    const rawSports: RawPolymarketSport[] = await response.json();
+    
+    return rawSports.map(raw => ({
+      id: raw.id.toString(),
+      slug: raw.sport,
+      label: humanizeSportSlug(raw.sport),
+      tags: raw.tags,
+      series: raw.series,
+      image: raw.image,
+      resolutionSource: raw.resolution,
+    }));
   } catch (error) {
     console.error("Error fetching Polymarket sports:", error);
     return [];
