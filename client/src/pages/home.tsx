@@ -128,7 +128,7 @@ export default function HomePage() {
     mutationFn: async (data: { marketId: string; outcomeId: string; amount: number; odds: number }) => {
       return apiRequest("POST", "/api/bets", {
         ...data,
-        walletAddress: address,
+        walletAddress: safeAddress || address,
       });
     },
     onSuccess: (_, variables) => {

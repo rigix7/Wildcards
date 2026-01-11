@@ -176,6 +176,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "marketId, outcomeId, amount, and odds required" });
       }
 
+      // Record bet locally
       const bet = await storage.createBet({
         marketId,
         outcomeId,

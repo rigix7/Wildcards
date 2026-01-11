@@ -130,7 +130,7 @@ export function BetSlip({
           </Button>
 
           <p className="text-[10px] text-zinc-600 text-center">
-            Bets are placed on Polymarket using your connected wallet
+            Bets earn WILD points. Polymarket CLOB integration coming soon.
           </p>
         </div>
       </div>
