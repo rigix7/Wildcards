@@ -7,6 +7,23 @@ export interface GammaTag {
   sportId?: string;
 }
 
+export interface MarketTypeOption {
+  id: string;
+  type: string;
+  label: string;
+}
+
+export interface SportWithMarketTypes {
+  id: string;
+  slug: string;
+  label: string;
+  sport: string;
+  seriesId: string;
+  image?: string;
+  marketTypes: MarketTypeOption[];
+}
+
+// Legacy type for backwards compatibility
 export interface CategorizedTag {
   id: string;
   slug: string;
@@ -126,47 +143,83 @@ export async function fetchPolymarketSports(): Promise<PolymarketSport[]> {
   }
 }
 
-// Fetch categorized sports tags with granular control
-// Returns sports grouped with unique series_id identifiers for precise selection
-export async function fetchCategorizedTags(): Promise<CategorizedTag[]> {
+// Fetch sports with hierarchical market types
+// Returns sports with nested market type options (moneyline, spreads, totals)
+export async function fetchSportsWithMarketTypes(): Promise<SportWithMarketTypes[]> {
   try {
     const response = await fetch("/api/polymarket/tags");
     if (!response.ok) {
-      throw new Error(`Failed to fetch tags: ${response.status}`);
+      throw new Error(`Failed to fetch sports: ${response.status}`);
     }
     return response.json();
   } catch (error) {
-    console.error("Error fetching categorized tags:", error);
+    console.error("Error fetching sports with market types:", error);
     return [];
   }
 }
 
-// Legacy alias for backwards compatibility
-export const fetchGammaTags = fetchCategorizedTags;
+// Legacy alias for backwards compatibility  
+export const fetchCategorizedTags = fetchSportsWithMarketTypes;
+export const fetchGammaTags = fetchSportsWithMarketTypes;
+
+// Parse tag ID to extract series and market type
+// Format: "seriesId_marketType" (e.g., "10345_moneyline") or legacy "series_seriesId"
+export function parseTagId(tagId: string): { seriesId: string; marketType: string | null } {
+  // New format: seriesId_marketType
+  const parts = tagId.split("_");
+  if (parts.length === 2 && !tagId.startsWith("series_")) {
+    return { seriesId: parts[0], marketType: parts[1] };
+  }
+  // Legacy format: series_seriesId
+  if (tagId.startsWith("series_")) {
+    return { seriesId: tagId.replace("series_", ""), marketType: null };
+  }
+  return { seriesId: tagId, marketType: null };
+}
 
 // Fetch events via server proxy (bypasses CORS)
-// Supports both tag_id and series_id (tag IDs starting with "series_" use series_id)
+// Supports new format (seriesId_marketType) and legacy format (series_seriesId)
 export async function fetchGammaEvents(tagIds: string[]): Promise<GammaEvent[]> {
   if (!tagIds.length) return [];
   
   try {
-    const allEvents: GammaEvent[] = [];
+    // Group tags by seriesId to avoid duplicate fetches
+    const seriesMap = new Map<string, Set<string>>();
     
     for (const tagId of tagIds) {
-      // Check if this is a series_id (format: "series_XXXXX")
-      let url: string;
-      if (tagId.startsWith("series_")) {
-        const seriesId = tagId.replace("series_", "");
-        url = `/api/polymarket/events?series_id=${seriesId}`;
-      } else {
-        url = `/api/polymarket/events?tag_id=${tagId}`;
+      const { seriesId, marketType } = parseTagId(tagId);
+      if (!seriesMap.has(seriesId)) {
+        seriesMap.set(seriesId, new Set());
       }
-      
+      if (marketType) {
+        seriesMap.get(seriesId)!.add(marketType);
+      }
+    }
+    
+    const allEvents: GammaEvent[] = [];
+    
+    for (const [seriesId, marketTypes] of Array.from(seriesMap.entries())) {
+      const url = `/api/polymarket/events?series_id=${seriesId}`;
       const response = await fetch(url);
       
       if (response.ok) {
         const events: GammaEvent[] = await response.json();
-        const validEvents = events.filter(event => {
+        
+        // Process each event
+        const processedEvents = events.map(event => {
+          // If we have specific market types, filter markets to only those types
+          if (marketTypes.size > 0 && event.markets?.length) {
+            const filteredMarkets = event.markets.filter((market: any) => {
+              const mType = market.sportsMarketType || "moneyline";
+              return marketTypes.has(mType);
+            });
+            return { ...event, markets: filteredMarkets };
+          }
+          return event;
+        });
+        
+        // Only include events with valid markets
+        const validEvents = processedEvents.filter(event => {
           if (!event.markets?.length) return false;
           const market = event.markets[0];
           try {
@@ -176,6 +229,7 @@ export async function fetchGammaEvents(tagIds: string[]): Promise<GammaEvent[]> 
             return false;
           }
         });
+        
         allEvents.push(...validEvents);
       }
     }

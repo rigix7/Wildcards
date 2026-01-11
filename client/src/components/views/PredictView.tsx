@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Shield, Lock, Loader2, TrendingUp, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Shield, Lock, Loader2, TrendingUp, Calendar, Radio, Clock } from "lucide-react";
 import { SubTabs } from "@/components/terminal/SubTabs";
 import { MarketCard, MarketCardSkeleton } from "@/components/terminal/MarketCard";
 import { EmptyState } from "@/components/terminal/EmptyState";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Market, Futures } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import type { Market, Futures, AdminSettings } from "@shared/schema";
 
 type PredictSubTab = "matchday" | "futures" | "fantasy";
 
@@ -22,6 +23,166 @@ interface PredictViewProps {
   futuresLoading: boolean;
   onPlaceBet: (marketId: string, outcomeId: string, odds: number) => void;
   selectedBet?: { marketId: string; outcomeId: string };
+  adminSettings?: AdminSettings;
+}
+
+function isValidDate(dateString: string): boolean {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  return !isNaN(date.getTime()) && date.getFullYear() > 2020;
+}
+
+function getTimeUntil(dateString: string): { text: string; isLive: boolean; isUpcoming: boolean } {
+  if (!isValidDate(dateString)) {
+    return { text: "TBD", isLive: false, isUpcoming: false };
+  }
+  
+  const now = new Date();
+  const eventTime = new Date(dateString);
+  const diff = eventTime.getTime() - now.getTime();
+  
+  const sixHoursMs = 6 * 60 * 60 * 1000;
+  if (diff <= 0 && diff > -sixHoursMs) {
+    return { text: "LIVE", isLive: true, isUpcoming: false };
+  }
+  
+  if (diff <= -sixHoursMs) {
+    return { text: "ENDED", isLive: false, isUpcoming: false };
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (hours < 1) {
+    return { text: `${minutes}m`, isLive: false, isUpcoming: true };
+  }
+  if (hours < 24) {
+    return { text: `${hours}h ${minutes}m`, isLive: false, isUpcoming: true };
+  }
+  
+  const days = Math.floor(hours / 24);
+  return { text: `${days}d ${hours % 24}h`, isLive: false, isUpcoming: true };
+}
+
+function isWithin5Days(dateString: string): boolean {
+  if (!isValidDate(dateString)) return false;
+  
+  const now = new Date();
+  const eventTime = new Date(dateString);
+  const diff = eventTime.getTime() - now.getTime();
+  
+  const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+  const sixHoursAgoMs = -6 * 60 * 60 * 1000;
+  
+  return diff >= sixHoursAgoMs && diff <= fiveDaysMs;
+}
+
+function extractLeagueFromMarket(market: Market): string {
+  return market.league?.toUpperCase() || market.sport?.toUpperCase() || "OTHER";
+}
+
+function PriceTicker({ markets }: { markets: Market[] }) {
+  const [offset, setOffset] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset((prev) => (prev + 1) % 100);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+  
+  if (markets.length === 0) return null;
+  
+  const tickerItems = markets.slice(0, 10).map((market) => {
+    const outcomes = Array.isArray(market.outcomes) ? market.outcomes : [];
+    const firstOutcome = outcomes[0];
+    return {
+      title: market.title,
+      odds: firstOutcome?.odds || 0,
+      probability: firstOutcome?.probability || 0,
+    };
+  });
+  
+  return (
+    <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
+      <div 
+        className="flex whitespace-nowrap py-2 px-3 gap-6"
+        style={{ transform: `translateX(-${offset}%)`, transition: 'transform 0.05s linear' }}
+      >
+        {[...tickerItems, ...tickerItems].map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-xs">
+            <span className="text-zinc-400 truncate max-w-[150px]">{item.title}</span>
+            <span className="text-wild-gold font-mono font-bold">{item.odds.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeagueFilters({ 
+  leagues, 
+  selectedLeagues, 
+  onToggle 
+}: { 
+  leagues: string[]; 
+  selectedLeagues: Set<string>; 
+  onToggle: (league: string) => void;
+}) {
+  if (leagues.length === 0) return null;
+  
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+      <Button
+        size="sm"
+        variant={selectedLeagues.size === 0 ? "default" : "outline"}
+        onClick={() => onToggle("ALL")}
+        className="shrink-0 text-xs h-7"
+        data-testid="filter-all"
+      >
+        All
+      </Button>
+      {leagues.map((league) => (
+        <Button
+          key={league}
+          size="sm"
+          variant={selectedLeagues.has(league) ? "default" : "outline"}
+          onClick={() => onToggle(league)}
+          className="shrink-0 text-xs h-7"
+          data-testid={`filter-${league.toLowerCase()}`}
+        >
+          {league}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function CountdownBadge({ startTime }: { startTime: string }) {
+  const [timeInfo, setTimeInfo] = useState(getTimeUntil(startTime));
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeInfo(getTimeUntil(startTime));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+  
+  if (timeInfo.isLive) {
+    return (
+      <Badge variant="destructive" className="animate-pulse text-xs">
+        <Radio className="w-3 h-3 mr-1" />
+        LIVE
+      </Badge>
+    );
+  }
+  
+  return (
+    <Badge variant="secondary" className="text-xs">
+      <Clock className="w-3 h-3 mr-1" />
+      {timeInfo.text}
+    </Badge>
+  );
 }
 
 function FuturesCard({ future, onPlaceBet, selectedOutcome }: { 
@@ -108,18 +269,62 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
   );
 }
 
-export function PredictView({ markets, futures, isLoading, futuresLoading, onPlaceBet, selectedBet }: PredictViewProps) {
+export function PredictView({ markets, futures, isLoading, futuresLoading, onPlaceBet, selectedBet, adminSettings }: PredictViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
+  const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
 
-  const matchDayMarkets = markets.filter(m => m.status === "open");
+  const openMarkets = markets.filter(m => m.status === "open");
+  
+  const filteredMarkets = openMarkets.filter(market => {
+    if (!isWithin5Days(market.startTime)) return false;
+    if (selectedLeagues.size === 0) return true;
+    const league = extractLeagueFromMarket(market);
+    return selectedLeagues.has(league);
+  });
+  
+  const liveMarkets = filteredMarkets.filter(m => {
+    const { isLive } = getTimeUntil(m.startTime);
+    return isLive;
+  });
+  
+  const upcomingMarkets = filteredMarkets.filter(m => {
+    const { isLive } = getTimeUntil(m.startTime);
+    return !isLive;
+  }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  
+  const availableLeagues = Array.from(new Set(openMarkets.map(extractLeagueFromMarket))).sort();
+  
+  const handleLeagueToggle = (league: string) => {
+    if (league === "ALL") {
+      setSelectedLeagues(new Set());
+      return;
+    }
+    
+    setSelectedLeagues(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(league)) {
+        newSet.delete(league);
+      } else {
+        newSet.add(league);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
+      <PriceTicker markets={openMarkets} />
       <SubTabs tabs={subTabs} activeTab={activeSubTab} onTabChange={setActiveSubTab} />
       
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {activeSubTab === "matchday" && (
           <div className="space-y-3">
+            <LeagueFilters 
+              leagues={availableLeagues}
+              selectedLeagues={selectedLeagues}
+              onToggle={handleLeagueToggle}
+            />
+            
             {isLoading ? (
               <>
                 <MarketCardSkeleton />
@@ -128,23 +333,62 @@ export function PredictView({ markets, futures, isLoading, futuresLoading, onPla
                   <MarketCardSkeleton />
                 </div>
               </>
-            ) : matchDayMarkets.length > 0 ? (
-              matchDayMarkets.map((market) => (
-                <MarketCard
-                  key={market.id}
-                  market={market}
-                  onPlaceBet={onPlaceBet}
-                  selectedOutcome={
-                    selectedBet?.marketId === market.id ? selectedBet.outcomeId : undefined
-                  }
-                />
-              ))
             ) : (
-              <EmptyState
-                icon={Loader2}
-                title="Loading Markets"
-                description="Fetching live prediction markets..."
-              />
+              <>
+                {liveMarkets.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-bold text-red-400">
+                      <Radio className="w-4 h-4 animate-pulse" />
+                      LIVE NOW ({liveMarkets.length})
+                    </div>
+                    {liveMarkets.map((market) => (
+                      <div key={market.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CountdownBadge startTime={market.startTime} />
+                        </div>
+                        <MarketCard
+                          market={market}
+                          onPlaceBet={onPlaceBet}
+                          selectedOutcome={
+                            selectedBet?.marketId === market.id ? selectedBet.outcomeId : undefined
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {upcomingMarkets.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-bold text-zinc-400">
+                      <Clock className="w-4 h-4" />
+                      UPCOMING ({upcomingMarkets.length})
+                    </div>
+                    {upcomingMarkets.map((market) => (
+                      <div key={market.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10">
+                          <CountdownBadge startTime={market.startTime} />
+                        </div>
+                        <MarketCard
+                          market={market}
+                          onPlaceBet={onPlaceBet}
+                          selectedOutcome={
+                            selectedBet?.marketId === market.id ? selectedBet.outcomeId : undefined
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {liveMarkets.length === 0 && upcomingMarkets.length === 0 && (
+                  <EmptyState
+                    icon={Calendar}
+                    title="No Events in 5-Day Window"
+                    description="Select leagues in the admin panel to see upcoming games"
+                  />
+                )}
+              </>
             )}
           </div>
         )}

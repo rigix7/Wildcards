@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, RefreshCw, Check, X, Link2, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, RefreshCw, Check, X, Link2, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { fetchCategorizedTags, type CategorizedTag } from "@/lib/polymarket";
+import { fetchSportsWithMarketTypes, type SportWithMarketTypes } from "@/lib/polymarket";
 import type { Market, Player, InsertMarket, InsertPlayer, AdminSettings, Futures } from "@shared/schema";
 
 const playerFormSchema = z.object({
@@ -50,11 +50,12 @@ function extractSlugFromInput(input: string): string {
 export default function AdminPage() {
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<"matchday" | "futures" | "players">("matchday");
-  const [categorizedTags, setCategorizedTags] = useState<CategorizedTag[]>([]);
+  const [sportsData, setSportsData] = useState<SportWithMarketTypes[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
   const [futuresSlug, setFuturesSlug] = useState("");
   const [fetchingEvent, setFetchingEvent] = useState(false);
+  const [expandedSports, setExpandedSports] = useState<Set<string>>(new Set());
 
   const playerForm = useForm<PlayerFormData>({
     resolver: zodResolver(playerFormSchema),
@@ -98,8 +99,8 @@ export default function AdminPage() {
   const loadSportsLeagues = async () => {
     setLoadingLeagues(true);
     try {
-      const tags = await fetchCategorizedTags();
-      setCategorizedTags(tags);
+      const sports = await fetchSportsWithMarketTypes();
+      setSportsData(sports);
     } catch (error) {
       toast({ title: "Failed to load sports tags", variant: "destructive" });
     } finally {
@@ -108,16 +109,16 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (activeSection === "matchday" && categorizedTags.length === 0) {
+    if (activeSection === "matchday" && sportsData.length === 0) {
       loadSportsLeagues();
     }
   }, [activeSection]);
 
-  const handleTagToggle = (tagId: string, checked: boolean) => {
+  // Toggle a market type tag (format: "seriesId_marketType")
+  const handleMarketTypeToggle = (tagId: string, checked: boolean) => {
     const currentTags = adminSettings?.activeTagIds || [];
     
     if (checked) {
-      // Deduplicate to prevent duplicate entries
       const newTags = Array.from(new Set([...currentTags, tagId]));
       updateSettingsMutation.mutate({ activeTagIds: newTags });
     } else {
@@ -126,29 +127,61 @@ export default function AdminPage() {
     }
   };
 
-  // Group tags by sport for display
-  const tagsBySport = categorizedTags.reduce((acc, tag) => {
-    const sport = tag.sport || "OTHER";
-    if (!acc[sport]) acc[sport] = [];
-    acc[sport].push(tag);
-    return acc;
-  }, {} as Record<string, CategorizedTag[]>);
+  // Toggle all market types for a sport
+  const handleSportToggleAll = (sport: SportWithMarketTypes, checked: boolean) => {
+    const currentTags = adminSettings?.activeTagIds || [];
+    const sportMarketTypeIds = sport.marketTypes.map(mt => mt.id);
+    
+    if (checked) {
+      const newTags = Array.from(new Set([...currentTags, ...sportMarketTypeIds]));
+      updateSettingsMutation.mutate({ activeTagIds: newTags });
+    } else {
+      const newTags = currentTags.filter(id => !sportMarketTypeIds.includes(id));
+      updateSettingsMutation.mutate({ activeTagIds: newTags });
+    }
+  };
 
-  // Sport labels for display
-  const sportLabels: Record<string, string> = {
-    NBA: "NBA Basketball",
-    NFL: "NFL Football",
-    MLB: "MLB Baseball",
-    NHL: "NHL Hockey",
-    MLS: "MLS Soccer",
-    EPL: "Premier League",
-    UCL: "Champions League",
-    WNBA: "WNBA",
-    CBB: "College Basketball",
-    CFB: "College Football",
-    MMA: "UFC/MMA",
-    ATP: "ATP Tennis",
-    WTA: "WTA Tennis",
+  // Check if any market types are selected for a sport
+  const isSportPartiallySelected = (sport: SportWithMarketTypes) => {
+    const currentTags = adminSettings?.activeTagIds || [];
+    const sportMarketTypeIds = sport.marketTypes.map(mt => mt.id);
+    return sportMarketTypeIds.some(id => currentTags.includes(id));
+  };
+
+  // Check if all market types are selected for a sport
+  const isSportFullySelected = (sport: SportWithMarketTypes) => {
+    const currentTags = adminSettings?.activeTagIds || [];
+    const sportMarketTypeIds = sport.marketTypes.map(mt => mt.id);
+    return sportMarketTypeIds.every(id => currentTags.includes(id));
+  };
+
+  // Toggle sport expansion
+  const toggleSportExpansion = (sportId: string) => {
+    setExpandedSports(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sportId)) {
+        newSet.delete(sportId);
+      } else {
+        newSet.add(sportId);
+      }
+      return newSet;
+    });
+  };
+
+  // Get active sports for display (sports with at least one selected market type)
+  const getActiveSportsInfo = () => {
+    const currentTags = adminSettings?.activeTagIds || [];
+    const activeSports: { sport: SportWithMarketTypes; marketTypes: string[] }[] = [];
+    
+    for (const sport of sportsData) {
+      const activeMarketTypes = sport.marketTypes
+        .filter(mt => currentTags.includes(mt.id))
+        .map(mt => mt.label);
+      if (activeMarketTypes.length > 0) {
+        activeSports.push({ sport, marketTypes: activeMarketTypes });
+      }
+    }
+    return activeSports;
   };
 
   const createFuturesMutation = useMutation({
@@ -396,7 +429,7 @@ export default function AdminPage() {
               <div>
                 <h2 className="text-lg font-bold">Match Day - Sports Leagues</h2>
                 <p className="text-sm text-zinc-500">
-                  Select sports leagues to auto-populate upcoming games in the Predict tab
+                  Select leagues and bet types to show in the Predict tab
                 </p>
               </div>
               <Button
@@ -411,72 +444,117 @@ export default function AdminPage() {
             </div>
 
             {loadingLeagues ? (
-              <div className="text-zinc-500">Loading sports tags from Polymarket...</div>
-            ) : Object.keys(tagsBySport).length === 0 ? (
+              <div className="text-zinc-500">Loading sports from Polymarket...</div>
+            ) : sportsData.length === 0 ? (
               <Card className="p-8 text-center text-zinc-500">
-                No sports tags found. Click "Refresh" to load from Polymarket.
+                No sports found. Click "Refresh" to load from Polymarket.
               </Card>
             ) : (
-              <div className="space-y-4">
-                {Object.entries(tagsBySport).map(([sport, tags]) => (
-                  <Card key={sport} className="p-4">
-                    <div className="font-bold text-white mb-3">
-                      {sportLabels[sport] || sport}
-                    </div>
-                    <div className="grid gap-2">
-                      {tags.map((tag) => {
-                        const isActive = adminSettings?.activeTagIds?.includes(tag.id);
-                        return (
-                          <div
-                            key={tag.id}
-                            className={`p-3 rounded-md flex justify-between items-center cursor-pointer transition-colors border ${
-                              isActive ? "border-wild-brand/50 bg-wild-brand/10" : "border-zinc-800 hover:border-zinc-700"
-                            }`}
-                            onClick={() => handleTagToggle(tag.id, !isActive)}
-                            data-testid={`tag-${tag.slug}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <Checkbox
-                                checked={isActive}
-                                onClick={(e) => e.stopPropagation()}
-                                onCheckedChange={(checked) => handleTagToggle(tag.id, checked as boolean)}
-                                data-testid={`checkbox-tag-${tag.slug}`}
-                              />
-                              <div>
-                                <div className="text-white">{tag.label}</div>
-                                <div className="text-xs text-zinc-500">{tag.slug}</div>
-                              </div>
+              <div className="space-y-2">
+                {sportsData.map((sport) => {
+                  const isExpanded = expandedSports.has(sport.id);
+                  const isPartial = isSportPartiallySelected(sport);
+                  const isFull = isSportFullySelected(sport);
+                  
+                  return (
+                    <Card key={sport.id} className="overflow-hidden">
+                      <div
+                        className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
+                          isPartial ? "bg-wild-brand/5" : ""
+                        }`}
+                        onClick={() => toggleSportExpansion(sport.id)}
+                        data-testid={`sport-${sport.slug}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={isFull}
+                            className={isPartial && !isFull ? "data-[state=checked]:bg-wild-brand/50" : ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onCheckedChange={(checked) => handleSportToggleAll(sport, checked as boolean)}
+                            data-testid={`checkbox-sport-${sport.slug}`}
+                          />
+                          {sport.image && (
+                            <img 
+                              src={sport.image} 
+                              alt={sport.label} 
+                              className="w-8 h-8 rounded object-cover"
+                            />
+                          )}
+                          <div>
+                            <div className="text-white font-medium">{sport.label}</div>
+                            <div className="text-xs text-zinc-500">
+                              {isPartial ? (
+                                <span className="text-wild-brand">
+                                  {sport.marketTypes.filter(mt => adminSettings?.activeTagIds?.includes(mt.id)).length} of {sport.marketTypes.length} bet types
+                                </span>
+                              ) : (
+                                `${sport.marketTypes.length} bet types available`
+                              )}
                             </div>
-                            {isActive && (
-                              <Check className="w-4 h-4 text-wild-brand" />
-                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isPartial && <Check className="w-4 h-4 text-wild-brand" />}
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-zinc-400" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-zinc-400" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {isExpanded && (
+                        <div className="border-t border-zinc-800 bg-zinc-900/50 p-3 space-y-2">
+                          {sport.marketTypes.map((mt) => {
+                            const isActive = adminSettings?.activeTagIds?.includes(mt.id);
+                            return (
+                              <div
+                                key={mt.id}
+                                className={`p-2 rounded flex items-center gap-3 cursor-pointer transition-colors ${
+                                  isActive ? "bg-wild-brand/10" : "hover:bg-zinc-800"
+                                }`}
+                                onClick={() => handleMarketTypeToggle(mt.id, !isActive)}
+                                data-testid={`market-type-${mt.id}`}
+                              >
+                                <Checkbox
+                                  checked={isActive}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onCheckedChange={(checked) => handleMarketTypeToggle(mt.id, checked as boolean)}
+                                />
+                                <div>
+                                  <div className="text-sm text-white">{mt.label}</div>
+                                  <div className="text-xs text-zinc-500">{mt.type}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
-            {(adminSettings?.activeTagIds?.length || 0) > 0 && (
+            {getActiveSportsInfo().length > 0 && (
               <div className="mt-4 p-4 bg-zinc-900 rounded-md">
                 <div className="text-sm text-zinc-400 mb-2">
-                  Active Tags - Games will auto-populate:
+                  Active Selections - Games will auto-populate:
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {categorizedTags
-                    .filter(tag => adminSettings?.activeTagIds?.includes(tag.id))
-                    .map(tag => (
-                      <span 
-                        key={tag.id} 
-                        className="px-2 py-1 bg-wild-brand/20 text-wild-brand rounded text-sm cursor-pointer hover:bg-wild-brand/30"
-                        onClick={() => handleTagToggle(tag.id, false)}
-                      >
-                        {tag.label} <X className="w-3 h-3 inline ml-1" />
-                      </span>
-                    ))
-                  }
+                <div className="space-y-2">
+                  {getActiveSportsInfo().map(({ sport, marketTypes }) => (
+                    <div key={sport.id} className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-white">{sport.label}:</span>
+                      {marketTypes.map((mtLabel) => (
+                        <span
+                          key={mtLabel}
+                          className="px-2 py-1 bg-wild-brand/20 text-wild-brand rounded text-xs"
+                        >
+                          {mtLabel}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

@@ -390,8 +390,8 @@ export async function registerRoutes(
     }
   });
 
-  // Fetch sports with series_id for granular league selection
-  // Each sport has a unique series_id that can be used to fetch only that sport's events
+  // Fetch sports with hierarchical market types for granular selection
+  // Returns sports with nested market type options (moneyline, spreads, totals, etc.)
   app.get("/api/polymarket/tags", async (req, res) => {
     try {
       const response = await fetch(`${GAMMA_API_BASE}/sports`);
@@ -434,6 +434,22 @@ export async function registerRoutes(
         val: "Valorant",
       };
       
+      // Available market types with human-readable labels
+      const marketTypeLabels: Record<string, string> = {
+        moneyline: "Moneyline (Winner)",
+        spreads: "Spreads",
+        totals: "Totals (Over/Under)",
+        first_half_moneyline: "1st Half Moneyline",
+        first_half_spreads: "1st Half Spreads",
+        first_half_totals: "1st Half Totals",
+        points: "Player Points",
+        rebounds: "Player Rebounds",
+        assists: "Player Assists",
+      };
+      
+      // Core market types available for most sports
+      const coreMarketTypes = ["moneyline", "spreads", "totals"];
+      
       interface RawSport {
         id: number;
         sport: string;
@@ -442,15 +458,19 @@ export async function registerRoutes(
         image?: string;
       }
       
-      // Transform sports into categorized tags format using series_id as unique identifier
+      // Transform sports into hierarchical structure with market type options
       const categorizedSports = sports.map((sport: RawSport) => ({
-        id: `series_${sport.series || sport.id}`, // Use series_id as unique identifier
+        id: `series_${sport.series || sport.id}`,
         slug: sport.sport,
         label: sportLabels[sport.sport] || sport.sport.toUpperCase(),
         sport: sport.sport.toUpperCase(),
-        marketType: "all",
         seriesId: sport.series || String(sport.id),
-        tagIds: sport.tags || "",
+        image: sport.image,
+        marketTypes: coreMarketTypes.map(mt => ({
+          id: `${sport.series || sport.id}_${mt}`,
+          type: mt,
+          label: marketTypeLabels[mt] || mt,
+        })),
       }));
       
       res.json(categorizedSports);

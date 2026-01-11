@@ -254,6 +254,7 @@ export default function HomePage() {
               futuresLoading={futuresLoading}
               onPlaceBet={handlePlaceBet}
               selectedBet={selectedBet}
+              adminSettings={adminSettings}
             />
           )}
           {activeTab === "scout" && (
