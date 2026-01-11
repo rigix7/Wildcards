@@ -311,59 +311,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async seedInitialData(): Promise<void> {
-    const existingMarkets = await this.getMarkets();
-    if (existingMarkets.length > 0) return;
-
-    const sampleMarkets: InsertMarket[] = [
-      {
-        title: "Lakers vs Celtics",
-        description: "NBA Finals Game 7",
-        category: "sports",
-        sport: "NBA",
-        league: "Basketball",
-        startTime: new Date(Date.now() + 3600000 * 4).toISOString(),
-        status: "open",
-        outcomes: [
-          { id: "lakers", label: "Lakers", odds: 2.15, probability: 0.465 },
-          { id: "draw", label: "OT", odds: 21.0, probability: 0.048 },
-          { id: "celtics", label: "Celtics", odds: 1.78, probability: 0.562 },
-        ],
-        volume: 847500,
-        liquidity: 325000,
-      },
-      {
-        title: "Chiefs vs 49ers",
-        description: "Super Bowl LXII",
-        category: "sports",
-        sport: "NFL",
-        league: "Football",
-        startTime: new Date(Date.now() + 86400000 * 2).toISOString(),
-        status: "open",
-        outcomes: [
-          { id: "chiefs", label: "Chiefs", odds: 1.95, probability: 0.513 },
-          { id: "tie", label: "Draw", odds: 31.0, probability: 0.032 },
-          { id: "49ers", label: "49ers", odds: 1.91, probability: 0.524 },
-        ],
-        volume: 1250000,
-        liquidity: 489000,
-      },
-      {
-        title: "Real Madrid vs Man City",
-        description: "Champions League Final",
-        category: "sports",
-        sport: "Soccer",
-        league: "UCL",
-        startTime: new Date(Date.now() + 86400000 * 5).toISOString(),
-        status: "open",
-        outcomes: [
-          { id: "rm", label: "Madrid", odds: 2.40, probability: 0.417 },
-          { id: "draw", label: "Draw", odds: 3.25, probability: 0.308 },
-          { id: "mc", label: "Man City", odds: 2.65, probability: 0.377 },
-        ],
-        volume: 2150000,
-        liquidity: 875000,
-      },
-    ];
+    // Only seed demo players for the Scout feature (not real markets)
+    const existingPlayers = await this.getPlayers();
+    if (existingPlayers.length > 0) return;
 
     const samplePlayers: InsertPlayer[] = [
       {
@@ -460,15 +410,11 @@ export class DatabaseStorage implements IStorage {
       },
     ];
 
-    for (const market of sampleMarkets) {
-      await this.createMarket(market);
-    }
-
     for (const player of samplePlayers) {
       await this.createPlayer(player);
     }
 
-    console.log("Database seeded with initial data");
+    console.log("Database seeded with demo players for Scout feature");
   }
 }
 

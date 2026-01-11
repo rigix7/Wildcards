@@ -413,8 +413,8 @@ export default function AdminPage() {
                           data-testid={`checkbox-sport-${sport.slug}`}
                         />
                         <div>
-                          <div className="font-bold">{sport.label}</div>
-                          <div className="text-sm text-zinc-500">
+                          <div className="font-bold text-white">{sport.label}</div>
+                          <div className="text-sm text-zinc-400">
                             {sport.slug}
                           </div>
                         </div>

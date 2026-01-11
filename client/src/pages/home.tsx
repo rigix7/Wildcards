@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/terminal/Header";
 import { BottomNav, TabType } from "@/components/terminal/BottomNav";
 import { WalletDrawer } from "@/components/terminal/WalletDrawer";
+import { BetSlip } from "@/components/terminal/BetSlip";
 import { useTerminalToast } from "@/components/terminal/Toast";
 import { PredictView } from "@/components/views/PredictView";
 import { ScoutView } from "@/components/views/ScoutView";
@@ -21,7 +22,8 @@ export default function HomePage() {
   const walletLoading = !isReady;
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<{ marketId: string; outcomeId: string } | undefined>();
+  const [selectedBet, setSelectedBet] = useState<{ marketId: string; outcomeId: string; odds: number; marketTitle: string; outcomeLabel: string } | undefined>();
+  const [showBetSlip, setShowBetSlip] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
   const [liveMarketsLoading, setLiveMarketsLoading] = useState(false);
   const [usdcBalance, setUsdcBalance] = useState(0);
@@ -129,11 +131,16 @@ export default function HomePage() {
         walletAddress: address,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/wallet", address] });
-      showToast("Bet placed successfully! +1 WILD per $1", "success");
+      const wildEarned = Math.floor(variables.amount);
+      showToast(`Bet placed! +${wildEarned} WILD earned`, "success");
       setSelectedBet(undefined);
+      setShowBetSlip(false);
+      if (address && !address.startsWith("0xDemo")) {
+        getUSDCBalance(address).then(setUsdcBalance);
+      }
     },
     onError: () => {
       showToast("Failed to place bet", "error");
@@ -173,12 +180,40 @@ export default function HomePage() {
       return;
     }
 
-    if (selectedBet?.marketId === marketId && selectedBet?.outcomeId === outcomeId) {
-      placeBetMutation.mutate({ marketId, outcomeId, amount: 10, odds });
-    } else {
-      setSelectedBet({ marketId, outcomeId });
-      showToast("Tap again to confirm bet", "info");
+    const allMarkets = [...markets, ...futures.map(f => ({
+      id: f.id,
+      title: f.title,
+      outcomes: f.marketData?.outcomes || [],
+    }))];
+    const market = allMarkets.find(m => m.id === marketId);
+    const outcome = market?.outcomes?.find((o: { id?: string; marketId?: string; label: string }) => 
+      o.id === outcomeId || o.marketId === outcomeId
+    );
+    
+    setSelectedBet({
+      marketId,
+      outcomeId,
+      odds,
+      marketTitle: market?.title || "Unknown Market",
+      outcomeLabel: outcome?.label || "Unknown",
+    });
+    setShowBetSlip(true);
+  };
+
+  const handleConfirmBet = (stake: number) => {
+    if (selectedBet) {
+      placeBetMutation.mutate({
+        marketId: selectedBet.marketId,
+        outcomeId: selectedBet.outcomeId,
+        amount: stake,
+        odds: selectedBet.odds,
+      });
     }
+  };
+
+  const handleCancelBet = () => {
+    setSelectedBet(undefined);
+    setShowBetSlip(false);
   };
 
   const handleFundPlayer = (playerId: string, amount: number) => {
@@ -261,6 +296,18 @@ export default function HomePage() {
         isSafeDeploying={isSafeDeploying}
         onDeploySafe={deploySafe}
       />
+
+      {showBetSlip && selectedBet && (
+        <BetSlip
+          marketTitle={selectedBet.marketTitle}
+          outcomeLabel={selectedBet.outcomeLabel}
+          odds={selectedBet.odds}
+          maxBalance={usdcBalance}
+          onConfirm={handleConfirmBet}
+          onCancel={handleCancelBet}
+          isPending={placeBetMutation.isPending}
+        />
+      )}
 
       <ToastContainer />
     </div>
