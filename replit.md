@@ -84,3 +84,7 @@ Key API Endpoints:
   - Additional markets (team totals, player props, etc.) in expandable "More Markets" section
   - Simplified view uses question text directly, collapsed by default
   - Only need to configure Sport Configs for 3 core market types per sport
+- Enhanced additional markets and bet slip (January 12, 2026)
+  - SimplifiedMarketRow displays all outcomes with prices as separate clickable buttons
+  - BetSlip dynamically shows outcome-specific labels (e.g., player names, Over/Under) instead of static Yes/No
+  - Fixed critical bug: additional market selections now use outcome tokenId instead of market conditionId
