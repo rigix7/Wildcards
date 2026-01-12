@@ -88,3 +88,7 @@ Key API Endpoints:
   - SimplifiedMarketRow displays all outcomes with prices as separate clickable buttons
   - BetSlip dynamically shows outcome-specific labels (e.g., player names, Over/Under) instead of static Yes/No
   - Fixed critical bug: additional market selections now use outcome tokenId instead of market conditionId
+- Added event merging for duplicate Polymarket events (January 12, 2026)
+  - Child events (with parentEventId like "More Markets") are now merged into their parent events
+  - Markets, volume, and liquidity are consolidated from all child events
+  - BetSlip correctly shows Yes/No for soccer binary markets vs team names for NBA 2-way markets
