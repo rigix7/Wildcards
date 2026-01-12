@@ -870,6 +870,7 @@ interface EnhancedSampleData {
     slug?: string;
     description: string; 
     startDate: string; 
+    endDate?: string;
     seriesSlug?: string;
   } | null;
   market: {
@@ -881,6 +882,8 @@ interface EnhancedSampleData {
     sportsMarketType: string;
     subtitle?: string;
     extraInfo?: string;
+    participantName?: string;
+    teamAbbrev?: string;
     line?: number;
     outcomes: string;
     outcomePrices: string;
@@ -893,9 +896,12 @@ interface EnhancedSampleData {
     spread?: number;
     active?: boolean;
     closed?: boolean;
+    clobTokenIds?: string;
   } | null;
+  rawMarket?: Record<string, unknown>;
   allMarketTypes: string[];
   availableMarketTypes?: string[];
+  eventsSearched?: number;
   message?: string;
 }
 
@@ -908,10 +914,17 @@ function SportConfigEditor({
 }) {
   const [selectedSport, setSelectedSport] = useState<string>("");
   const [selectedMarketType, setSelectedMarketType] = useState<string>("");
-  const [availableMarketTypes, setAvailableMarketTypes] = useState<string[]>([]);
+  const [availableMarketTypes, setAvailableMarketTypes] = useState<{
+    type: string;
+    label: string;
+    count: number;
+    sampleQuestion: string;
+  }[]>([]);
   const [sampleData, setSampleData] = useState<EnhancedSampleData | null>(null);
+  const [loadingMarketTypes, setLoadingMarketTypes] = useState(false);
   const [loadingSample, setLoadingSample] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [eventsScanned, setEventsScanned] = useState(0);
   
   const [formData, setFormData] = useState({
     titleField: "groupItemTitle",
@@ -971,21 +984,24 @@ function SportConfigEditor({
     setSelectedSport(sportId);
     setSelectedMarketType("");
     setSampleData(null);
+    setAvailableMarketTypes([]);
     
     const sport = sportsData.find(s => s.id === sportId);
     if (!sport) return;
 
-    setLoadingSample(true);
+    setLoadingMarketTypes(true);
     try {
-      const response = await fetch(`/api/admin/sport-sample/${sport.seriesId}`);
+      // Use the comprehensive market types discovery endpoint
+      const response = await fetch(`/api/admin/sport-market-types/${sport.seriesId}`);
       const data = await response.json();
-      setSampleData(data);
-      setAvailableMarketTypes(data.allMarketTypes || []);
+      setAvailableMarketTypes(data.marketTypes || []);
+      setEventsScanned(data.eventsScanned || 0);
     } catch (error) {
-      console.error("Failed to fetch sample data:", error);
+      console.error("Failed to fetch market types:", error);
       setAvailableMarketTypes([]);
+      setEventsScanned(0);
     } finally {
-      setLoadingSample(false);
+      setLoadingMarketTypes(false);
     }
   };
 
@@ -1012,14 +1028,17 @@ function SportConfigEditor({
         notes: existingConfig.notes || "",
       });
     } else {
+      // Smart defaults based on market type
+      const isSpreads = marketType.includes("spread") || marketType.includes("handicap");
+      const isTotals = marketType.includes("total") || marketType.includes("over_under");
       setFormData({
         titleField: "groupItemTitle",
         buttonLabelField: "outcomes",
         betSlipTitleField: "question",
         useQuestionForTitle: false,
-        showLine: marketType.includes("spread") || marketType.includes("total"),
+        showLine: isSpreads || isTotals,
         lineFieldPath: "line",
-        lineFormatter: marketType.includes("spread") ? "spread" : marketType.includes("total") ? "total" : "default",
+        lineFormatter: isSpreads ? "spread" : isTotals ? "total" : "default",
         outcomeStrategy: { type: "default" },
         notes: "",
       });
@@ -1027,7 +1046,8 @@ function SportConfigEditor({
 
     setLoadingSample(true);
     try {
-      const response = await fetch(`/api/admin/sport-sample/${sport.seriesId}/${marketType}`);
+      // Use the enhanced v2 sample endpoint for better data
+      const response = await fetch(`/api/admin/sport-sample-v2/${sport.seriesId}/${marketType}`);
       const data = await response.json();
       setSampleData(data);
     } catch (error) {
@@ -1121,24 +1141,28 @@ function SportConfigEditor({
             <Select 
               value={selectedMarketType} 
               onValueChange={handleSelectMarketType}
-              disabled={!selectedSport || availableMarketTypes.length === 0}
+              disabled={!selectedSport || loadingMarketTypes || availableMarketTypes.length === 0}
             >
               <SelectTrigger data-testid="select-market-type">
-                <SelectValue placeholder={loadingSample ? "Loading..." : "Choose bet type..."} />
+                <SelectValue placeholder={loadingMarketTypes ? "Loading market types..." : "Choose bet type..."} />
               </SelectTrigger>
               <SelectContent>
                 {availableMarketTypes.map((mt) => {
                   const sport = sportsData.find(s => s.id === selectedSport);
-                  const hasConfig = sport && configs.some(c => c.sportSlug === sport.slug && c.marketType === mt);
+                  const hasConfig = sport && configs.some(c => c.sportSlug === sport.slug && c.marketType === mt.type);
                   return (
-                    <SelectItem key={mt} value={mt}>
-                      {mt.replace(/_/g, " ")}
-                      {hasConfig && " (configured)"}
+                    <SelectItem key={mt.type} value={mt.type}>
+                      {mt.label} ({mt.count}){hasConfig ? " - configured" : ""}
                     </SelectItem>
                   );
                 })}
               </SelectContent>
             </Select>
+            {eventsScanned > 0 && (
+              <p className="text-xs text-zinc-500">
+                Found {availableMarketTypes.length} market types from {eventsScanned} events
+              </p>
+            )}
           </div>
         </div>
 
@@ -1309,7 +1333,7 @@ function SportConfigEditor({
           
           {showRawJson ? (
             <div className="p-3 bg-zinc-900 rounded text-xs font-mono overflow-x-auto max-h-96 overflow-y-auto">
-              <pre>{JSON.stringify(sampleData.market, null, 2)}</pre>
+              <pre>{JSON.stringify(sampleData.rawMarket || sampleData.market, null, 2)}</pre>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1327,8 +1351,13 @@ function SportConfigEditor({
           )}
           
           <div className="text-xs text-zinc-500">
-            <strong>All market types for this sport:</strong> {availableMarketTypes.join(", ") || "None"}
+            <strong>All market types for this sport:</strong> {availableMarketTypes.map(mt => mt.label).join(", ") || "None found"}
           </div>
+          {sampleData?.eventsSearched && (
+            <div className="text-xs text-zinc-400">
+              Sample from searching {sampleData.eventsSearched} events
+            </div>
+          )}
         </Card>
       )}
 
