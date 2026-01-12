@@ -796,6 +796,212 @@ export async function registerRoutes(
     }
   });
 
+  // Comprehensive market type discovery - fetches more events to find ALL available market types
+  app.get("/api/admin/sport-market-types/:seriesId", async (req, res) => {
+    try {
+      const { seriesId } = req.params;
+      const foundMarketTypes = new Map<string, { count: number; sampleQuestion: string }>();
+      
+      // Fetch more events (up to 50) to discover all market types
+      const url = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=50`;
+      console.log(`[Market Types Discovery] Fetching: ${url}`);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Gamma API error: ${response.status}`);
+      }
+      
+      const events = await response.json();
+      
+      // Extract all unique market types with sample questions
+      for (const event of events) {
+        if (event.markets) {
+          for (const market of event.markets) {
+            if (market.sportsMarketType) {
+              const existing = foundMarketTypes.get(market.sportsMarketType);
+              if (existing) {
+                existing.count++;
+              } else {
+                foundMarketTypes.set(market.sportsMarketType, {
+                  count: 1,
+                  sampleQuestion: market.question || market.groupItemTitle || "",
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      // Market type labels
+      const marketTypeLabels: Record<string, string> = {
+        moneyline: "Moneyline (Winner)",
+        spreads: "Spreads",
+        totals: "Totals (Over/Under)",
+        first_half_moneyline: "1st Half Moneyline",
+        first_half_spreads: "1st Half Spreads",
+        first_half_totals: "1st Half Totals",
+        points: "Player Points",
+        rebounds: "Player Rebounds",
+        assists: "Player Assists",
+        threes: "Player 3-Pointers",
+        steals: "Player Steals",
+        blocks: "Player Blocks",
+        passing_yards: "Passing Yards",
+        rushing_yards: "Rushing Yards",
+        receiving_yards: "Receiving Yards",
+        touchdowns: "Touchdowns",
+        strikeouts: "Pitcher Strikeouts",
+        hits: "Player Hits",
+        home_runs: "Home Runs",
+        goals: "Goals",
+        shots: "Shots",
+        saves: "Saves",
+        both_teams_to_score: "Both Teams To Score",
+        map_handicap: "Map Handicap",
+        map_participant_win_total: "Map Participant Win Total",
+        child_moneyline: "Child Moneyline",
+        tennis_first_set_winner: "Tennis First Set Winner",
+        tennis_match_totals: "Tennis Match Totals",
+        tennis_first_set_totals: "Tennis First Set Totals",
+        tennis_set_totals: "Tennis Set Totals",
+        tennis_set_handicap: "Tennis Set Handicap",
+        round_over_under_match: "Round Over/Under Match",
+        round_handicap_match: "Round Handicap Match",
+        kill_handicap_match: "Kill Handicap Match",
+        tower_handicap_match: "Tower Handicap Match",
+        cricket_toss_winner: "Cricket Toss Winner",
+        cricket_completed_match: "Cricket Completed Match",
+        cricket_team_top_batter: "Cricket Team Top Batter",
+        cricket_most_sixes: "Cricket Most Sixes",
+      };
+      
+      // Convert to sorted array (by count, descending)
+      const marketTypes = Array.from(foundMarketTypes.entries())
+        .map(([type, data]) => ({
+          type,
+          label: marketTypeLabels[type] || type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+          count: data.count,
+          sampleQuestion: data.sampleQuestion,
+        }))
+        .sort((a, b) => b.count - a.count);
+      
+      res.json({
+        seriesId,
+        eventsScanned: events.length,
+        marketTypes,
+      });
+    } catch (error) {
+      console.error("Error discovering market types:", error);
+      res.status(500).json({ error: "Failed to discover market types" });
+    }
+  });
+
+  // Enhanced sample endpoint that searches more thoroughly
+  app.get("/api/admin/sport-sample-v2/:seriesId/:marketType", async (req, res) => {
+    try {
+      const { seriesId, marketType } = req.params;
+      
+      // Fetch more events (up to 30) to find a matching market
+      const url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=30&series_id=${seriesId}`;
+      console.log(`[Sample Data V2] Fetching for marketType ${marketType}: ${url}`);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Gamma API error: ${response.status}`);
+      }
+      
+      const events = await response.json();
+      if (!events || events.length === 0) {
+        return res.json({ sample: null, message: "No active events found for this sport" });
+      }
+      
+      // Find a market matching the requested market type, preferring ones with higher liquidity
+      let matchingMarket = null;
+      let matchingEvent = null;
+      let bestLiquidity = 0;
+      
+      for (const event of events) {
+        if (event.markets) {
+          for (const market of event.markets) {
+            if (market.sportsMarketType === marketType) {
+              const liquidity = parseFloat(market.liquidity) || 0;
+              if (!matchingMarket || liquidity > bestLiquidity) {
+                matchingMarket = market;
+                matchingEvent = event;
+                bestLiquidity = liquidity;
+              }
+            }
+          }
+        }
+      }
+      
+      // Collect all available market types across all events
+      const allMarketTypes = new Set<string>();
+      for (const event of events) {
+        if (event.markets) {
+          for (const market of event.markets) {
+            if (market.sportsMarketType) {
+              allMarketTypes.add(market.sportsMarketType);
+            }
+          }
+        }
+      }
+      
+      if (!matchingMarket) {
+        return res.json({
+          sample: null,
+          message: `No markets found with type "${marketType}" in ${events.length} events`,
+          availableMarketTypes: Array.from(allMarketTypes),
+        });
+      }
+      
+      // Return comprehensive market data for configuration
+      res.json({
+        event: {
+          id: matchingEvent.id,
+          title: matchingEvent.title,
+          slug: matchingEvent.slug,
+          description: matchingEvent.description,
+          startDate: matchingEvent.startDate,
+          endDate: matchingEvent.endDate,
+          seriesSlug: matchingEvent.seriesSlug,
+        },
+        market: {
+          id: matchingMarket.id,
+          conditionId: matchingMarket.conditionId,
+          slug: matchingMarket.slug,
+          question: matchingMarket.question,
+          groupItemTitle: matchingMarket.groupItemTitle,
+          sportsMarketType: matchingMarket.sportsMarketType,
+          subtitle: matchingMarket.subtitle,
+          extraInfo: matchingMarket.extraInfo,
+          participantName: matchingMarket.participantName,
+          teamAbbrev: matchingMarket.teamAbbrev,
+          line: matchingMarket.line,
+          outcomes: matchingMarket.outcomes,
+          outcomePrices: matchingMarket.outcomePrices,
+          bestAsk: matchingMarket.bestAsk,
+          bestBid: matchingMarket.bestBid,
+          volume: matchingMarket.volume,
+          liquidity: matchingMarket.liquidity,
+          gameStartTime: matchingMarket.gameStartTime,
+          tokens: matchingMarket.tokens,
+          spread: matchingMarket.spread,
+          active: matchingMarket.active,
+          closed: matchingMarket.closed,
+          clobTokenIds: matchingMarket.clobTokenIds,
+        },
+        // Include full raw market for debugging/exploration
+        rawMarket: matchingMarket,
+        availableMarketTypes: Array.from(allMarketTypes),
+        eventsSearched: events.length,
+      });
+    } catch (error) {
+      console.error("Error fetching sample data v2:", error);
+      res.status(500).json({ error: "Failed to fetch sample data" });
+    }
+  });
+
   // Sport Market Config endpoints (sport + marketType composite key)
   app.get("/api/admin/sport-market-configs", async (req, res) => {
     try {
