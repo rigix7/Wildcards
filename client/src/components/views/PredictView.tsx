@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, Lock, Loader2, TrendingUp, Calendar, Radio, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Shield, Lock, Loader2, TrendingUp, Calendar, Radio, Clock, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { SubTabs } from "@/components/terminal/SubTabs";
 import { MarketCardSkeleton } from "@/components/terminal/MarketCard";
 import { EmptyState } from "@/components/terminal/EmptyState";
@@ -579,6 +579,112 @@ function isTennisLeague(league: string): boolean {
   return TENNIS_LEAGUES.some(tl => league.toLowerCase().includes(tl.toLowerCase()));
 }
 
+// Core market types that get the polished UI
+const CORE_MARKET_TYPES = ["moneyline", "spreads", "totals"];
+
+// Simplified market button for additional markets - styled consistently with existing UI
+function SimplifiedMarketButton({
+  market,
+  onSelect,
+  isSelected,
+}: {
+  market: ParsedMarket;
+  onSelect: (market: ParsedMarket, direction: "yes") => void;
+  isSelected: boolean;
+}) {
+  const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0;
+  const priceInCents = Math.round(yesPrice * 100);
+  
+  return (
+    <button
+      onClick={() => onSelect(market, "yes")}
+      className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
+        isSelected 
+          ? "border-wild-brand bg-wild-brand/20 text-white" 
+          : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+      }`}
+      data-testid={`simplified-market-${market.id}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm truncate flex-1">{market.question || market.groupItemTitle}</span>
+        <span className={`font-mono font-bold shrink-0 ${isSelected ? "text-wild-brand" : "text-wild-gold"}`}>
+          {priceInCents}¢
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// Additional markets section - simplified view for non-core market types
+function AdditionalMarketsSection({
+  marketGroups,
+  eventTitle,
+  onSelectMarket,
+  selectedMarketId,
+}: {
+  marketGroups: MarketGroup[];
+  eventTitle: string;
+  onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, direction?: string, outcomeLabel?: string) => void;
+  selectedMarketId?: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Count total additional markets
+  const totalMarkets = marketGroups.reduce((sum, g) => sum + g.markets.length, 0);
+  
+  if (totalMarkets === 0) return null;
+  
+  const handleSelect = (market: ParsedMarket, direction: "yes") => {
+    onSelectMarket(market, eventTitle, market.sportsMarketType, direction, market.question || market.groupItemTitle);
+  };
+  
+  return (
+    <div className="border-t border-zinc-800 pt-3 mt-3">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center justify-between w-full text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
+        data-testid="expand-more-markets"
+      >
+        <span className="font-medium uppercase tracking-wide">
+          More Markets ({totalMarkets})
+        </span>
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-3 space-y-3">
+          {marketGroups.map((group) => (
+            <div key={group.type} className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                  {formatMarketTypeLabel(group.label)}
+                </span>
+                <span className="text-xs text-zinc-600">
+                  {formatVolume(group.volume)} Vol.
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {group.markets.map((market) => (
+                  <SimplifiedMarketButton
+                    key={market.id}
+                    market={market}
+                    onSelect={handleSelect}
+                    isSelected={selectedMarketId === market.id}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Market group display with line selector for spreads/totals
 function MarketGroupDisplay({
   group,
@@ -724,6 +830,10 @@ function EventCard({
 }) {
   const countdown = getCountdown(event.gameStartTime);
   
+  // Separate core markets (polished UI) from additional markets (simplified view)
+  const coreMarketGroups = event.marketGroups.filter(g => CORE_MARKET_TYPES.includes(g.type));
+  const additionalMarketGroups = event.marketGroups.filter(g => !CORE_MARKET_TYPES.includes(g.type));
+  
   return (
     <Card className="p-4 space-y-4" data-testid={`event-card-${event.id}`}>
       {/* Event Header */}
@@ -752,8 +862,8 @@ function EventCard({
         </Badge>
       </div>
       
-      {/* Market Groups */}
-      {event.marketGroups.map((group) => (
+      {/* Core Market Groups - Polished UI */}
+      {coreMarketGroups.map((group) => (
         <MarketGroupDisplay
           key={group.type}
           group={group}
@@ -764,6 +874,16 @@ function EventCard({
           selectedDirection={selectedDirection}
         />
       ))}
+      
+      {/* Additional Markets - Simplified expandable view */}
+      {additionalMarketGroups.length > 0 && (
+        <AdditionalMarketsSection
+          marketGroups={additionalMarketGroups}
+          eventTitle={event.title}
+          onSelectMarket={onSelectMarket}
+          selectedMarketId={selectedMarketId}
+        />
+      )}
     </Card>
   );
 }
