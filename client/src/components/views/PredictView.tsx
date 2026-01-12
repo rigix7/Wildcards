@@ -483,9 +483,12 @@ function SoccerMoneylineDisplay({
         
         // Use groupItemTitle directly - it contains the team name (e.g., "Sevilla FC", "Draw", "RC Celta")
         // Fall back to parsing from question if groupItemTitle is not available
-        const label = market.groupItemTitle || parseSoccerOutcomeName(market.question, "Team");
-        const lowerLabel = label.toLowerCase();
+        const fullLabel = market.groupItemTitle || parseSoccerOutcomeName(market.question, "Team");
+        const lowerLabel = fullLabel.toLowerCase();
         const isDraw = lowerLabel.includes("draw") || lowerLabel.includes("tie");
+        
+        // Use 3-letter abbreviation for teams, "DRAW" for draw
+        const displayLabel = isDraw ? "DRAW" : getTeamAbbreviation(fullLabel);
         
         const isSelected = selectedMarketId === market.id;
         const isYesSelected = isSelected && selectedDirection === "yes";
@@ -509,11 +512,11 @@ function SoccerMoneylineDisplay({
         return (
           <button
             key={market.id}
-            onClick={() => onSelect(market, "yes", label)}
+            onClick={() => onSelect(market, "yes", fullLabel)}
             className={`flex-1 flex flex-col items-center gap-1 px-3 py-2 rounded-md border text-sm transition-all ${colorClass} text-zinc-100`}
             data-testid={`soccer-moneyline-${market.id}`}
           >
-            <span className="font-medium text-xs truncate max-w-full">{label}</span>
+            <span className="font-medium text-xs truncate max-w-full">{displayLabel}</span>
             <span className="font-mono font-bold text-white">{priceInCents}¢</span>
           </button>
         );
