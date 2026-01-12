@@ -582,36 +582,49 @@ function isTennisLeague(league: string): boolean {
 // Core market types that get the polished UI
 const CORE_MARKET_TYPES = ["moneyline", "spreads", "totals"];
 
-// Simplified market button for additional markets - styled consistently with existing UI
-function SimplifiedMarketButton({
+// Simplified market row for additional markets - shows question + all outcomes with prices
+function SimplifiedMarketRow({
   market,
   onSelect,
-  isSelected,
+  selectedMarketId,
+  selectedOutcomeIndex,
 }: {
   market: ParsedMarket;
-  onSelect: (market: ParsedMarket, direction: "yes") => void;
-  isSelected: boolean;
+  onSelect: (market: ParsedMarket, outcomeIndex: number, outcomeLabel: string) => void;
+  selectedMarketId?: string;
+  selectedOutcomeIndex?: number;
 }) {
-  const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0;
-  const priceInCents = Math.round(yesPrice * 100);
+  const isThisMarket = selectedMarketId === market.id;
   
   return (
-    <button
-      onClick={() => onSelect(market, "yes")}
-      className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
-        isSelected 
-          ? "border-wild-brand bg-wild-brand/20 text-white" 
-          : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
-      }`}
-      data-testid={`simplified-market-${market.id}`}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm truncate flex-1">{market.question || market.groupItemTitle}</span>
-        <span className={`font-mono font-bold shrink-0 ${isSelected ? "text-wild-brand" : "text-wild-gold"}`}>
-          {priceInCents}¢
-        </span>
+    <div className="space-y-1.5" data-testid={`simplified-market-${market.id}`}>
+      <div className="text-sm text-zinc-300">{market.question}</div>
+      <div className="flex gap-2">
+        {market.outcomes.map((outcome, idx) => {
+          const price = outcome.price || (idx === 0 ? market.bestAsk : market.bestBid) || 0;
+          const priceInCents = Math.round(price * 100);
+          const isSelected = isThisMarket && selectedOutcomeIndex === idx;
+          
+          return (
+            <button
+              key={idx}
+              onClick={() => onSelect(market, idx, outcome.label)}
+              className={`flex-1 px-3 py-2 rounded-md border transition-all text-center ${
+                isSelected 
+                  ? "border-wild-brand bg-wild-brand/20 text-white" 
+                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+              }`}
+              data-testid={`outcome-${market.id}-${idx}`}
+            >
+              <div className="text-xs text-zinc-400 truncate">{outcome.label}</div>
+              <div className={`font-mono font-bold ${isSelected ? "text-wild-brand" : "text-wild-gold"}`}>
+                {priceInCents}¢
+              </div>
+            </button>
+          );
+        })}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -621,11 +634,13 @@ function AdditionalMarketsSection({
   eventTitle,
   onSelectMarket,
   selectedMarketId,
+  selectedOutcomeIndex,
 }: {
   marketGroups: MarketGroup[];
   eventTitle: string;
-  onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, direction?: string, outcomeLabel?: string) => void;
+  onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, outcomeIndex: number, outcomeLabel: string) => void;
   selectedMarketId?: string;
+  selectedOutcomeIndex?: number;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -634,8 +649,8 @@ function AdditionalMarketsSection({
   
   if (totalMarkets === 0) return null;
   
-  const handleSelect = (market: ParsedMarket, direction: "yes") => {
-    onSelectMarket(market, eventTitle, market.sportsMarketType, direction, market.question || market.groupItemTitle);
+  const handleSelect = (market: ParsedMarket, outcomeIndex: number, outcomeLabel: string) => {
+    onSelectMarket(market, eventTitle, market.sportsMarketType, outcomeIndex, outcomeLabel);
   };
   
   return (
@@ -656,9 +671,9 @@ function AdditionalMarketsSection({
       </button>
       
       {isExpanded && (
-        <div className="mt-3 space-y-3">
+        <div className="mt-3 space-y-4">
           {marketGroups.map((group) => (
-            <div key={group.type} className="space-y-2">
+            <div key={group.type} className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
                   {formatMarketTypeLabel(group.label)}
@@ -667,13 +682,14 @@ function AdditionalMarketsSection({
                   {formatVolume(group.volume)} Vol.
                 </span>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-3">
                 {group.markets.map((market) => (
-                  <SimplifiedMarketButton
+                  <SimplifiedMarketRow
                     key={market.id}
                     market={market}
                     onSelect={handleSelect}
-                    isSelected={selectedMarketId === market.id}
+                    selectedMarketId={selectedMarketId}
+                    selectedOutcomeIndex={selectedOutcomeIndex}
                   />
                 ))}
               </div>
@@ -820,13 +836,17 @@ function MarketGroupDisplay({
 function EventCard({ 
   event, 
   onSelectMarket,
+  onSelectAdditionalMarket,
   selectedMarketId,
-  selectedDirection
+  selectedDirection,
+  selectedOutcomeIndex,
 }: { 
   event: DisplayEvent;
   onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, direction?: string, outcomeLabel?: string) => void;
+  onSelectAdditionalMarket: (market: ParsedMarket, eventTitle: string, marketType: string, outcomeIndex: number, outcomeLabel: string) => void;
   selectedMarketId?: string;
   selectedDirection?: string;
+  selectedOutcomeIndex?: number;
 }) {
   const countdown = getCountdown(event.gameStartTime);
   
@@ -880,8 +900,9 @@ function EventCard({
         <AdditionalMarketsSection
           marketGroups={additionalMarketGroups}
           eventTitle={event.title}
-          onSelectMarket={onSelectMarket}
+          onSelectMarket={onSelectAdditionalMarket}
           selectedMarketId={selectedMarketId}
+          selectedOutcomeIndex={selectedOutcomeIndex}
         />
       )}
     </Card>
@@ -1118,6 +1139,33 @@ export function PredictView({
       noTokenId
     );
   };
+  
+  // Handler for additional markets (simplified view) - uses direct outcome labels
+  const handleSelectAdditionalMarket = (market: ParsedMarket, eventTitle: string, marketType: string, outcomeIndex: number, outcomeLabel: string) => {
+    const outcome = market.outcomes[outcomeIndex];
+    const price = outcome?.price || (outcomeIndex === 0 ? market.bestAsk : market.bestBid) || 0.5;
+    const odds = price > 0 ? 1 / price : 2;
+    
+    // Extract CLOB token IDs - use the selected outcome's token
+    const selectedTokenId = market.clobTokenIds?.[outcomeIndex] || outcome?.tokenId;
+    const otherTokenId = market.clobTokenIds?.[outcomeIndex === 0 ? 1 : 0] || market.outcomes[outcomeIndex === 0 ? 1 : 0]?.tokenId;
+    
+    // Use outcome's token as the outcomeId for bet placement
+    const outcomeId = selectedTokenId || outcome?.tokenId || market.conditionId;
+    
+    // Use the question as market title and outcome label directly
+    onPlaceBet(
+      market.id, 
+      outcomeId, 
+      odds,
+      market.question || eventTitle,
+      outcomeLabel,
+      marketType,
+      outcomeIndex === 0 ? "yes" : "no",
+      selectedTokenId,
+      otherTokenId
+    );
+  };
 
   return (
     <SportConfigContext.Provider value={configMap}>
@@ -1155,6 +1203,7 @@ export function PredictView({
                         key={event.id}
                         event={event}
                         onSelectMarket={handleSelectMarket}
+                        onSelectAdditionalMarket={handleSelectAdditionalMarket}
                         selectedMarketId={selectedBet?.marketId}
                         selectedDirection={selectedBet?.direction}
                       />
@@ -1173,6 +1222,7 @@ export function PredictView({
                         key={event.id}
                         event={event}
                         onSelectMarket={handleSelectMarket}
+                        onSelectAdditionalMarket={handleSelectAdditionalMarket}
                         selectedMarketId={selectedBet?.marketId}
                         selectedDirection={selectedBet?.direction}
                       />

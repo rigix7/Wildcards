@@ -12,6 +12,7 @@ interface BetSlipProps {
   onCancel: () => void;
   isPending: boolean;
   marketType?: string;
+  outcomeLabels?: [string, string];
 }
 
 export function BetSlip({
@@ -23,6 +24,7 @@ export function BetSlip({
   onCancel,
   isPending,
   marketType,
+  outcomeLabels,
 }: BetSlipProps) {
   const [stake, setStake] = useState<string>("10");
   const [betDirection, setBetDirection] = useState<"yes" | "no">("yes");
@@ -39,8 +41,12 @@ export function BetSlip({
   const wildPoints = Math.floor(stakeNum);
   const insufficientBalance = stakeNum > maxBalance;
   
-  // Determine button labels based on market type
+  // Determine button labels based on market type or custom outcomeLabels
   const getDirectionLabels = () => {
+    // Use custom outcome labels if provided
+    if (outcomeLabels && outcomeLabels[0] && outcomeLabels[1]) {
+      return { yes: outcomeLabels[0].toUpperCase(), no: outcomeLabels[1].toUpperCase() };
+    }
     if (marketType === "totals") {
       return { yes: "OVER", no: "UNDER" };
     }

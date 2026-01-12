@@ -32,6 +32,7 @@ export default function HomePage() {
     direction?: string;
     yesTokenId?: string;
     noTokenId?: string;
+    outcomeLabels?: [string, string];
   } | undefined>();
   const [showBetSlip, setShowBetSlip] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
@@ -212,6 +213,19 @@ export default function HomePage() {
 
     // If title/label provided (from new event-based UI), use them directly
     if (marketTitle && outcomeLabel) {
+      // Find the market from displayEvents to get outcome labels
+      let foundOutcomeLabels: [string, string] | undefined;
+      for (const event of displayEvents) {
+        for (const group of event.marketGroups) {
+          const market = group.markets.find(m => m.id === marketId);
+          if (market && market.outcomes.length >= 2) {
+            foundOutcomeLabels = [market.outcomes[0].label, market.outcomes[1].label];
+            break;
+          }
+        }
+        if (foundOutcomeLabels) break;
+      }
+      
       setSelectedBet({
         marketId,
         outcomeId,
@@ -222,6 +236,7 @@ export default function HomePage() {
         direction,
         yesTokenId,
         noTokenId,
+        outcomeLabels: foundOutcomeLabels,
       });
       setShowBetSlip(true);
       return;
@@ -366,6 +381,7 @@ export default function HomePage() {
           onCancel={handleCancelBet}
           isPending={placeBetMutation.isPending}
           marketType={selectedBet.marketType}
+          outcomeLabels={selectedBet.outcomeLabels}
         />
       )}
 
