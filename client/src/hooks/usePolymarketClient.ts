@@ -234,6 +234,8 @@ export function usePolymarketClient() {
           negRisk: params.negRisk ?? false,
         };
 
+        // Use GTC (Good Till Cancelled) - for instant fills, caller must set price 
+        // at or above bestAsk (for BUY) so the order matches existing sell orders
         const result = await client.createAndPostOrder(
           orderArgs,
           options,

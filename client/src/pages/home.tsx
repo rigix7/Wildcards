@@ -194,7 +194,7 @@ export default function HomePage() {
     address: address || "",
     usdcBalance: usdcBalance,
     wildBalance: wildBalance,
-    totalValue: usdcBalance + wildBalance,
+    totalValue: usdcBalance, // Total value is just USDC - WILD points are separate loyalty rewards
   }), [address, usdcBalance, wildBalance]);
 
   const placeBetMutation = useMutation({

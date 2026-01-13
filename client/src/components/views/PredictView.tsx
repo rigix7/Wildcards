@@ -1167,16 +1167,17 @@ export function PredictView({
     }
     
     const outcome = market.outcomes[outcomeIndex];
-    const price = outcome?.price || market.bestAsk || 0.5;
-    const odds = price > 0 ? 1 / price : 2;
+    // Use executionPrice for order submission (bestAsk or buffered price for instant fills)
+    const execPrice = outcome?.executionPrice || outcome?.price || market.bestAsk || 0.5;
+    const odds = execPrice > 0 ? 1 / execPrice : 2;
     
     // Extract CLOB token IDs based on direction
     const yesTokenId = market.clobTokenIds?.[0] || market.outcomes[0]?.tokenId;
     const noTokenId = market.clobTokenIds?.[1] || market.outcomes[1]?.tokenId;
     
-    // Extract prices for both outcomes
-    const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0.5;
-    const noPrice = market.outcomes[1]?.price || market.bestBid || 0.5;
+    // Use executionPrice for each outcome (what user will actually pay)
+    const yesPrice = market.outcomes[0]?.executionPrice || market.outcomes[0]?.price || market.bestAsk || 0.5;
+    const noPrice = market.outcomes[1]?.executionPrice || market.outcomes[1]?.price || 0.5;
     
     // Create a descriptive outcome label
     // For soccer 3-way, use the parsed team name passed from SoccerMoneylineDisplay
@@ -1219,8 +1220,9 @@ export function PredictView({
   // Handler for additional markets (simplified view) - uses direct outcome labels
   const handleSelectAdditionalMarket = (market: ParsedMarket, eventTitle: string, marketType: string, outcomeIndex: number, outcomeLabel: string) => {
     const outcome = market.outcomes[outcomeIndex];
-    const price = outcome?.price || (outcomeIndex === 0 ? market.bestAsk : market.bestBid) || 0.5;
-    const odds = price > 0 ? 1 / price : 2;
+    // Use executionPrice for order submission (bestAsk or buffered price for instant fills)
+    const execPrice = outcome?.executionPrice || outcome?.price || (outcomeIndex === 0 ? market.bestAsk : 0.5) || 0.5;
+    const odds = execPrice > 0 ? 1 / execPrice : 2;
     
     // Extract CLOB token IDs - use the selected outcome's token
     const selectedTokenId = market.clobTokenIds?.[outcomeIndex] || outcome?.tokenId;
@@ -1229,9 +1231,9 @@ export function PredictView({
     // Use outcome's token as the outcomeId for bet placement
     const outcomeId = selectedTokenId || outcome?.tokenId || market.conditionId;
     
-    // Extract prices for both outcomes
-    const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0.5;
-    const noPrice = market.outcomes[1]?.price || market.bestBid || 0.5;
+    // Use executionPrice for each outcome (what user will actually pay)
+    const yesPrice = market.outcomes[0]?.executionPrice || market.outcomes[0]?.price || market.bestAsk || 0.5;
+    const noPrice = market.outcomes[1]?.executionPrice || market.outcomes[1]?.price || 0.5;
     
     // Map direction to "yes" | "no" for BetSlip
     const betDirection: "yes" | "no" = outcomeIndex === 0 ? "yes" : "no";

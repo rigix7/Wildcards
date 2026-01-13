@@ -1202,12 +1202,15 @@ export async function registerRoutes(
         return res.status(500).json({ error: "Failed to store order" });
       }
       
-      // Award WILD points only for confirmed successful orders (open or filled)
-      // Don't award for "submitted" or other interim statuses
-      if (walletAddress && (status === "open" || status === "filled")) {
+      // Award WILD points only for filled/matched orders (actual execution)
+      // "open" means order is sitting in order book - don't award until filled
+      // "filled" or "matched" means order executed and USDC was spent
+      if (walletAddress && (status === "filled" || status === "matched")) {
         const stakeAmount = order.price * order.size;
         await storage.addWildPoints(walletAddress, stakeAmount);
         console.log(`[Orders] Awarded ${stakeAmount} WILD points to ${walletAddress}`);
+      } else {
+        console.log(`[Orders] No WILD points awarded - status: ${status} (only filled/matched get points)`);
       }
       
       res.json({

@@ -464,7 +464,8 @@ export interface ParsedMarket {
   liquidity: number;
   outcomes: Array<{
     label: string;
-    price: number;
+    price: number;           // Mid/last trade price (for display)
+    executionPrice: number;  // Best ask price for this outcome (for order submission)
     tokenId?: string;
   }>;
   clobTokenIds?: string[];
@@ -539,11 +540,31 @@ export function gammaEventToDisplayEvent(event: GammaEvent): DisplayEvent | null
       if (market.clobTokenIds) {
         clobTokenIds = JSON.parse(market.clobTokenIds);
       }
-      outcomes = outcomeLabels.map((label: string, i: number) => ({
-        label,
-        price: parseFloat(prices[i] || "0"),
-        tokenId: clobTokenIds[i],
-      }));
+      
+      // Calculate execution prices for each outcome
+      // For instant fills, we use bestAsk for outcome 0, and add a small buffer for others
+      // The buffer (0.01) ensures we cross the spread to match existing sell orders
+      const SPREAD_BUFFER = 0.01;
+      
+      outcomes = outcomeLabels.map((label: string, i: number) => {
+        const midPrice = parseFloat(prices[i] || "0");
+        // For outcome 0, use bestAsk if available, else add buffer to mid price
+        // For other outcomes, add buffer to mid price (they have separate order books)
+        let executionPrice = midPrice;
+        if (i === 0 && market.bestAsk && market.bestAsk > 0) {
+          executionPrice = market.bestAsk;
+        } else if (midPrice > 0) {
+          // Add buffer but cap at 0.99 (price must be < 1)
+          executionPrice = Math.min(midPrice + SPREAD_BUFFER, 0.99);
+        }
+        
+        return {
+          label,
+          price: midPrice,
+          executionPrice,
+          tokenId: clobTokenIds[i],
+        };
+      });
     } catch {
       continue;
     }
