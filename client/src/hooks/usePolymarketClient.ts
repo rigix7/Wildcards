@@ -185,6 +185,22 @@ export function usePolymarketClient() {
       setError(null);
 
       try {
+        // Validate minimum order size (Polymarket requires minimum $5 orders)
+        const orderValue = params.price * params.size;
+        const MIN_ORDER_VALUE = 5;
+        if (orderValue < MIN_ORDER_VALUE) {
+          const errorMsg = `Order too small: $${orderValue.toFixed(2)} minimum is $${MIN_ORDER_VALUE}`;
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        }
+        
+        // Validate price is within valid range
+        if (params.price <= 0 || params.price >= 1) {
+          const errorMsg = `Invalid price: ${params.price}. Must be between 0 and 1`;
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        }
+
         const client = await initializeClient();
         if (!client) {
           return {
@@ -193,7 +209,13 @@ export function usePolymarketClient() {
           };
         }
 
-        console.log("[PolymarketClient] Placing order:", params);
+        console.log("[PolymarketClient] Placing order:", {
+          tokenId: params.tokenId,
+          price: params.price,
+          size: params.size,
+          side: params.side,
+          orderValue: orderValue.toFixed(2),
+        });
 
         // Use createAndPostOrder for full order lifecycle
         const orderArgs = {
@@ -214,7 +236,7 @@ export function usePolymarketClient() {
           OrderType.GTC,
         );
 
-        console.log("[PolymarketClient] Order result:", result);
+        console.log("[PolymarketClient] Order result:", JSON.stringify(result, null, 2));
 
         // Check if order was successful
         const isSuccess = result.success !== false && !result.errorMsg;
@@ -264,6 +286,29 @@ export function usePolymarketClient() {
         const errorMsg =
           err instanceof Error ? err.message : "Order submission failed";
         setError(errorMsg);
+        
+        // Store failed order in database for tracking
+        try {
+          await fetch("/api/polymarket/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order: {
+                tokenID: params.tokenId,
+                price: params.price,
+                size: params.size,
+                side: params.side,
+                orderType: "GTC",
+              },
+              walletAddress: addressRef.current,
+              polymarketOrderId: null,
+              status: "failed",
+            }),
+          });
+        } catch (dbErr) {
+          console.warn("[PolymarketClient] Failed to store failed order:", dbErr);
+        }
+        
         return { success: false, error: errorMsg };
       } finally {
         setIsSubmitting(false);

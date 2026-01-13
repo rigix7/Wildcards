@@ -13,6 +13,9 @@ interface BetSlipProps {
   isPending: boolean;
   marketType?: string;
   outcomeLabels?: [string, string];
+  initialDirection?: "yes" | "no";
+  yesPrice?: number;
+  noPrice?: number;
 }
 
 export function BetSlip({
@@ -25,17 +28,28 @@ export function BetSlip({
   isPending,
   marketType,
   outcomeLabels,
+  initialDirection = "yes",
+  yesPrice,
+  noPrice,
 }: BetSlipProps) {
   const [stake, setStake] = useState<string>("10");
-  const [betDirection, setBetDirection] = useState<"yes" | "no">("yes");
+  const [betDirection, setBetDirection] = useState<"yes" | "no">(initialDirection);
   const stakeNum = parseFloat(stake) || 0;
   
-  // Calculate odds based on direction
-  // For "yes" bets, use the provided odds
-  // For "no" bets, use the inverse (1 / (1 - 1/odds))
-  const effectiveOdds = betDirection === "yes" 
-    ? odds 
-    : odds > 1 ? odds / (odds - 1) : 2;
+  // Calculate odds based on direction using the correct price for each side
+  // If we have both prices, use them directly; otherwise fall back to odds prop
+  const getOddsForDirection = (dir: "yes" | "no"): number => {
+    if (yesPrice !== undefined && noPrice !== undefined) {
+      const price = dir === "yes" ? yesPrice : noPrice;
+      return price > 0 ? 1 / price : 2;
+    }
+    // Fallback: use provided odds for yes, calculate inverse for no
+    return dir === "yes" 
+      ? odds 
+      : odds > 1 ? odds / (odds - 1) : 2;
+  };
+  
+  const effectiveOdds = getOddsForDirection(betDirection);
     
   const potentialWin = stakeNum * effectiveOdds;
   const wildPoints = Math.floor(stakeNum);

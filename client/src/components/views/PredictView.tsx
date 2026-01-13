@@ -41,7 +41,7 @@ interface PredictViewProps {
   futures: Futures[];
   isLoading: boolean;
   futuresLoading: boolean;
-  onPlaceBet: (marketId: string, outcomeId: string, odds: number, marketTitle?: string, outcomeLabel?: string, marketType?: string, direction?: string, yesTokenId?: string, noTokenId?: string) => void;
+  onPlaceBet: (marketId: string, outcomeId: string, odds: number, marketTitle?: string, outcomeLabel?: string, marketType?: string, direction?: "yes" | "no", yesTokenId?: string, noTokenId?: string, yesPrice?: number, noPrice?: number) => void;
   selectedBet?: { marketId: string; outcomeId: string; direction?: string };
   adminSettings?: AdminSettings;
   userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string }[];
@@ -1174,6 +1174,10 @@ export function PredictView({
     const yesTokenId = market.clobTokenIds?.[0] || market.outcomes[0]?.tokenId;
     const noTokenId = market.clobTokenIds?.[1] || market.outcomes[1]?.tokenId;
     
+    // Extract prices for both outcomes
+    const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0.5;
+    const noPrice = market.outcomes[1]?.price || market.bestBid || 0.5;
+    
     // Create a descriptive outcome label
     // For soccer 3-way, use the parsed team name passed from SoccerMoneylineDisplay
     let outcomeLabel = soccerOutcomeLabel || market.groupItemTitle;
@@ -1192,6 +1196,9 @@ export function PredictView({
       }
     }
     
+    // Map direction to "yes" | "no" for BetSlip
+    const betDirection: "yes" | "no" = outcomeIndex === 0 ? "yes" : "no";
+    
     // Pass to parent with all info for bet slip
     onPlaceBet(
       market.id, 
@@ -1200,9 +1207,11 @@ export function PredictView({
       eventTitle,
       outcomeLabel,
       marketType,
-      direction,
+      betDirection,
       yesTokenId,
-      noTokenId
+      noTokenId,
+      yesPrice,
+      noPrice
     );
   };
   
@@ -1219,6 +1228,13 @@ export function PredictView({
     // Use outcome's token as the outcomeId for bet placement
     const outcomeId = selectedTokenId || outcome?.tokenId || market.conditionId;
     
+    // Extract prices for both outcomes
+    const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0.5;
+    const noPrice = market.outcomes[1]?.price || market.bestBid || 0.5;
+    
+    // Map direction to "yes" | "no" for BetSlip
+    const betDirection: "yes" | "no" = outcomeIndex === 0 ? "yes" : "no";
+    
     // Use the question as market title and outcome label directly
     onPlaceBet(
       market.id, 
@@ -1227,9 +1243,11 @@ export function PredictView({
       market.question || eventTitle,
       outcomeLabel,
       marketType,
-      outcomeIndex === 0 ? "yes" : "no",
+      betDirection,
       selectedTokenId,
-      otherTokenId
+      otherTokenId,
+      yesPrice,
+      noPrice
     );
   };
 

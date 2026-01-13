@@ -32,10 +32,12 @@ export default function HomePage() {
     marketTitle: string; 
     outcomeLabel: string; 
     marketType?: string;
-    direction?: string;
+    direction?: "yes" | "no";
     yesTokenId?: string;
     noTokenId?: string;
     outcomeLabels?: [string, string];
+    yesPrice?: number;
+    noPrice?: number;
   } | undefined>();
   const [showBetSlip, setShowBetSlip] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
@@ -300,9 +302,11 @@ export default function HomePage() {
     marketTitle?: string, 
     outcomeLabel?: string, 
     marketType?: string,
-    direction?: string,
+    direction?: "yes" | "no",
     yesTokenId?: string,
-    noTokenId?: string
+    noTokenId?: string,
+    yesPrice?: number,
+    noPrice?: number
   ) => {
     if (!isConnected) {
       showToast("Connect wallet to place bets", "info");
@@ -336,6 +340,8 @@ export default function HomePage() {
         yesTokenId,
         noTokenId,
         outcomeLabels: foundOutcomeLabels,
+        yesPrice,
+        noPrice,
       });
       setShowBetSlip(true);
       return;
@@ -362,6 +368,8 @@ export default function HomePage() {
       direction,
       yesTokenId,
       noTokenId,
+      yesPrice,
+      noPrice,
     });
     setShowBetSlip(true);
   };
@@ -496,6 +504,9 @@ export default function HomePage() {
           isPending={placeBetMutation.isPending}
           marketType={selectedBet.marketType}
           outcomeLabels={selectedBet.outcomeLabels}
+          initialDirection={selectedBet.direction || "yes"}
+          yesPrice={selectedBet.yesPrice}
+          noPrice={selectedBet.noPrice}
         />
       )}
 
