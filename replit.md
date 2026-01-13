@@ -121,3 +121,8 @@ Key API Endpoints:
   - Position tracking shows user's bets directly on EventCard with "Your Position" indicator
   - Dashboard updated with Positions section, Claim Winnings, and Withdraw functionality
   - Client-side polymarketOrder.ts utility for order submission and position fetching
+- Fixed production build failure (January 13, 2026)
+  - Added /api/health endpoint for deployment health checks
+  - Created Solana shim packages in build script (script/build.ts) to handle Privy's optional peer dependencies
+  - Shims provide stub exports for @solana/kit, @solana-program/system, @solana-program/token
+  - Required because Privy bundles Solana support even though we only use EVM/Polygon
