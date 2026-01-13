@@ -55,10 +55,18 @@ Wildcard is a sports prediction terminal application featuring a HUD-style dark 
   - **ClobClient**: Order placement via createAndPostOrder() with ethers v5 signer from Privy wallet
   - **RelayClient**: Safe wallet operations with remote Builder signing via /api/polymarket/sign
   - **placeOrder()**: Places limit orders on Polymarket CLOB with wallet signature
+  - **getSafeAddress()**: Returns user's Safe wallet address for USDC deposits on Polygon
   - **withdrawUSDC()**: Transfers USDC from user's Safe wallet via ERC20 transfer
   - **redeemPositions()**: Claims winning positions via CTF.redeemPositions (binary markets: indexSets=[1,2], parentCollectionId=0x0)
   - **deploySafe()**: Deploys user's Gnosis Safe proxy wallet
   - **approveUSDC()**: Approves CTF Exchange for USDC spending
+
+### Deposit Flow
+USDC deposits work by sending USDC directly to the user's Safe wallet address on Polygon:
+1. User clicks "Get Deposit Address" in Dashboard
+2. System derives/fetches the Safe address via RelayClient
+3. User sends USDC from exchange (Coinbase, Kraken) or wallet to the Safe address on Polygon network
+4. Funds arrive in ~5 minutes with minimal fees (<$0.10)
 
 ## Sport Config Editor
 The Admin panel includes a comprehensive Sport + Market Type Configuration system:

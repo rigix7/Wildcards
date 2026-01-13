@@ -549,11 +549,29 @@ export function usePolymarketClient() {
     setError(null);
   }, []);
 
+  // Get the user's Safe address for deposits
+  // USDC is deposited by sending directly to this address on Polygon
+  const getSafeAddress = useCallback(async (): Promise<string | null> => {
+    // Return cached Safe address if available
+    if (safeAddressRef.current) {
+      return safeAddressRef.current;
+    }
+    
+    // Initialize RelayClient to get Safe address
+    const relayClient = await initializeRelayClient();
+    if (!relayClient) {
+      return null;
+    }
+    
+    return safeAddressRef.current;
+  }, [initializeRelayClient]);
+
   return {
     placeOrder,
     getOpenOrders,
     cancelOrder,
     getWalletAddress,
+    getSafeAddress,
     initializeClient,
     initializeRelayClient,
     deploySafe,

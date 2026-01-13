@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Loader2, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -21,12 +21,23 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawTo, setWithdrawTo] = useState("");
+  const [depositAddress, setDepositAddress] = useState<string | null>(null);
+  const [depositAddressLoading, setDepositAddressLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const { 
     withdrawUSDC, 
     redeemPositions, 
+    getSafeAddress,
+    safeAddress,
     isRelayerLoading 
   } = usePolymarketClient();
+  
+  useEffect(() => {
+    if (safeAddress) {
+      setDepositAddress(safeAddress);
+    }
+  }, [safeAddress]);
   
   useEffect(() => {
     if (walletAddress) {
@@ -216,6 +227,63 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
                 {formatBalance(wallet?.wildBalance || 0)}
               </span>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+            <ArrowUpFromLine className="w-4 h-4 text-wild-trade" />
+            <h3 className="text-xs font-bold text-zinc-400 tracking-wider">DEPOSIT USDC</h3>
+          </div>
+          <div className="p-3 space-y-3">
+            <p className="text-xs text-zinc-400">
+              Send USDC on <span className="text-wild-trade font-medium">Polygon network</span> to your Safe wallet address below:
+            </p>
+            {depositAddress ? (
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-zinc-850 border border-zinc-800 rounded px-3 py-2 text-xs font-mono text-white overflow-hidden text-ellipsis" data-testid="text-deposit-address">
+                  {depositAddress}
+                </code>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(depositAddress);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  data-testid="button-copy-address"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4 text-wild-scout" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-zinc-500" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  setDepositAddressLoading(true);
+                  const addr = await getSafeAddress();
+                  if (addr) setDepositAddress(addr);
+                  setDepositAddressLoading(false);
+                }}
+                disabled={depositAddressLoading}
+                data-testid="button-get-deposit-address"
+              >
+                {depositAddressLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
+                Get Deposit Address
+              </Button>
+            )}
+            <p className="text-[10px] text-zinc-500">
+              Deposits from exchanges like Coinbase or Kraken typically arrive in under 5 minutes.
+            </p>
           </div>
         </div>
 
