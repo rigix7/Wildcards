@@ -44,6 +44,7 @@ interface PredictViewProps {
   onPlaceBet: (marketId: string, outcomeId: string, odds: number, marketTitle?: string, outcomeLabel?: string, marketType?: string, direction?: string, yesTokenId?: string, noTokenId?: string) => void;
   selectedBet?: { marketId: string; outcomeId: string; direction?: string };
   adminSettings?: AdminSettings;
+  userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string }[];
 }
 
 function formatVolume(vol: number): string {
@@ -854,6 +855,13 @@ function MarketGroupDisplay({
   );
 }
 
+interface UserPosition {
+  tokenId: string;
+  size: number;
+  avgPrice: number;
+  outcomeLabel?: string;
+}
+
 // New EventCard component using DisplayEvent
 function EventCard({ 
   event, 
@@ -862,6 +870,7 @@ function EventCard({
   selectedMarketId,
   selectedDirection,
   selectedOutcomeIndex,
+  userPositions = [],
 }: { 
   event: DisplayEvent;
   onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, direction?: string, outcomeLabel?: string) => void;
@@ -869,6 +878,7 @@ function EventCard({
   selectedMarketId?: string;
   selectedDirection?: string;
   selectedOutcomeIndex?: number;
+  userPositions?: UserPosition[];
 }) {
   const countdown = getCountdown(event.gameStartTime);
   
@@ -876,8 +886,40 @@ function EventCard({
   const coreMarketGroups = event.marketGroups.filter(g => CORE_MARKET_TYPES.includes(g.type));
   const additionalMarketGroups = event.marketGroups.filter(g => !CORE_MARKET_TYPES.includes(g.type));
   
+  // Find positions that match any market in this event
+  const eventPositions: UserPosition[] = [];
+  for (const group of event.marketGroups) {
+    for (const market of group.markets) {
+      for (const outcome of market.outcomes) {
+        const matchingPos = userPositions.find(p => p.tokenId === outcome.tokenId);
+        if (matchingPos) {
+          eventPositions.push({
+            ...matchingPos,
+            outcomeLabel: matchingPos.outcomeLabel || outcome.label,
+          });
+        }
+      }
+    }
+  }
+  
   return (
     <Card className="p-4 space-y-4" data-testid={`event-card-${event.id}`}>
+      {/* Position Indicator */}
+      {eventPositions.length > 0 && (
+        <div className="bg-wild-trade/10 border border-wild-trade/30 rounded-md p-2.5" data-testid="position-indicator">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-2 h-2 rounded-full bg-wild-trade animate-pulse" />
+            <span className="text-[10px] font-bold text-wild-trade uppercase tracking-wider">Your Position</span>
+          </div>
+          {eventPositions.map((pos, i) => (
+            <div key={i} className="flex justify-between items-center text-xs">
+              <span className="text-zinc-300">{pos.outcomeLabel}</span>
+              <span className="font-mono text-wild-trade">{pos.size.toFixed(2)} @ {(pos.avgPrice * 100).toFixed(0)}¢</span>
+            </div>
+          ))}
+        </div>
+      )}
+      
       {/* Event Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -1066,7 +1108,8 @@ export function PredictView({
   futuresLoading, 
   onPlaceBet, 
   selectedBet, 
-  adminSettings 
+  adminSettings,
+  userPositions = [],
 }: PredictViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
@@ -1229,6 +1272,7 @@ export function PredictView({
                         onSelectAdditionalMarket={handleSelectAdditionalMarket}
                         selectedMarketId={selectedBet?.marketId}
                         selectedDirection={selectedBet?.direction}
+                        userPositions={userPositions}
                       />
                     ))}
                   </div>
@@ -1248,6 +1292,7 @@ export function PredictView({
                         onSelectAdditionalMarket={handleSelectAdditionalMarket}
                         selectedMarketId={selectedBet?.marketId}
                         selectedDirection={selectedBet?.direction}
+                        userPositions={userPositions}
                       />
                     ))}
                   </div>

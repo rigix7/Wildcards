@@ -1111,6 +1111,371 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================================
+  // POLYMARKET CLOB ORDER PLACEMENT
+  // ============================================================
+  
+  const CLOB_API_BASE = "https://clob.polymarket.com";
+  
+  // POST order to Polymarket CLOB - receives signed order from client
+  // Server adds Builder API credentials and forwards to CLOB
+  // Builder signing endpoint for Polymarket RelayClient remote signing pattern
+  // This endpoint provides HMAC signatures using Builder credentials (kept server-side)
+  // The client uses RelayClient with remoteBuilderConfig pointing to this endpoint
+  app.post("/api/polymarket/sign", async (req, res) => {
+    try {
+      const { method, path, body } = req.body;
+      
+      if (!method || !path) {
+        return res.status(400).json({ error: "method and path required" });
+      }
+      
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        console.error("[Sign] Builder credentials not configured");
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+      
+      const timestamp = Date.now().toString();
+      const bodyString = typeof body === "string" ? body : (body ? JSON.stringify(body) : "");
+      
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        parseInt(timestamp),
+        method.toUpperCase(),
+        path,
+        bodyString
+      );
+      
+      console.log(`[Sign] Created HMAC for ${method} ${path}`);
+      
+      // Return headers for RelayClient to use
+      res.json({
+        POLY_BUILDER_SIGNATURE: signature,
+        POLY_BUILDER_TIMESTAMP: timestamp,
+        POLY_BUILDER_API_KEY: BUILDER_CREDENTIALS.key,
+        POLY_BUILDER_PASSPHRASE: BUILDER_CREDENTIALS.passphrase,
+      });
+    } catch (error) {
+      console.error("[Sign] Error:", error);
+      res.status(500).json({ error: "Signing failed" });
+    }
+  });
+
+  // Legacy order submission endpoint for clients that can't use RelayClient directly
+  // This endpoint stores the order intent and returns a pending status
+  // Actual order execution happens client-side via RelayClient with remote signing
+  app.post("/api/polymarket/orders", async (req, res) => {
+    try {
+      const { order, walletAddress, marketQuestion, outcomeLabel } = req.body;
+      
+      if (!order || !walletAddress) {
+        return res.status(400).json({ error: "order and walletAddress required" });
+      }
+      
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+      
+      // Build HMAC signature for CLOB API
+      const timestamp = Date.now();
+      const path = "/orders";
+      const bodyString = JSON.stringify(order);
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        timestamp,
+        "POST",
+        path,
+        bodyString
+      );
+      
+      console.log(`[CLOB] Submitting order for wallet ${walletAddress}`);
+      console.log(`[CLOB] Order details: tokenID=${order.tokenID}, price=${order.price}, size=${order.size}, side=${order.side}`);
+      
+      // Submit order to Polymarket CLOB API
+      const clobResponse = await fetch(`${CLOB_API_BASE}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "POLY_BUILDER_SIGNATURE": signature,
+          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
+          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
+          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
+        },
+        body: bodyString,
+      });
+      
+      const responseText = await clobResponse.text();
+      console.log(`[CLOB] Response: ${clobResponse.status} - ${responseText.substring(0, 500)}`);
+      
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        responseData = { error: responseText };
+      }
+      
+      // Store order in our database for tracking
+      const now = new Date().toISOString();
+      try {
+        await storage.createPolymarketOrder({
+          walletAddress,
+          tokenId: order.tokenID,
+          side: order.side,
+          price: order.price.toString(),
+          size: order.size.toString(),
+          orderType: "GTC",
+          polymarketOrderId: responseData.orderID || null,
+          status: clobResponse.ok ? "open" : "failed",
+          errorMessage: clobResponse.ok ? null : (responseData.errorMsg || responseData.error || "Unknown error"),
+          marketQuestion: marketQuestion || null,
+          outcomeLabel: outcomeLabel || null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      } catch (dbError) {
+        console.error("[CLOB] Failed to store order in DB:", dbError);
+      }
+      
+      if (!clobResponse.ok) {
+        return res.status(clobResponse.status).json({
+          success: false,
+          error: responseData.errorMsg || responseData.error || "Order failed",
+          details: responseData,
+        });
+      }
+      
+      // Award WILD points for successful order
+      if (walletAddress) {
+        const stakeAmount = order.price * order.size;
+        await storage.addWildPoints(walletAddress, stakeAmount);
+      }
+      
+      res.json({
+        success: true,
+        orderID: responseData.orderID,
+        status: responseData.status || "OPEN",
+        ...responseData,
+      });
+    } catch (error) {
+      console.error("[CLOB] Order error:", error);
+      res.status(500).json({ error: "Failed to submit order" });
+    }
+  });
+  
+  // Get orders for a wallet address
+  app.get("/api/polymarket/orders/:address", async (req, res) => {
+    try {
+      const { address } = req.params;
+      if (!address) {
+        return res.status(400).json({ error: "address required" });
+      }
+      
+      const orders = await storage.getPolymarketOrders(address);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+  
+  // Get positions from Polymarket CLOB for a wallet
+  app.get("/api/polymarket/positions/:address", async (req, res) => {
+    try {
+      const { address } = req.params;
+      if (!address) {
+        return res.status(400).json({ error: "address required" });
+      }
+      
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+      
+      // Fetch positions from Polymarket CLOB API
+      const path = `/data/positions?user=${address}`;
+      const timestamp = Date.now();
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        timestamp,
+        "GET",
+        path,
+        ""
+      );
+      
+      console.log(`[CLOB] Fetching positions for ${address}`);
+      
+      const clobResponse = await fetch(`${CLOB_API_BASE}${path}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "POLY_BUILDER_SIGNATURE": signature,
+          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
+          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
+          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
+        },
+      });
+      
+      if (!clobResponse.ok) {
+        const errorText = await clobResponse.text();
+        console.error(`[CLOB] Positions error: ${clobResponse.status} - ${errorText}`);
+        
+        // Fall back to local database positions
+        const localPositions = await storage.getPolymarketPositions(address);
+        return res.json(localPositions);
+      }
+      
+      const positions = await clobResponse.json();
+      res.json(positions);
+    } catch (error) {
+      console.error("Error fetching positions:", error);
+      // Fall back to local positions
+      const localPositions = await storage.getPolymarketPositions(req.params.address);
+      res.json(localPositions);
+    }
+  });
+  
+  // Redeem winning positions after market resolution
+  app.post("/api/polymarket/redeem", async (req, res) => {
+    try {
+      const { walletAddress, conditionId, outcomeSlot } = req.body;
+      
+      if (!walletAddress || !conditionId) {
+        return res.status(400).json({ error: "walletAddress and conditionId required" });
+      }
+      
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+      
+      // Build redeem request for Polymarket relayer
+      const path = "/redeem";
+      const body = {
+        user: walletAddress,
+        conditionId,
+        outcomeSlot: outcomeSlot || 0,
+      };
+      const timestamp = Date.now();
+      const bodyString = JSON.stringify(body);
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        timestamp,
+        "POST",
+        path,
+        bodyString
+      );
+      
+      console.log(`[Relayer] Redeeming position for ${walletAddress}, condition ${conditionId}`);
+      
+      const relayerResponse = await fetch(`https://relayer-v2.polymarket.com${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "POLY_BUILDER_SIGNATURE": signature,
+          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
+          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
+          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
+        },
+        body: bodyString,
+      });
+      
+      const responseText = await relayerResponse.text();
+      console.log(`[Relayer] Redeem response: ${relayerResponse.status} - ${responseText.substring(0, 500)}`);
+      
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        responseData = { message: responseText };
+      }
+      
+      if (!relayerResponse.ok) {
+        return res.status(relayerResponse.status).json({
+          success: false,
+          error: responseData.error || responseData.message || "Redeem failed",
+        });
+      }
+      
+      res.json({
+        success: true,
+        ...responseData,
+      });
+    } catch (error) {
+      console.error("[Relayer] Redeem error:", error);
+      res.status(500).json({ error: "Failed to redeem position" });
+    }
+  });
+  
+  // Withdraw USDC from Safe wallet
+  app.post("/api/polymarket/withdraw", async (req, res) => {
+    try {
+      const { walletAddress, amount, toAddress } = req.body;
+      
+      if (!walletAddress || !amount || !toAddress) {
+        return res.status(400).json({ error: "walletAddress, amount, and toAddress required" });
+      }
+      
+      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
+        return res.status(500).json({ error: "Builder credentials not configured" });
+      }
+      
+      // Build withdrawal request for Polymarket relayer
+      const path = "/withdraw";
+      const body = {
+        user: walletAddress,
+        amount: amount.toString(),
+        toAddress,
+      };
+      const timestamp = Date.now();
+      const bodyString = JSON.stringify(body);
+      const signature = buildHmacSignature(
+        BUILDER_CREDENTIALS.secret,
+        timestamp,
+        "POST",
+        path,
+        bodyString
+      );
+      
+      console.log(`[Relayer] Withdrawing ${amount} USDC from ${walletAddress} to ${toAddress}`);
+      
+      const relayerResponse = await fetch(`https://relayer-v2.polymarket.com${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "POLY_BUILDER_SIGNATURE": signature,
+          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
+          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
+          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
+        },
+        body: bodyString,
+      });
+      
+      const responseText = await relayerResponse.text();
+      console.log(`[Relayer] Withdraw response: ${relayerResponse.status} - ${responseText.substring(0, 500)}`);
+      
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        responseData = { message: responseText };
+      }
+      
+      if (!relayerResponse.ok) {
+        return res.status(relayerResponse.status).json({
+          success: false,
+          error: responseData.error || responseData.message || "Withdrawal failed",
+        });
+      }
+      
+      res.json({
+        success: true,
+        txHash: responseData.transactionHash || responseData.txHash,
+        ...responseData,
+      });
+    } catch (error) {
+      console.error("[Relayer] Withdraw error:", error);
+      res.status(500).json({ error: "Failed to withdraw" });
+    }
+  });
+
   // Fetch Polymarket event by slug - for adding futures
   app.get("/api/polymarket/event-by-slug", async (req, res) => {
     try {

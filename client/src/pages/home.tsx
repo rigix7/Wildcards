@@ -11,6 +11,7 @@ import { TradeView } from "@/components/views/TradeView";
 import { DashboardView } from "@/components/views/DashboardView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket, gammaEventToDisplayEvent, type DisplayEvent } from "@/lib/polymarket";
+import { submitPolymarketOrder, calculateOrderSize, fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
 import { getUSDCBalance } from "@/lib/polygon";
 import { useWallet } from "@/providers/PrivyProvider";
 import { useSafeWallet } from "@/hooks/useSafeWallet";
@@ -39,6 +40,7 @@ export default function HomePage() {
   const [liveMarketsLoading, setLiveMarketsLoading] = useState(false);
   const [displayEvents, setDisplayEvents] = useState<DisplayEvent[]>([]);
   const [usdcBalance, setUsdcBalance] = useState(0);
+  const [userPositions, setUserPositions] = useState<PolymarketPosition[]>([]);
   const { showToast, ToastContainer } = useTerminalToast();
 
   const { data: demoMarkets = [], isLoading: demoMarketsLoading } = useQuery<Market[]>({
@@ -82,6 +84,16 @@ export default function HomePage() {
     };
     fetchBalance();
   }, [address]);
+
+  // Fetch user positions when wallet is connected
+  useEffect(() => {
+    const walletAddr = safeAddress || address;
+    if (walletAddr && !walletAddr.startsWith("0xDemo")) {
+      fetchPositions(walletAddr).then(setUserPositions);
+    } else {
+      setUserPositions([]);
+    }
+  }, [safeAddress, address]);
 
   useEffect(() => {
     const loadLiveMarkets = async () => {
@@ -146,25 +158,77 @@ export default function HomePage() {
   }), [address, usdcBalance, wildBalance]);
 
   const placeBetMutation = useMutation({
-    mutationFn: async (data: { marketId: string; outcomeId: string; amount: number; odds: number }) => {
+    mutationFn: async (data: { 
+      marketId: string; 
+      outcomeId: string; 
+      amount: number; 
+      odds: number;
+      tokenId?: string;
+      price?: number;
+      marketTitle?: string;
+      outcomeLabel?: string;
+    }) => {
+      const walletAddr = safeAddress || address || "";
+      
+      if (data.tokenId && data.price) {
+        const size = calculateOrderSize(data.amount, data.price);
+        
+        console.log("[Bet] Submitting to Polymarket:", {
+          tokenId: data.tokenId,
+          price: data.price,
+          size,
+          wallet: walletAddr,
+        });
+        
+        const result = await submitPolymarketOrder({
+          tokenId: data.tokenId,
+          side: "BUY",
+          price: data.price,
+          size,
+          walletAddress: walletAddr,
+          marketQuestion: data.marketTitle,
+          outcomeLabel: data.outcomeLabel,
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || result.errorMsg || "Order failed");
+        }
+        
+        return result;
+      }
+      
       return apiRequest("POST", "/api/bets", {
-        ...data,
-        walletAddress: safeAddress || address,
+        marketId: data.marketId,
+        outcomeId: data.outcomeId,
+        amount: data.amount,
+        odds: data.odds,
+        walletAddress: walletAddr,
       });
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/wallet", address] });
+      queryClient.invalidateQueries({ queryKey: ["/api/polymarket/orders", safeAddress || address] });
+      
       const wildEarned = Math.floor(variables.amount);
-      showToast(`Bet placed! +${wildEarned} WILD earned`, "success");
+      const orderMsg = (result as any)?.orderID 
+        ? `Order ${(result as any).orderID.slice(0, 8)}... placed!` 
+        : "Bet placed!";
+      showToast(`${orderMsg} +${wildEarned} WILD earned`, "success");
       setSelectedBet(undefined);
       setShowBetSlip(false);
       if (address && !address.startsWith("0xDemo")) {
         getUSDCBalance(address).then(setUsdcBalance);
       }
+      // Refetch positions after bet
+      const walletAddr = safeAddress || address;
+      if (walletAddr && !walletAddr.startsWith("0xDemo")) {
+        fetchPositions(walletAddr).then(setUserPositions);
+      }
     },
-    onError: () => {
-      showToast("Failed to place bet", "error");
+    onError: (error) => {
+      const msg = error instanceof Error ? error.message : "Failed to place bet";
+      showToast(msg, "error");
     },
   });
 
@@ -269,16 +333,25 @@ export default function HomePage() {
 
   const handleConfirmBet = (stake: number, direction: "yes" | "no", effectiveOdds: number) => {
     if (selectedBet) {
-      // Use CLOB token IDs if available, otherwise fall back to outcomeId
+      const tokenId = direction === "yes" 
+        ? selectedBet.yesTokenId
+        : selectedBet.noTokenId;
+      
       const betOutcomeId = direction === "yes" 
         ? (selectedBet.yesTokenId || selectedBet.outcomeId)
         : (selectedBet.noTokenId || `${selectedBet.outcomeId}_NO`);
+      
+      const price = effectiveOdds > 0 ? 1 / effectiveOdds : 0.5;
       
       placeBetMutation.mutate({
         marketId: selectedBet.marketId,
         outcomeId: betOutcomeId,
         amount: stake,
         odds: effectiveOdds,
+        tokenId,
+        price,
+        marketTitle: selectedBet.marketTitle,
+        outcomeLabel: selectedBet.outcomeLabel,
       });
     }
   };
@@ -328,6 +401,7 @@ export default function HomePage() {
               onPlaceBet={handlePlaceBet}
               selectedBet={selectedBet}
               adminSettings={adminSettings}
+              userPositions={userPositions}
             />
           )}
           {activeTab === "scout" && (
@@ -351,6 +425,7 @@ export default function HomePage() {
               bets={bets}
               trades={trades}
               isLoading={betsLoading || tradesLoading}
+              walletAddress={safeAddress || address}
             />
           )}
         </main>

@@ -11,6 +11,8 @@ import {
   futures,
   sportFieldConfigs,
   sportMarketConfigs,
+  polymarketPositions,
+  polymarketOrders,
   type Market,
   type InsertMarket,
   type Player,
@@ -28,6 +30,10 @@ import {
   type InsertSportFieldConfig,
   type SportMarketConfig,
   type InsertSportMarketConfig,
+  type PolymarketPosition,
+  type InsertPolymarketPosition,
+  type PolymarketOrder,
+  type InsertPolymarketOrder,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -75,6 +81,14 @@ export interface IStorage {
   getSportMarketConfigsBySport(sportSlug: string): Promise<SportMarketConfig[]>;
   createOrUpdateSportMarketConfig(config: InsertSportMarketConfig): Promise<SportMarketConfig>;
   deleteSportMarketConfig(sportSlug: string, marketType: string): Promise<boolean>;
+
+  getPolymarketOrders(walletAddress: string): Promise<PolymarketOrder[]>;
+  createPolymarketOrder(order: InsertPolymarketOrder): Promise<PolymarketOrder>;
+  updatePolymarketOrder(id: number, updates: Partial<PolymarketOrder>): Promise<PolymarketOrder | undefined>;
+  
+  getPolymarketPositions(walletAddress: string): Promise<PolymarketPosition[]>;
+  createPolymarketPosition(position: InsertPolymarketPosition): Promise<PolymarketPosition>;
+  updatePolymarketPosition(id: number, updates: Partial<PolymarketPosition>): Promise<PolymarketPosition | undefined>;
 
   seedInitialData(): Promise<void>;
 }
@@ -560,6 +574,42 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log("Database seeded with demo players for Scout feature");
+  }
+
+  async getPolymarketOrders(walletAddress: string): Promise<PolymarketOrder[]> {
+    return await db.select().from(polymarketOrders)
+      .where(eq(polymarketOrders.walletAddress, walletAddress));
+  }
+
+  async createPolymarketOrder(order: InsertPolymarketOrder): Promise<PolymarketOrder> {
+    const [newOrder] = await db.insert(polymarketOrders).values(order).returning();
+    return newOrder;
+  }
+
+  async updatePolymarketOrder(id: number, updates: Partial<PolymarketOrder>): Promise<PolymarketOrder | undefined> {
+    const [updated] = await db.update(polymarketOrders)
+      .set({ ...updates, updatedAt: new Date().toISOString() })
+      .where(eq(polymarketOrders.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getPolymarketPositions(walletAddress: string): Promise<PolymarketPosition[]> {
+    return await db.select().from(polymarketPositions)
+      .where(eq(polymarketPositions.walletAddress, walletAddress));
+  }
+
+  async createPolymarketPosition(position: InsertPolymarketPosition): Promise<PolymarketPosition> {
+    const [newPosition] = await db.insert(polymarketPositions).values(position).returning();
+    return newPosition;
+  }
+
+  async updatePolymarketPosition(id: number, updates: Partial<PolymarketPosition>): Promise<PolymarketPosition | undefined> {
+    const [updated] = await db.update(polymarketPositions)
+      .set({ ...updates, updatedAt: new Date().toISOString() })
+      .where(eq(polymarketPositions.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 

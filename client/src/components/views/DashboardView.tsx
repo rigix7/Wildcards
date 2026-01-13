@@ -1,5 +1,10 @@
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, RefreshCw, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { fetchPositions, redeemPosition, withdrawUSDC, type PolymarketPosition } from "@/lib/polymarketOrder";
 import type { Wallet as WalletType, Bet, Trade } from "@shared/schema";
 
 interface DashboardViewProps {
@@ -7,9 +12,50 @@ interface DashboardViewProps {
   bets: Bet[];
   trades: Trade[];
   isLoading: boolean;
+  walletAddress?: string;
 }
 
-export function DashboardView({ wallet, bets, trades, isLoading }: DashboardViewProps) {
+export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }: DashboardViewProps) {
+  const [positions, setPositions] = useState<PolymarketPosition[]>([]);
+  const [positionsLoading, setPositionsLoading] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawTo, setWithdrawTo] = useState("");
+  
+  useEffect(() => {
+    if (walletAddress) {
+      setPositionsLoading(true);
+      fetchPositions(walletAddress)
+        .then(setPositions)
+        .finally(() => setPositionsLoading(false));
+    }
+  }, [walletAddress]);
+
+  const refreshPositions = async () => {
+    if (walletAddress) {
+      setPositionsLoading(true);
+      const pos = await fetchPositions(walletAddress);
+      setPositions(pos);
+      setPositionsLoading(false);
+    }
+  };
+
+  const redeemMutation = useMutation({
+    mutationFn: async ({ conditionId, outcomeSlot }: { conditionId: string; outcomeSlot?: number }) => {
+      if (!walletAddress) throw new Error("No wallet connected");
+      return redeemPosition(walletAddress, conditionId, outcomeSlot);
+    },
+    onSuccess: () => {
+      refreshPositions();
+    },
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: async ({ amount, toAddress }: { amount: number; toAddress: string }) => {
+      if (!walletAddress) throw new Error("No wallet connected");
+      return withdrawUSDC(walletAddress, amount, toAddress);
+    },
+  });
+
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -34,6 +80,9 @@ export function DashboardView({ wallet, bets, trades, isLoading }: DashboardView
     if (bet.status === "lost") return acc - bet.amount;
     return acc;
   }, 0);
+
+  const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
+  const claimablePositions = positions.filter(p => p.status === "resolved" || p.status === "claimable");
 
   if (isLoading) {
     return (
@@ -155,6 +204,148 @@ export function DashboardView({ wallet, bets, trades, isLoading }: DashboardView
           </div>
         </div>
 
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="p-3 border-b border-zinc-800 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-wild-trade" />
+              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">POSITIONS</h3>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={refreshPositions}
+              disabled={positionsLoading}
+              data-testid="button-refresh-positions"
+            >
+              <RefreshCw className={cn("w-3 h-3 text-zinc-500", positionsLoading && "animate-spin")} />
+            </Button>
+          </div>
+          <div className="divide-y divide-zinc-800/50">
+            {openPositions.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="text-xs text-zinc-500">No open positions</p>
+              </div>
+            ) : (
+              openPositions.map((pos, i) => (
+                <div key={`${pos.tokenId}-${i}`} className="p-3" data-testid={`position-${i}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-white truncate">{pos.marketQuestion || "Unknown Market"}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || pos.side}</span>
+                        <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                      {pos.unrealizedPnl !== undefined && (
+                        <div className={cn(
+                          "text-[10px] font-mono",
+                          pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
+                        )}>
+                          {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {claimablePositions.length > 0 && (
+          <div className="bg-zinc-900 border border-wild-scout/30 rounded-md overflow-hidden">
+            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+              <Coins className="w-4 h-4 text-wild-scout" />
+              <h3 className="text-xs font-bold text-wild-scout tracking-wider">CLAIM WINNINGS</h3>
+            </div>
+            <div className="divide-y divide-zinc-800/50">
+              {claimablePositions.map((pos, i) => (
+                <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center" data-testid={`claimable-${i}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
+                    <div className="text-[10px] font-mono text-wild-scout">${pos.size.toFixed(2)} USDC</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-wild-scout hover:bg-wild-scout/80 text-zinc-950 text-xs h-7"
+                    onClick={() => pos.conditionId && redeemMutation.mutate({ conditionId: pos.conditionId })}
+                    disabled={redeemMutation.isPending || !pos.conditionId}
+                    data-testid={`button-claim-${i}`}
+                  >
+                    {redeemMutation.isPending ? (
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Claim
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {wallet && wallet.usdcBalance > 0 && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 text-wild-gold" />
+              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">WITHDRAW</h3>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10px] text-zinc-500 block mb-1">Amount (USDC)</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="w-full bg-zinc-850 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-wild-gold"
+                  data-testid="input-withdraw-amount"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-zinc-500 block mb-1">To Address</label>
+                <input
+                  type="text"
+                  placeholder="0x..."
+                  value={withdrawTo}
+                  onChange={(e) => setWithdrawTo(e.target.value)}
+                  className="w-full bg-zinc-850 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-wild-gold"
+                  data-testid="input-withdraw-address"
+                />
+              </div>
+              <Button
+                className="w-full bg-wild-gold hover:bg-wild-gold/80 text-zinc-950"
+                disabled={!withdrawAmount || !withdrawTo || withdrawMutation.isPending}
+                onClick={() => withdrawMutation.mutate({ 
+                  amount: parseFloat(withdrawAmount), 
+                  toAddress: withdrawTo 
+                })}
+                data-testid="button-withdraw"
+              >
+                {withdrawMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Withdraw USDC"
+                )}
+              </Button>
+              {withdrawMutation.isSuccess && (
+                <p className="text-xs text-wild-scout text-center">Withdrawal submitted!</p>
+              )}
+              {withdrawMutation.isError && (
+                <p className="text-xs text-wild-brand text-center">
+                  {withdrawMutation.error instanceof Error ? withdrawMutation.error.message : "Withdrawal failed"}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {bets.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
             <div className="p-3 border-b border-zinc-800">
@@ -194,7 +385,7 @@ export function DashboardView({ wallet, bets, trades, isLoading }: DashboardView
           </div>
         )}
 
-        {bets.length === 0 && trades.length === 0 && (
+        {bets.length === 0 && trades.length === 0 && openPositions.length === 0 && (
           <div className="text-center py-8 opacity-60">
             <Activity className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
             <h3 className="font-bold text-zinc-500">No Activity Yet</h3>

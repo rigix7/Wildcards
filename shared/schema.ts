@@ -278,6 +278,93 @@ export const adminSettingsSchema = z.object({
   lastUpdated: z.string(),
 });
 
+// ============ POLYMARKET POSITIONS TABLE ============
+
+export const polymarketPositions = pgTable("polymarket_positions", {
+  id: serial("id").primaryKey(),
+  walletAddress: varchar("wallet_address", { length: 42 }).notNull(),
+  tokenId: text("token_id").notNull(),
+  conditionId: text("condition_id"),
+  marketId: text("market_id"),
+  marketQuestion: text("market_question"),
+  outcomeLabel: text("outcome_label"),
+  side: text("side").notNull(), // "yes" or "no"
+  size: numeric("size", { precision: 20, scale: 6 }).notNull(),
+  avgPrice: numeric("avg_price", { precision: 10, scale: 6 }).notNull(),
+  currentPrice: numeric("current_price", { precision: 10, scale: 6 }),
+  realizedPnl: numeric("realized_pnl", { precision: 20, scale: 6 }).default("0"),
+  unrealizedPnl: numeric("unrealized_pnl", { precision: 20, scale: 6 }).default("0"),
+  status: text("status").notNull().default("open"), // "open", "closed", "redeemable"
+  polymarketOrderId: text("polymarket_order_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const polymarketOrders = pgTable("polymarket_orders", {
+  id: serial("id").primaryKey(),
+  walletAddress: varchar("wallet_address", { length: 42 }).notNull(),
+  tokenId: text("token_id").notNull(),
+  side: text("side").notNull(), // "BUY" or "SELL"
+  price: numeric("price", { precision: 10, scale: 6 }).notNull(),
+  size: numeric("size", { precision: 20, scale: 6 }).notNull(),
+  orderType: text("order_type").notNull().default("GTC"), // "GTC", "FOK", "GTD"
+  polymarketOrderId: text("polymarket_order_id"),
+  status: text("status").notNull().default("pending"), // "pending", "open", "filled", "cancelled", "failed"
+  filledSize: numeric("filled_size", { precision: 20, scale: 6 }).default("0"),
+  errorMessage: text("error_message"),
+  marketQuestion: text("market_question"),
+  outcomeLabel: text("outcome_label"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const insertPolymarketPositionSchema = createInsertSchema(polymarketPositions).omit({ id: true });
+export type InsertPolymarketPosition = z.infer<typeof insertPolymarketPositionSchema>;
+export type PolymarketPosition = typeof polymarketPositions.$inferSelect;
+
+export const insertPolymarketOrderSchema = createInsertSchema(polymarketOrders).omit({ id: true });
+export type InsertPolymarketOrder = z.infer<typeof insertPolymarketOrderSchema>;
+export type PolymarketOrder = typeof polymarketOrders.$inferSelect;
+
+// Zod schemas for API validation
+export const polymarketPositionSchema = z.object({
+  id: z.number(),
+  walletAddress: z.string(),
+  tokenId: z.string(),
+  conditionId: z.string().nullable(),
+  marketId: z.string().nullable(),
+  marketQuestion: z.string().nullable(),
+  outcomeLabel: z.string().nullable(),
+  side: z.string(),
+  size: z.string(),
+  avgPrice: z.string(),
+  currentPrice: z.string().nullable(),
+  realizedPnl: z.string().nullable(),
+  unrealizedPnl: z.string().nullable(),
+  status: z.string(),
+  polymarketOrderId: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const polymarketOrderSchema = z.object({
+  id: z.number(),
+  walletAddress: z.string(),
+  tokenId: z.string(),
+  side: z.string(),
+  price: z.string(),
+  size: z.string(),
+  orderType: z.string(),
+  polymarketOrderId: z.string().nullable(),
+  status: z.string(),
+  filledSize: z.string().nullable(),
+  errorMessage: z.string().nullable(),
+  marketQuestion: z.string().nullable(),
+  outcomeLabel: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 // ============ LEGACY USER SCHEMA (keep for compatibility) ============
 
 export const users = pgTable("users", {

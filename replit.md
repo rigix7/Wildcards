@@ -44,7 +44,13 @@ Wildcard is a sports prediction terminal application featuring a HUD-style dark 
 - GET/POST /api/bets
 - GET/POST /api/trades
 - GET /api/wallet
-- POST /api/polymarket/sign (stub)
+
+### Polymarket CLOB Integration
+- POST /api/polymarket/sign - Returns HMAC signature headers for Builder attribution (used by RelayClient remote signing)
+- POST /api/polymarket/orders - Submits orders to Polymarket CLOB with Builder credentials
+- GET /api/polymarket/positions/:address - Fetches user's tracked positions from database
+- POST /api/polymarket/redeem - Claims settled winning positions (stub - requires RelayClient integration)
+- POST /api/polymarket/withdraw - Withdraws USDC from Safe wallet (stub - requires RelayClient integration)
 
 ## Sport Config Editor
 The Admin panel includes a comprehensive Sport + Market Type Configuration system:
@@ -92,3 +98,10 @@ Key API Endpoints:
   - Child events (with parentEventId like "More Markets") are now merged into their parent events
   - Markets, volume, and liquidity are consolidated from all child events
   - BetSlip correctly shows Yes/No for soccer binary markets vs team names for NBA 2-way markets
+- Implemented Polymarket SDK integration for real betting (January 13, 2026)
+  - Added polymarketOrders and polymarketPositions database tables for tracking
+  - Created /api/polymarket/sign endpoint for Builder HMAC signatures (remote signing pattern)
+  - Order submission via /api/polymarket/orders with Builder credential headers
+  - Position tracking shows user's bets directly on EventCard with "Your Position" indicator
+  - Dashboard updated with Positions section, Claim Winnings, and Withdraw functionality
+  - Client-side polymarketOrder.ts utility for order submission and position fetching
