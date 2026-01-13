@@ -216,7 +216,11 @@ export function usePolymarketClient() {
 
         console.log("[PolymarketClient] Order result:", result);
 
-        // Store order in our database for tracking
+        // Check if order was successful
+        const isSuccess = result.success !== false && !result.errorMsg;
+        const orderID = result.orderID || result.id;
+        
+        // Store order in our database for tracking (regardless of success/failure)
         try {
           await fetch("/api/polymarket/orders", {
             method: "POST",
@@ -230,8 +234,8 @@ export function usePolymarketClient() {
                 orderType: "GTC",
               },
               walletAddress: addressRef.current,
-              polymarketOrderId: result.orderID || result.id,
-              status: result.success !== false ? "submitted" : "failed",
+              polymarketOrderId: orderID,
+              status: isSuccess ? "open" : "failed",
             }),
           });
         } catch (dbErr) {
@@ -241,16 +245,18 @@ export function usePolymarketClient() {
           );
         }
 
-        if (result.success === false || result.errorMsg) {
+        if (!isSuccess) {
+          const errorMsg = result.errorMsg || "Order rejected by Polymarket";
+          setError(errorMsg);
           return {
             success: false,
-            error: result.errorMsg || "Order rejected by Polymarket",
+            error: errorMsg,
           };
         }
 
         return {
           success: true,
-          orderID: result.orderID || result.id,
+          orderID: orderID,
           transactionsHashes: result.transactionsHashes,
         };
       } catch (err) {

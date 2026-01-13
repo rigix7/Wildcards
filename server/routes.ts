@@ -1166,58 +1166,18 @@ export async function registerRoutes(
     }
   });
 
-  // Legacy order submission endpoint for clients that can't use RelayClient directly
-  // This endpoint stores the order intent and returns a pending status
-  // Actual order execution happens client-side via RelayClient with remote signing
+  // Store order records in database (order submission happens client-side via SDK)
+  // This endpoint only stores the order for tracking purposes
   app.post("/api/polymarket/orders", async (req, res) => {
     try {
-      const { order, walletAddress, marketQuestion, outcomeLabel } = req.body;
+      const { order, walletAddress, polymarketOrderId, status, marketQuestion, outcomeLabel } = req.body;
       
       if (!order || !walletAddress) {
         return res.status(400).json({ error: "order and walletAddress required" });
       }
       
-      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
-        return res.status(500).json({ error: "Builder credentials not configured" });
-      }
-      
-      // Build HMAC signature for CLOB API
-      const timestamp = Date.now();
-      const path = "/orders";
-      const bodyString = JSON.stringify(order);
-      const signature = buildHmacSignature(
-        BUILDER_CREDENTIALS.secret,
-        timestamp,
-        "POST",
-        path,
-        bodyString
-      );
-      
-      console.log(`[CLOB] Submitting order for wallet ${walletAddress}`);
-      console.log(`[CLOB] Order details: tokenID=${order.tokenID}, price=${order.price}, size=${order.size}, side=${order.side}`);
-      
-      // Submit order to Polymarket CLOB API
-      const clobResponse = await fetch(`${CLOB_API_BASE}${path}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "POLY_BUILDER_SIGNATURE": signature,
-          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
-          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
-          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
-        },
-        body: bodyString,
-      });
-      
-      const responseText = await clobResponse.text();
-      console.log(`[CLOB] Response: ${clobResponse.status} - ${responseText.substring(0, 500)}`);
-      
-      let responseData;
-      try {
-        responseData = responseText ? JSON.parse(responseText) : {};
-      } catch {
-        responseData = { error: responseText };
-      }
+      console.log(`[Orders] Storing order for wallet ${walletAddress}`);
+      console.log(`[Orders] Details: tokenID=${order.tokenID}, price=${order.price}, size=${order.size}, side=${order.side}, status=${status}`);
       
       // Store order in our database for tracking
       const now = new Date().toISOString();
@@ -1228,42 +1188,34 @@ export async function registerRoutes(
           side: order.side,
           price: order.price.toString(),
           size: order.size.toString(),
-          orderType: "GTC",
-          polymarketOrderId: responseData.orderID || null,
-          status: clobResponse.ok ? "open" : "failed",
-          errorMessage: clobResponse.ok ? null : (responseData.errorMsg || responseData.error || "Unknown error"),
+          orderType: order.orderType || "GTC",
+          polymarketOrderId: polymarketOrderId || null,
+          status: status || "submitted",
+          errorMessage: null,
           marketQuestion: marketQuestion || null,
           outcomeLabel: outcomeLabel || null,
           createdAt: now,
           updatedAt: now,
         });
       } catch (dbError) {
-        console.error("[CLOB] Failed to store order in DB:", dbError);
+        console.error("[Orders] Failed to store order in DB:", dbError);
+        return res.status(500).json({ error: "Failed to store order" });
       }
       
-      if (!clobResponse.ok) {
-        return res.status(clobResponse.status).json({
-          success: false,
-          error: responseData.errorMsg || responseData.error || "Order failed",
-          details: responseData,
-        });
-      }
-      
-      // Award WILD points for successful order
-      if (walletAddress) {
+      // Award WILD points for successful orders
+      if (walletAddress && status !== "failed") {
         const stakeAmount = order.price * order.size;
         await storage.addWildPoints(walletAddress, stakeAmount);
       }
       
       res.json({
         success: true,
-        orderID: responseData.orderID,
-        status: responseData.status || "OPEN",
-        ...responseData,
+        stored: true,
+        orderID: polymarketOrderId,
       });
     } catch (error) {
-      console.error("[CLOB] Order error:", error);
-      res.status(500).json({ error: "Failed to submit order" });
+      console.error("[Orders] Storage error:", error);
+      res.status(500).json({ error: "Failed to store order" });
     }
   });
   
