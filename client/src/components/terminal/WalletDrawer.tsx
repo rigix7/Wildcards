@@ -1,4 +1,4 @@
-import { X, Copy, ExternalLink, Wallet, Check, Shield, Loader2, ChevronLeft, HelpCircle } from "lucide-react";
+import { X, Copy, ExternalLink, Wallet, Check, Shield, Loader2, ChevronLeft, HelpCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Wallet as WalletType } from "@shared/schema";
@@ -60,6 +60,8 @@ interface WalletDrawerProps {
   isSafeDeployed?: boolean;
   isSafeDeploying?: boolean;
   onDeploySafe?: () => void;
+  onRefreshBalance?: () => void;
+  isRefreshingBalance?: boolean;
 }
 
 export function WalletDrawer({
@@ -73,6 +75,8 @@ export function WalletDrawer({
   isSafeDeployed,
   isSafeDeploying,
   onDeploySafe,
+  onRefreshBalance,
+  isRefreshingBalance,
 }: WalletDrawerProps) {
   const [showDepositInstructions, setShowDepositInstructions] = useState(false);
 
@@ -151,9 +155,23 @@ export function WalletDrawer({
                       </div>
                       <span className="text-sm text-zinc-300">USDC</span>
                     </div>
-                    <span className="font-mono font-bold text-white" data-testid="text-drawer-usdc">
-                      ${formatBalance(wallet.usdcBalance)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-white" data-testid="text-drawer-usdc">
+                        ${formatBalance(wallet.usdcBalance)}
+                      </span>
+                      {onRefreshBalance && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={onRefreshBalance}
+                          disabled={isRefreshingBalance}
+                          className="w-6 h-6"
+                          data-testid="button-refresh-balance"
+                        >
+                          <RefreshCw className={`w-3 h-3 text-zinc-400 ${isRefreshingBalance ? 'animate-spin' : ''}`} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-zinc-950 rounded-lg border border-zinc-800">

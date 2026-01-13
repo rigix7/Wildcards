@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/terminal/Header";
 import { BottomNav, TabType } from "@/components/terminal/BottomNav";
@@ -42,6 +42,7 @@ export default function HomePage() {
   const [liveMarketsLoading, setLiveMarketsLoading] = useState(false);
   const [displayEvents, setDisplayEvents] = useState<DisplayEvent[]>([]);
   const [usdcBalance, setUsdcBalance] = useState(0);
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [userPositions, setUserPositions] = useState<PolymarketPosition[]>([]);
   const { showToast, ToastContainer } = useTerminalToast();
 
@@ -74,18 +75,52 @@ export default function HomePage() {
     queryKey: ["/api/futures"],
   });
 
-  // Fetch real USDC balance when wallet is connected (skip for demo addresses)
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (address && !address.startsWith("0xDemo")) {
-        const balance = await getUSDCBalance(address);
+  // Track previous balance for deposit detection
+  const prevBalanceRef = useRef<number>(0);
+  const isFirstFetchRef = useRef<boolean>(true);
+  
+  // Fetch balance function
+  const fetchBalance = useCallback(async (isManual = false) => {
+    const walletAddr = safeAddress || address;
+    if (walletAddr && !walletAddr.startsWith("0xDemo")) {
+      if (isManual) setIsRefreshingBalance(true);
+      
+      try {
+        const balance = await getUSDCBalance(walletAddr);
+        
+        // Check for deposit (balance increased) - skip first fetch
+        if (!isFirstFetchRef.current && balance > prevBalanceRef.current) {
+          const deposited = (balance - prevBalanceRef.current).toFixed(2);
+          showToast(`Deposit received! +${deposited} USDC`, "success");
+        }
+        
+        prevBalanceRef.current = balance;
+        isFirstFetchRef.current = false;
         setUsdcBalance(balance);
-      } else {
-        setUsdcBalance(0);
+      } finally {
+        if (isManual) setIsRefreshingBalance(false);
       }
-    };
+    } else {
+      setUsdcBalance(0);
+      prevBalanceRef.current = 0;
+      isFirstFetchRef.current = true;
+    }
+  }, [safeAddress, address, showToast]);
+
+  // Fetch USDC balance with polling every 10 seconds
+  useEffect(() => {
+    // Reset on wallet change
+    isFirstFetchRef.current = true;
+    prevBalanceRef.current = 0;
+    
+    // Initial fetch
     fetchBalance();
-  }, [address]);
+    
+    // Set up polling interval
+    const intervalId = setInterval(fetchBalance, 10000);
+    
+    return () => clearInterval(intervalId);
+  }, [fetchBalance]);
 
   // Fetch user positions when wallet is connected
   useEffect(() => {
@@ -219,9 +254,7 @@ export default function HomePage() {
       showToast(`${orderMsg} +${wildEarned} WILD earned`, "success");
       setSelectedBet(undefined);
       setShowBetSlip(false);
-      if (address && !address.startsWith("0xDemo")) {
-        getUSDCBalance(address).then(setUsdcBalance);
-      }
+      fetchBalance();
       // Refetch positions after bet
       const walletAddr = safeAddress || address;
       if (walletAddr && !walletAddr.startsWith("0xDemo")) {
@@ -448,6 +481,8 @@ export default function HomePage() {
         isSafeDeployed={isSafeDeployed}
         isSafeDeploying={isSafeDeploying}
         onDeploySafe={deploySafe}
+        onRefreshBalance={() => fetchBalance(true)}
+        isRefreshingBalance={isRefreshingBalance}
       />
 
       {showBetSlip && selectedBet && (
