@@ -428,6 +428,8 @@ export default function HomePage() {
               trades={trades}
               isLoading={betsLoading || tradesLoading}
               walletAddress={safeAddress || address}
+              safeAddress={safeAddress}
+              isSafeDeployed={isSafeDeployed}
             />
           )}
         </main>

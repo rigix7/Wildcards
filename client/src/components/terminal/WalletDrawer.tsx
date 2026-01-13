@@ -136,7 +136,7 @@ export function WalletDrawer({
                     <div>
                       <div className="text-sm font-medium text-white">Connected</div>
                       <div className="text-[11px] text-zinc-500">
-                        {isSafeDeployed ? "Trading Wallet Active" : "Wallet Ready"}
+                        {isSafeDeployed ? "Prediction Wallet Active" : "Wallet Ready"}
                       </div>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export function WalletDrawer({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-wild-trade" />
-                        <span className="text-sm font-medium text-white">Trading Wallet</span>
+                        <span className="text-sm font-medium text-white">Prediction Wallet</span>
                       </div>
                       {isSafeDeployed ? (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-wild-scout/20 text-wild-scout font-medium">

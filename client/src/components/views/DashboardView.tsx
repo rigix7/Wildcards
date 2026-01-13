@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Loader2, Copy, Check } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
 import { usePolymarketClient } from "@/hooks/usePolymarketClient";
+import { DepositInstructions } from "@/components/terminal/DepositInstructions";
 import type { Wallet as WalletType, Bet, Trade } from "@shared/schema";
 
 interface DashboardViewProps {
@@ -14,30 +15,22 @@ interface DashboardViewProps {
   trades: Trade[];
   isLoading: boolean;
   walletAddress?: string;
+  safeAddress?: string | null;
+  isSafeDeployed?: boolean;
 }
 
-export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }: DashboardViewProps) {
+export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, safeAddress, isSafeDeployed }: DashboardViewProps) {
   const [positions, setPositions] = useState<PolymarketPosition[]>([]);
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawTo, setWithdrawTo] = useState("");
-  const [depositAddress, setDepositAddress] = useState<string | null>(null);
-  const [depositAddressLoading, setDepositAddressLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showDepositInstructions, setShowDepositInstructions] = useState(false);
   
   const { 
     withdrawUSDC, 
-    redeemPositions, 
-    getSafeAddress,
-    safeAddress,
-    isRelayerLoading 
+    redeemPositions,
   } = usePolymarketClient();
-  
-  useEffect(() => {
-    if (safeAddress) {
-      setDepositAddress(safeAddress);
-    }
-  }, [safeAddress]);
   
   useEffect(() => {
     if (walletAddress) {
@@ -236,54 +229,67 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
             <h3 className="text-xs font-bold text-zinc-400 tracking-wider">DEPOSIT USDC</h3>
           </div>
           <div className="p-3 space-y-3">
-            <p className="text-xs text-zinc-400">
-              Send USDC on <span className="text-wild-trade font-medium">Polygon network</span> to your Safe wallet address below:
-            </p>
-            {depositAddress ? (
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-zinc-850 border border-zinc-800 rounded px-3 py-2 text-xs font-mono text-white overflow-hidden text-ellipsis" data-testid="text-deposit-address">
-                  {depositAddress}
-                </code>
+            {isSafeDeployed && safeAddress ? (
+              <>
+                <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className="text-[10px] text-zinc-500 mb-0.5">Deposit Address</span>
+                    <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-deposit-address">
+                      {safeAddress}
+                    </span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="shrink-0 w-7 h-7"
+                    onClick={() => {
+                      navigator.clipboard.writeText(safeAddress);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    data-testid="button-copy-address"
+                  >
+                    {copied ? (
+                      <Check className="w-3 h-3 text-wild-scout" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-zinc-400" />
+                    )}
+                  </Button>
+                </div>
                 <Button
-                  size="icon"
-                  variant="ghost"
-                  className="shrink-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(depositAddress);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  data-testid="button-copy-address"
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs border-zinc-700"
+                  onClick={() => setShowDepositInstructions(!showDepositInstructions)}
+                  data-testid="button-how-to-deposit"
                 >
-                  {copied ? (
-                    <Check className="w-4 h-4 text-wild-scout" />
+                  <HelpCircle className="w-3 h-3 mr-1" />
+                  How to Deposit
+                  {showDepositInstructions ? (
+                    <ChevronUp className="w-3 h-3 ml-1" />
                   ) : (
-                    <Copy className="w-4 h-4 text-zinc-500" />
+                    <ChevronDown className="w-3 h-3 ml-1" />
                   )}
                 </Button>
-              </div>
+                {showDepositInstructions && (
+                  <div className="mt-3">
+                    <DepositInstructions safeAddress={safeAddress} />
+                  </div>
+                )}
+                <p className="text-[10px] text-zinc-600">
+                  Gasless trading enabled. Deposit USDC.e (Polygon) to start.
+                </p>
+              </>
             ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={async () => {
-                  setDepositAddressLoading(true);
-                  const addr = await getSafeAddress();
-                  if (addr) setDepositAddress(addr);
-                  setDepositAddressLoading(false);
-                }}
-                disabled={depositAddressLoading}
-                data-testid="button-get-deposit-address"
-              >
-                {depositAddressLoading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                ) : null}
-                Get Deposit Address
-              </Button>
+              <div className="text-center py-4">
+                <p className="text-xs text-zinc-400 mb-2">
+                  Activate your Prediction Wallet to get a deposit address
+                </p>
+                <p className="text-[10px] text-zinc-500">
+                  Open your wallet (top right) and click "Activate Wallet"
+                </p>
+              </div>
             )}
-            <p className="text-[10px] text-zinc-500">
-              Deposits from exchanges like Coinbase or Kraken typically arrive in under 5 minutes.
-            </p>
           </div>
         </div>
 
