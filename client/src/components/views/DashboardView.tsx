@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, RefreshCw, CheckCircle2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { fetchPositions, redeemPosition, withdrawUSDC, type PolymarketPosition } from "@/lib/polymarketOrder";
+import { fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
+import { usePolymarketClient } from "@/hooks/usePolymarketClient";
 import type { Wallet as WalletType, Bet, Trade } from "@shared/schema";
 
 interface DashboardViewProps {
@@ -20,6 +21,12 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
   const [positionsLoading, setPositionsLoading] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawTo, setWithdrawTo] = useState("");
+  
+  const { 
+    withdrawUSDC, 
+    redeemPositions, 
+    isRelayerLoading 
+  } = usePolymarketClient();
   
   useEffect(() => {
     if (walletAddress) {
@@ -40,9 +47,13 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
   };
 
   const redeemMutation = useMutation({
-    mutationFn: async ({ conditionId, outcomeSlot }: { conditionId: string; outcomeSlot?: number }) => {
+    mutationFn: async ({ conditionId }: { conditionId: string }) => {
       if (!walletAddress) throw new Error("No wallet connected");
-      return redeemPosition(walletAddress, conditionId, outcomeSlot);
+      const result = await redeemPositions(conditionId, [1, 2]);
+      if (!result.success) {
+        throw new Error(result.error || "Redeem failed");
+      }
+      return result;
     },
     onSuccess: () => {
       refreshPositions();
@@ -52,7 +63,11 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress }
   const withdrawMutation = useMutation({
     mutationFn: async ({ amount, toAddress }: { amount: number; toAddress: string }) => {
       if (!walletAddress) throw new Error("No wallet connected");
-      return withdrawUSDC(walletAddress, amount, toAddress);
+      const result = await withdrawUSDC(amount, toAddress);
+      if (!result.success) {
+        throw new Error(result.error || "Withdrawal failed");
+      }
+      return result;
     },
   });
 

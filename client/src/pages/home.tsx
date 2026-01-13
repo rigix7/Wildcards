@@ -11,7 +11,8 @@ import { TradeView } from "@/components/views/TradeView";
 import { DashboardView } from "@/components/views/DashboardView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket, gammaEventToDisplayEvent, type DisplayEvent } from "@/lib/polymarket";
-import { submitPolymarketOrder, calculateOrderSize, fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
+import { calculateOrderSize, fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
+import { usePolymarketClient } from "@/hooks/usePolymarketClient";
 import { getUSDCBalance } from "@/lib/polygon";
 import { useWallet } from "@/providers/PrivyProvider";
 import { useSafeWallet } from "@/hooks/useSafeWallet";
@@ -20,6 +21,7 @@ import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, F
 export default function HomePage() {
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
   const { safeAddress, isDeployed: isSafeDeployed, isDeploying: isSafeDeploying, deploy: deploySafe } = useSafeWallet();
+  const { placeOrder, isSubmitting: isPolymarketSubmitting, isInitializing, error: polymarketError } = usePolymarketClient();
   const walletLoading = !isReady;
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
@@ -173,25 +175,25 @@ export default function HomePage() {
       if (data.tokenId && data.price) {
         const size = calculateOrderSize(data.amount, data.price);
         
-        console.log("[Bet] Submitting to Polymarket:", {
+        console.log("[Bet] Submitting to Polymarket via SDK:", {
           tokenId: data.tokenId,
           price: data.price,
           size,
           wallet: walletAddr,
         });
         
-        const result = await submitPolymarketOrder({
+        // Use the ClobClient SDK for real wallet-signed orders
+        const result = await placeOrder({
           tokenId: data.tokenId,
           side: "BUY",
           price: data.price,
           size,
-          walletAddress: walletAddr,
-          marketQuestion: data.marketTitle,
-          outcomeLabel: data.outcomeLabel,
+          tickSize: "0.01",
+          negRisk: false,
         });
         
         if (!result.success) {
-          throw new Error(result.error || result.errorMsg || "Order failed");
+          throw new Error(result.error || "Order failed");
         }
         
         return result;

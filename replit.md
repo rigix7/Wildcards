@@ -49,8 +49,16 @@ Wildcard is a sports prediction terminal application featuring a HUD-style dark 
 - POST /api/polymarket/sign - Returns HMAC signature headers for Builder attribution (used by RelayClient remote signing)
 - POST /api/polymarket/orders - Submits orders to Polymarket CLOB with Builder credentials
 - GET /api/polymarket/positions/:address - Fetches user's tracked positions from database
-- POST /api/polymarket/redeem - Claims settled winning positions (stub - requires RelayClient integration)
-- POST /api/polymarket/withdraw - Withdraws USDC from Safe wallet (stub - requires RelayClient integration)
+
+### Polymarket SDK Integration (Client-side)
+- usePolymarketClient hook (client/src/hooks/usePolymarketClient.ts):
+  - **ClobClient**: Order placement via createAndPostOrder() with ethers v5 signer from Privy wallet
+  - **RelayClient**: Safe wallet operations with remote Builder signing via /api/polymarket/sign
+  - **placeOrder()**: Places limit orders on Polymarket CLOB with wallet signature
+  - **withdrawUSDC()**: Transfers USDC from user's Safe wallet via ERC20 transfer
+  - **redeemPositions()**: Claims winning positions via CTF.redeemPositions (binary markets: indexSets=[1,2], parentCollectionId=0x0)
+  - **deploySafe()**: Deploys user's Gnosis Safe proxy wallet
+  - **approveUSDC()**: Approves CTF Exchange for USDC spending
 
 ## Sport Config Editor
 The Admin panel includes a comprehensive Sport + Market Type Configuration system:
