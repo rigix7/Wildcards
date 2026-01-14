@@ -210,27 +210,28 @@ export function usePolymarketClient() {
       }
 
       // STEP 2: Create temporary ClobClient for API key derivation
-      // IMPORTANT: Must use signatureType=2 and safeAddress so credentials are owned by the Safe
-      // The EOA signs on behalf of the Safe, but the credentials belong to the Safe address
+      // Per official Polymarket example: use basic EOA-only client to derive/create credentials
+      // The trading client (authenticatedClient) handles Safe association via signatureType=2
       const tempClient = new ClobClient(
         CLOB_HOST,
         CHAIN_ID,
-        signer,
-        undefined, // no credentials yet
-        2,         // signatureType = 2 for Safe proxy (EOA signing on behalf of Safe)
-        safeAddress // credentials will be owned by the Safe proxy address
+        signer
       );
 
-      // STEP 3: Derive or create API credentials for the Safe proxy address
-      console.log("[PolymarketClient] Deriving API credentials for Safe:", safeAddress);
+      // STEP 3: Force CREATE new API credentials (don't derive - old creds may be tied to EOA)
+      // For fresh accounts, this ensures credentials are created fresh
+      // For existing accounts, createApiKey() will create a new key set
+      console.log("[PolymarketClient] Creating fresh API credentials for EOA:", address);
       let creds;
       try {
-        creds = await tempClient.deriveApiKey();
-        console.log("[PolymarketClient] Successfully derived existing API credentials for Safe");
-      } catch {
-        console.log("[PolymarketClient] Creating new API credentials for Safe...");
+        // Always create new credentials to avoid using stale EOA-derived ones
         creds = await tempClient.createApiKey();
-        console.log("[PolymarketClient] Successfully created new API credentials for Safe");
+        console.log("[PolymarketClient] Successfully created new API credentials");
+      } catch (createErr: any) {
+        // If creation fails (e.g., already exists), try deriving
+        console.log("[PolymarketClient] Create failed, trying to derive existing...", createErr?.message);
+        creds = await tempClient.deriveApiKey();
+        console.log("[PolymarketClient] Successfully derived existing API credentials");
       }
       credsRef.current = creds;
 
@@ -281,14 +282,16 @@ export function usePolymarketClient() {
         // Get amount - either from new amount field or legacy price*size
         const amount = params.amount ?? (params.price && params.size ? params.price * params.size : 0);
         
+        // TEMPORARILY DISABLED for testing signature flow without funds
         // Validate minimum order value using market's orderMinSize from Polymarket (in USDC)
         // Default to 5 if not specified (Polymarket's typical minimum)
-        const minOrderValueUSDC = params.orderMinSize ?? 5;
-        if (amount < minOrderValueUSDC) {
-          const errorMsg = `Order value too small: $${amount.toFixed(2)}. Polymarket requires minimum $${minOrderValueUSDC} for this market.`;
-          setError(errorMsg);
-          return { success: false, error: errorMsg };
-        }
+        // const minOrderValueUSDC = params.orderMinSize ?? 5;
+        // if (amount < minOrderValueUSDC) {
+        //   const errorMsg = `Order value too small: $${amount.toFixed(2)}. Polymarket requires minimum $${minOrderValueUSDC} for this market.`;
+        //   setError(errorMsg);
+        //   return { success: false, error: errorMsg };
+        // }
+        console.log("[PolymarketClient] Minimum order check BYPASSED for testing");
 
         const client = await initializeClient();
         if (!client) {
@@ -302,7 +305,6 @@ export function usePolymarketClient() {
           tokenId: params.tokenId,
           amount,
           side: params.side,
-          minOrderValueUSDC,
         });
 
         // Use FOK (Fill-or-Kill) market order for instant execution

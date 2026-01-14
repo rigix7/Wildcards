@@ -132,7 +132,8 @@ export function BetSlip({
   const labels = getDirectionLabels();
   
   const handleConfirm = async () => {
-    if (stakeNum <= 0 || insufficientBalance) return;
+    // TEMPORARILY DISABLED insufficientBalance check for testing signature flow
+    if (stakeNum <= 0) return;
     
     // If book is stale, refresh before submitting
     if (isBookStale && getOrderBook && currentTokenId) {
@@ -325,7 +326,7 @@ export function BetSlip({
 
           <Button
             onClick={handleConfirm}
-            disabled={stakeNum <= 0 || insufficientBalance || isPending || isLoadingBook}
+            disabled={stakeNum <= 0 || isPending || isLoadingBook}
             className="w-full h-12 bg-wild-brand hover:bg-wild-brand/90 text-white font-bold text-lg"
             data-testid="button-confirm-bet"
           >
