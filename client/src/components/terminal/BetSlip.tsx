@@ -143,7 +143,8 @@ export function BetSlip({
         setLastFetchTime(Date.now());
         
         if (freshBook && freshBook.bestAsk > 0) {
-          const freshPrice = Math.min(freshBook.bestAsk + 0.01, 0.99);
+          // Use same PRICE_BUFFER (3%) for consistent aggressive pricing
+          const freshPrice = Math.min(freshBook.bestAsk + PRICE_BUFFER, 0.99);
           const freshOdds = 1 / freshPrice;
           onConfirm(stakeNum, betDirection, freshOdds, freshPrice);
           return;

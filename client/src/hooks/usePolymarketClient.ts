@@ -36,7 +36,7 @@ export interface OrderResult {
   orderID?: string;
   transactionsHashes?: string[];
   error?: string;
-  status?: "matched" | "open" | "cancelled" | "failed";
+  status?: "matched" | "open" | "cancelled" | "failed" | "partial" | "partial_cancelled";
   filled?: boolean;
 }
 
@@ -270,7 +270,122 @@ export function usePolymarketClient() {
         const isSuccess = result.success !== false && !result.errorMsg;
         const orderID = result.orderID || result.id;
         
-        // Store order in our database for tracking (regardless of success/failure)
+        // Determine order status - check if order was matched/filled or is sitting open
+        // Polymarket returns status in various fields and in UPPERCASE (e.g., "FILLED", "OPEN")
+        const rawStatus = result.orderDetails?.status || result.order?.status || result.status || "";
+        const orderStatus = typeof rawStatus === "string" ? rawStatus.toLowerCase() : "";
+        
+        // Check for fills - Polymarket may return fill info in various ways
+        const hasFills = !!(result.fills && result.fills.length > 0);
+        const sizeFilled = parseFloat(result.orderDetails?.sizeFilled || result.sizeFilled || "0") || 0;
+        const sizeRemaining = parseFloat(result.orderDetails?.sizeRemaining || result.sizeRemaining || "0") || 0;
+        const hasPartialFill = sizeFilled > 0;
+        const hasRemainder = sizeRemaining > 0;
+        
+        // Status-based fill detection
+        const statusIsFilled = orderStatus === "matched" || orderStatus === "filled";
+        
+        // Order has some fills if status says so OR if there are actual fills
+        const hasAnyFill = statusIsFilled || hasFills || hasPartialFill;
+        
+        // Determine if we need to cancel any remaining order:
+        // 1. Cancel if explicitly open/live with zero fills
+        // 2. Cancel if unknown/blank status with zero fills (be defensive)
+        // 3. Cancel remainder if partial fill (has fills but also has remaining)
+        const isExplicitlyOpen = orderStatus === "open" || orderStatus === "live";
+        const isUnknownStatus = orderStatus === "" || orderStatus === "unknown";
+        const noFillsAtAll = !hasFills && !hasPartialFill;
+        
+        // Need to cancel if: no fills and (open or unknown status), OR there's a remainder after partial fill
+        const needsCancel = (noFillsAtAll && (isExplicitlyOpen || isUnknownStatus)) || (hasAnyFill && hasRemainder);
+        
+        console.log("[PolymarketClient] Order status:", orderStatus, "hasAnyFill:", hasAnyFill, "hasFills:", hasFills, "sizeFilled:", sizeFilled, "sizeRemaining:", sizeRemaining, "needsCancel:", needsCancel);
+        
+        // If order needs cancellation (unfilled or has remainder), cancel it immediately
+        // We want instant execution only - no orders sitting in the book
+        if (isSuccess && orderID && needsCancel) {
+          console.log("[PolymarketClient] Cancelling order (unfilled or has remainder)...", orderID);
+          try {
+            await client.cancelOrder({ orderID });
+            console.log("[PolymarketClient] Order cancelled successfully");
+            
+            // Store order in database with appropriate status
+            const dbStatus = hasAnyFill ? "partial_cancelled" : "cancelled";
+            try {
+              await fetch("/api/polymarket/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  order: {
+                    tokenID: params.tokenId,
+                    price: params.price,
+                    size: params.size,
+                    side: params.side,
+                    orderType: "GTC",
+                  },
+                  walletAddress: addressRef.current,
+                  polymarketOrderId: orderID,
+                  status: dbStatus,
+                  sizeFilled,
+                  sizeRemaining,
+                }),
+              });
+            } catch (dbErr) {
+              console.warn("[PolymarketClient] Failed to store cancelled order:", dbErr);
+            }
+            
+            // If there were any fills, report as partial fill with details
+            // Otherwise report as not filled
+            if (hasAnyFill) {
+              return {
+                success: true,
+                status: "partial_cancelled",
+                filled: true, // Partial fill - positions should refresh
+                orderID,
+                // Include fill info for UI messaging
+                sizeFilled,
+                sizeRemaining,
+                isPartialFill: true,
+              } as OrderResult & { sizeFilled: number; sizeRemaining: number; isPartialFill: boolean };
+            } else {
+              return {
+                success: true,
+                error: "Order not filled - not enough liquidity at current price. Try a smaller amount or wait for more liquidity.",
+                status: "cancelled",
+                filled: false,
+                orderID,
+              };
+            }
+          } catch (cancelErr) {
+            console.error("[PolymarketClient] Failed to cancel order:", cancelErr);
+            
+            if (hasAnyFill) {
+              // Partial fill but cancel failed - this is a problem, residual order is still open
+              // Return as error so user knows to check manually
+              return {
+                success: false,
+                error: `Order partially filled but could not cancel remainder. Order ${orderID} may still be open.`,
+                status: "partial",
+                filled: true,
+                orderID,
+                sizeFilled,
+                sizeRemaining,
+                isPartialFill: true,
+              } as OrderResult & { sizeFilled: number; sizeRemaining: number; isPartialFill: boolean };
+            } else {
+              // No fills and cancel failed - order is still open
+              return {
+                success: false,
+                error: `Order not filled and cancel failed. Order ${orderID} may still be open.`,
+                status: "open",
+                filled: false,
+                orderID,
+              };
+            }
+          }
+        }
+        
+        // Store order in our database for tracking
         try {
           await fetch("/api/polymarket/orders", {
             method: "POST",
@@ -285,7 +400,7 @@ export function usePolymarketClient() {
               },
               walletAddress: addressRef.current,
               polymarketOrderId: orderID,
-              status: isSuccess ? "open" : "failed",
+              status: hasAnyFill ? "matched" : (isSuccess ? "open" : "failed"),
             }),
           });
         } catch (dbErr) {
@@ -301,6 +416,8 @@ export function usePolymarketClient() {
           return {
             success: false,
             error: errorMsg,
+            status: "failed",
+            filled: false,
           };
         }
 
@@ -308,6 +425,8 @@ export function usePolymarketClient() {
           success: true,
           orderID: orderID,
           transactionsHashes: result.transactionsHashes,
+          status: hasAnyFill ? "matched" : "open",
+          filled: hasAnyFill,
         };
       } catch (err) {
         console.error("[PolymarketClient] Order error:", err);

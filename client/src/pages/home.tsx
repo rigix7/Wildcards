@@ -253,19 +253,53 @@ export default function HomePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/wallet", address] });
       queryClient.invalidateQueries({ queryKey: ["/api/polymarket/orders", safeAddress || address] });
       
-      const wildEarned = Math.floor(variables.amount);
-      const orderMsg = (result as any)?.orderID 
-        ? `Order ${(result as any).orderID.slice(0, 8)}... placed!` 
-        : "Bet placed!";
-      showToast(`${orderMsg} +${wildEarned} WILD earned`, "success");
+      // Check if this was a Polymarket order and determine fill status
+      const orderResult = result as { 
+        orderID?: string; 
+        filled?: boolean; 
+        status?: string; 
+        error?: string;
+        isPartialFill?: boolean;
+        sizeFilled?: number;
+        sizeRemaining?: number;
+      };
+      const isFilled = orderResult?.filled !== false; // true if filled or no status returned (demo bets)
+      const isPartialFill = orderResult?.isPartialFill === true;
+      
+      if (isFilled) {
+        // Refetch positions after any fill (full or partial)
+        const walletAddr = safeAddress || address;
+        if (walletAddr && !walletAddr.startsWith("0xDemo")) {
+          fetchPositions(walletAddr).then(setUserPositions);
+        }
+        
+        if (isPartialFill) {
+          // Partial fill - show warning with details
+          const filledPct = orderResult.sizeFilled && orderResult.sizeRemaining
+            ? Math.round((orderResult.sizeFilled / (orderResult.sizeFilled + orderResult.sizeRemaining)) * 100)
+            : null;
+          const msg = filledPct 
+            ? `Order partially filled (${filledPct}%) - rest cancelled due to liquidity`
+            : "Order partially filled - rest cancelled due to liquidity";
+          showToast(msg, "info");
+        } else {
+          // Full fill - show success
+          const wildEarned = Math.floor(variables.amount);
+          const orderMsg = orderResult?.orderID 
+            ? `Order filled! ${orderResult.orderID.slice(0, 8)}...` 
+            : "Bet placed!";
+          showToast(`${orderMsg} +${wildEarned} WILD earned`, "success");
+        }
+      } else {
+        // Order was cancelled due to insufficient liquidity
+        // Show the specific error message from the order result
+        const errorMsg = orderResult?.error || "Order not filled - not enough liquidity";
+        showToast(errorMsg, "error");
+      }
+      
       setSelectedBet(undefined);
       setShowBetSlip(false);
       fetchBalance();
-      // Refetch positions after bet
-      const walletAddr = safeAddress || address;
-      if (walletAddr && !walletAddr.startsWith("0xDemo")) {
-        fetchPositions(walletAddr).then(setUserPositions);
-      }
     },
     onError: (error) => {
       const msg = error instanceof Error ? error.message : "Failed to place bet";
