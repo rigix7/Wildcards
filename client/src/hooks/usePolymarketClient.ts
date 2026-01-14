@@ -1,6 +1,10 @@
 import { useCallback, useState, useRef, useMemo } from "react";
 import { ClobClient, Side, OrderType } from "@polymarket/clob-client";
 import { RelayClient, RelayerTxType } from "@polymarket/builder-relayer-client";
+// @ts-ignore - These are exported from subpaths
+import { deriveSafe } from "@polymarket/builder-relayer-client/dist/builder/derive";
+// @ts-ignore - These are exported from subpaths  
+import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
 import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import { providers } from "ethers";
 import {
@@ -178,19 +182,60 @@ export function usePolymarketClient() {
       credsRef.current = creds;
       console.log("[PolymarketClient] API credentials obtained");
 
+      // Get Safe address from RelayClient (where USDC is deposited)
+      // The Safe is deterministically derived from the EOA address
+      let safeAddress = safeAddressRef.current;
+      if (!safeAddress) {
+        console.log("[PolymarketClient] Deriving Safe address...");
+        const privyProvider = await getProvider();
+        if (privyProvider) {
+          const viemWallet = createWalletClient({
+            chain: polygon,
+            transport: custom(privyProvider as any),
+          });
+          
+          const builderConfig = new BuilderConfig({
+            remoteBuilderConfig: {
+              url: "/api/polymarket/sign",
+            },
+          });
+          
+          const relayClient = new RelayClient(
+            RELAYER_HOST,
+            CHAIN_ID,
+            viemWallet,
+            builderConfig,
+            RelayerTxType.SAFE,
+          );
+          
+          relayClientRef.current = relayClient;
+          
+          // Derive the Safe address from the EOA using contract config
+          const contractConfig = getContractConfig(CHAIN_ID);
+          safeAddress = deriveSafe(address, contractConfig.SafeContracts.SafeFactory);
+          safeAddressRef.current = safeAddress;
+          console.log("[PolymarketClient] Safe address:", safeAddress);
+        }
+      }
+
+      if (!safeAddress) {
+        throw new Error("Failed to derive Safe address");
+      }
+
       // Create authenticated client with credentials
-      // signatureType: 0 = EOA/Browser wallet
+      // signatureType: 2 = Safe proxy wallet (where USDC lives)
+      // funder = Safe address (not the EOA)
       const authenticatedClient = new ClobClient(
         CLOB_HOST,
         CHAIN_ID,
         signer,
         creds,
-        0, // signatureType for EOA
-        address, // funder address
+        2, // signatureType: 2 = Safe proxy wallet
+        safeAddress, // funder = Safe address where USDC is deposited
       );
 
       clientRef.current = authenticatedClient;
-      console.log("[PolymarketClient] Client initialized successfully");
+      console.log("[PolymarketClient] Client initialized with Safe wallet:", safeAddress);
 
       return authenticatedClient;
     } catch (err) {
