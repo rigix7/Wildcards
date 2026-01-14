@@ -1,10 +1,6 @@
 import { useCallback, useState, useRef, useMemo } from "react";
 import { ClobClient, Side, OrderType } from "@polymarket/clob-client";
 import { RelayClient, RelayerTxType } from "@polymarket/builder-relayer-client";
-// @ts-ignore - These are exported from subpaths
-import { deriveSafe } from "@polymarket/builder-relayer-client/dist/builder/derive";
-// @ts-ignore - These are exported from subpaths  
-import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
 import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import { providers } from "ethers";
 import {
@@ -12,8 +8,23 @@ import {
   custom,
   encodeFunctionData,
   parseUnits,
+  getCreate2Address,
+  keccak256,
+  encodeAbiParameters,
   type Address,
 } from "viem";
+
+// Safe wallet init code hash for CREATE2 address derivation (from Polymarket SDK)
+const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf" as `0x${string}`;
+
+// Derive Safe wallet address from EOA using CREATE2 (same as Polymarket SDK)
+function deriveSafe(address: string, safeFactory: string): string {
+  return getCreate2Address({
+    bytecodeHash: SAFE_INIT_CODE_HASH,
+    from: safeFactory as Address,
+    salt: keccak256(encodeAbiParameters([{ name: 'address', type: 'address' }], [address as Address])),
+  });
+}
 import { polygon } from "viem/chains";
 import { useWallet } from "@/providers/PrivyProvider";
 
@@ -210,11 +221,11 @@ export function usePolymarketClient() {
           
           relayClientRef.current = relayClient;
           
-          // Derive the Safe address from the EOA using contract config
-          const contractConfig = getContractConfig(CHAIN_ID);
-          safeAddress = deriveSafe(address, contractConfig.SafeContracts.SafeFactory);
+          // Derive the Safe address from the EOA using RelayClient's contract config
+          const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
+          safeAddress = deriveSafe(address, safeFactory);
           safeAddressRef.current = safeAddress;
-          console.log("[PolymarketClient] Safe address:", safeAddress);
+          console.log("[PolymarketClient] Safe address:", safeAddress, "from factory:", safeFactory);
         }
       }
 
