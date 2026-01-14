@@ -40,12 +40,12 @@ export default function useClobOrder(
 
         if (params.isMarketOrder) {
           // For market orders, use createAndPostMarketOrder with FOK
-          // BUY orders need amount in dollars (size * askPrice)
-          // SELL orders need amount in shares
+          // BUY orders: amount is in USDC (dollars to spend)
+          // SELL orders: amount is in shares
           let marketAmount: number;
 
           if (side === Side.BUY) {
-            // Get the ask price (price to buy at)
+            // Validate that we can get a reasonable market price before submitting
             const priceResponse = await clobClient.getPrice(
               params.tokenId,
               Side.SELL // Get sell side price = ask price for buyers
@@ -53,11 +53,13 @@ export default function useClobOrder(
             const askPrice = parseFloat(priceResponse.price);
 
             if (isNaN(askPrice) || askPrice <= 0 || askPrice >= 1) {
-              throw new Error("Unable to get valid market price");
+              throw new Error("Unable to get valid market price - no liquidity available");
             }
 
-            // Convert shares to dollar amount for BUY orders
-            marketAmount = params.size * askPrice;
+            // For BUY market orders, params.size is already the USDC amount to spend
+            // The SDK handles converting dollars to shares internally
+            marketAmount = params.size;
+            console.log(`[Order] Market BUY: spending $${marketAmount} USDC at ~${(askPrice * 100).toFixed(0)}¢`);
           } else {
             // For SELL orders, amount is in shares
             marketAmount = params.size;

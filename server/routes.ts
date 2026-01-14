@@ -1245,7 +1245,8 @@ export async function registerRoutes(
     }
   });
   
-  // Get positions from Polymarket CLOB for a wallet
+  // Get positions from Polymarket Data API for a wallet
+  // Uses public Data API endpoint (no auth required)
   app.get("/api/polymarket/positions/:address", async (req, res) => {
     try {
       const { address } = req.params;
@@ -1253,44 +1254,31 @@ export async function registerRoutes(
         return res.status(400).json({ error: "address required" });
       }
       
-      if (!BUILDER_CREDENTIALS.key || !BUILDER_CREDENTIALS.secret) {
-        return res.status(500).json({ error: "Builder credentials not configured" });
-      }
+      // Use public Data API endpoint (no authentication required)
+      const dataApiUrl = `https://data-api.polymarket.com/positions?user=${address}`;
       
-      // Fetch positions from Polymarket CLOB API
-      const path = `/data/positions?user=${address}`;
-      const timestamp = Date.now();
-      const signature = buildHmacSignature(
-        BUILDER_CREDENTIALS.secret,
-        timestamp,
-        "GET",
-        path,
-        ""
-      );
+      console.log(`[Positions] Fetching from Data API for ${address}`);
       
-      console.log(`[CLOB] Fetching positions for ${address}`);
-      
-      const clobResponse = await fetch(`${CLOB_API_BASE}${path}`, {
+      const response = await fetch(dataApiUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "POLY_BUILDER_SIGNATURE": signature,
-          "POLY_BUILDER_TIMESTAMP": timestamp.toString(),
-          "POLY_BUILDER_API_KEY": BUILDER_CREDENTIALS.key,
-          "POLY_BUILDER_PASSPHRASE": BUILDER_CREDENTIALS.passphrase,
         },
       });
       
-      if (!clobResponse.ok) {
-        const errorText = await clobResponse.text();
-        console.error(`[CLOB] Positions error: ${clobResponse.status} - ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Positions] Data API error: ${response.status} - ${errorText}`);
         
         // Fall back to local database positions
         const localPositions = await storage.getPolymarketPositions(address);
         return res.json(localPositions);
       }
       
-      const positions = await clobResponse.json();
+      const data = await response.json();
+      // Data API returns positions directly as array or wrapped in object
+      const positions = Array.isArray(data) ? data : (data.positions || []);
+      console.log(`[Positions] Found ${positions.length} positions for ${address}`);
       res.json(positions);
     } catch (error) {
       console.error("Error fetching positions:", error);

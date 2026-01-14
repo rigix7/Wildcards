@@ -110,6 +110,16 @@ export function BetSlip({
   const wildPoints = Math.floor(stakeNum);
   const insufficientBalance = stakeNum > maxBalance;
   
+  // Minimum order validation
+  // orderMinSize is in shares, so convert to USDC using bestAsk (not buffered price)
+  // Use order book bestAsk if available, otherwise fall back to execution price
+  const minShares = orderMinSize ?? 5; // Default Polymarket minimum is 5 shares
+  const priceForMinCalc = orderBook?.bestAsk && orderBook.bestAsk > 0 
+    ? orderBook.bestAsk 
+    : executionPrice;
+  const minOrderUSDC = minShares * priceForMinCalc;
+  const isBelowMinimum = stakeNum > 0 && stakeNum < minOrderUSDC;
+  
   // Liquidity warnings
   const isLowLiquidity = orderBook?.isLowLiquidity ?? false;
   const isWideSpread = orderBook?.isWideSpread ?? false;
@@ -323,10 +333,17 @@ export function BetSlip({
               <span>Insufficient USDC balance</span>
             </div>
           )}
+          
+          {isBelowMinimum && !insufficientBalance && (
+            <div className="flex items-center gap-2 text-amber-400 text-sm bg-amber-400/10 rounded p-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Minimum bet is ${minOrderUSDC.toFixed(2)} USDC ({minShares} shares)</span>
+            </div>
+          )}
 
           <Button
             onClick={handleConfirm}
-            disabled={stakeNum <= 0 || isPending || isLoadingBook}
+            disabled={stakeNum <= 0 || isPending || isLoadingBook || isBelowMinimum}
             className="w-full h-12 bg-wild-brand hover:bg-wild-brand/90 text-white font-bold text-lg"
             data-testid="button-confirm-bet"
           >
