@@ -12,17 +12,20 @@ import {
 
 // This hook creates the authenticated clobClient with the User API Credentials
 // and the builder config credentials, but only after a trading session is initialized
+// NOTE: safeAddress is passed from caller (useTradingSession) to avoid circular dependency
+// useSafeDeployment must only be called from useTradingSession, not here
 
 export default function useClobClient(
   tradingSession: TradingSession | null,
   isTradingSessionComplete: boolean | undefined,
   safeAddress?: string
 ) {
-  const { ethersSigner } = useWallet();
+  const { eoaAddress, ethersSigner } = useWallet();
 
   const clobClient = useMemo(() => {
     if (
       !ethersSigner ||
+      !eoaAddress ||
       !safeAddress ||
       !isTradingSessionComplete ||
       !tradingSession?.apiCredentials
@@ -51,6 +54,7 @@ export default function useClobClient(
       builderConfig // Builder order attribution
     );
   }, [
+    eoaAddress,
     ethersSigner,
     safeAddress,
     isTradingSessionComplete,

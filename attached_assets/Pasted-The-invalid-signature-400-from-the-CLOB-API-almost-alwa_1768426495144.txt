@@ -1,0 +1,109 @@
+The `invalid signature` 400 from the CLOB API almost always means the headers/body you are sending do not match what Polymarket expects for the HMAC signing scheme (user API key) or for the builder config (builder key), even if the values “look” right.
+
+## What is wrong in your request
+
+A few red flags from the payload you pasted:
+
+- You are sending `POLY_ADDRESS` / `POLY_SIGNATURE` / `POLY_TIMESTAMP` / `POLY_API_KEY` / `POLY_PASSPHRASE` directly from the client.  
+- You are also sending `POLY_BUILDER_*` headers that look like they were manually created.  
+- The order body looks like a raw order (salt, maker, signer, etc.), not an order created by `ClobClient.createAndPostOrder`, so the signature you put into `order.signature` may not match what the API is recomputing server‑side.  
+
+In the demo repo, none of those headers are hand‑crafted on the client: they are created for you by the `ClobClient` and by the builder `BuilderConfig` via the `/api/polymarket/sign` endpoint.[1]
+
+## How the demo is supposed to work
+
+In this example app, the flow for a **valid** order is:[1]
+
+1. Get a signer from Privy (embedded wallet).  
+2. Use a temporary `ClobClient` (with just `signer`) to `deriveApiKey` / `createApiKey` and obtain `{ key, secret, passphrase }` for the **user**.  
+3. Initialize the authenticated `ClobClient`:
+
+   ```ts
+   const builderConfig = new BuilderConfig({
+     remoteBuilderConfig: { url: "/api/polymarket/sign" },
+   });
+
+   const clobClient = new ClobClient(
+     "https://clob.polymarket.com",
+     137,                // chain id
+     signer,            // Privy signer
+     userApiCredentials, // { key, secret, passphrase }
+     2,                 // signatureType = 2 (EOA + Safe)
+     safeAddress,
+     undefined,
+     false,
+     builderConfig
+   );
+   ```
+
+4. Call `clobClient.createAndPostOrder(order, { negRisk: false }, OrderType.GTC)` and let the client build:
+   - The HMAC headers: `POLY_API_KEY`, `POLY_SIGNATURE`, `POLY_TIMESTAMP`, `POLY_PASSPHRASE`, etc.  
+   - The correct EIP‑712 order signature (`order.signature`).  
+   - The builder HMAC (via `remoteBuilderConfig`), returned from `/api/polymarket/sign` as `POLY_BUILDER_*`.  
+
+You never manually sign the order or compute HMACs in the browser; you just give `ClobClient` a plain order object (tokenID, price, size, side…).[1]
+
+## Likely causes of `invalid signature` in your case
+
+Most common issues, given your payload:
+
+- **User API HMAC mismatch**  
+  - `POLY_API_KEY` / `POLY_PASSPHRASE` / `POLY_SIGNATURE` must correspond to a valid user API key derived from the **same signer** that is associated with `maker`/`signer` in the order.  
+  - If you copied a key from the site UI or reused credentials from another wallet, the CLOB server will recompute the signature and reject it.
+
+- **Order signature mismatch**  
+  - The `signature` inside `order` must be the EIP‑712 signature that `ClobClient` generates for that exact order fields (salt, maker, tokenId, makerAmount, takerAmount, side, etc.).  
+  - If you hand‑assembled the order or signed the wrong typed data, the hash will not match and you get `invalid signature`.
+
+- **Builder headers mismatched to body/path**  
+  - `POLY_BUILDER_SIGNATURE` must be HMAC over the exact method, path, timestamp and body that you are sending.  
+  - In the demo, this is produced by:
+
+    ```ts
+    const sigTimestamp = Date.now().toString();
+    const signature = buildHmacSignature(
+      BUILDER_CREDENTIALS.secret,
+      parseInt(sigTimestamp),
+      method,
+      path,
+      body
+    );
+    ```
+
+    and returned from `/api/polymarket/sign`. If you are computing it yourself or copying from somewhere else, it will be invalid.[1]
+
+- **Wrong usage pattern: calling `https://clob.polymarket.com/order` directly with Axios**  
+  - The example app never does this directly; it always calls methods on `clobClient`, which handles all signing and header building for you. When you bypass that and hit the REST endpoint yourself, you must exactly replicate all of that logic.
+
+## How to fix it concretely
+
+If you want to follow the example repo and stop fighting the signatures:
+
+1. **Stop setting all those `POLY_*` headers manually in your Axios call.**  
+2. Use the hooks from the repo (`useTradingSession`, `useClobClient`, `useClobOrder`) and just call the provided `createAndPostOrder` hook function.[1]
+3. Ensure:
+   - You have successfully run the trading session steps: Safe deployed, API credentials obtained, approvals done.[1]
+   - The `clobClient` instance you are using is the authenticated one from `useClobClient`.[1]
+
+If you insist on calling the REST API yourself:
+
+- Use `ClobClient` only to generate:
+  - User API credentials (once).
+  - Correct order signature (call `clobClient.createOrder` to get a fully signed order, then inspect the body and headers it uses).  
+- Mirror exactly the `method`, `path` (`/order`), `body` (stringified JSON), and timestamp when computing both:
+  - `POLY_SIGNATURE` (using the user `secret` and `passphrase`).  
+  - `POLY_BUILDER_SIGNATURE` (using builder `secret` and the same `method/path/body` the server will see).  
+
+Any tiny difference (e.g., different timestamp, extra spaces, different body) yields `invalid signature`.
+
+## Quick sanity checks
+
+Before trying again:
+
+- Confirm your order is created via `clobClient.createAndPostOrder`, not manually.  
+- Confirm the wallet you are logged in with Privy is the one that created the user API key.  
+- Confirm the builder API key/secret/passphrase in `.env.local` are correct and your `/api/polymarket/sign` route runs without errors.[1]
+
+If you can share the code where you instantiate `ClobClient` and where you call the order endpoint (with secrets stripped), it becomes possible to point at the exact mismatch.
+
+[1](https://github.com/Polymarket/privy-safe-builder-example)

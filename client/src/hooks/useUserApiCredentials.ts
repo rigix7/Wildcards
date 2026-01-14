@@ -28,17 +28,26 @@ export default function useUserApiCredentials() {
       const tempClient = new ClobClient(CLOB_API_URL, POLYGON_CHAIN_ID, ethersSigner);
 
       try {
-        // Force CREATE new credentials (old derived ones may be stale)
-        console.log(`Creating new User API Credentials for EOA: ${eoaAddress}...`);
+        // Try to derive existing credentials first (matching official example)
+        const derivedCreds = await tempClient.deriveApiKey().catch(() => null);
+
+        if (
+          derivedCreds?.key &&
+          derivedCreds?.secret &&
+          derivedCreds?.passphrase
+        ) {
+          console.log("Successfully derived existing User API Credentials");
+          return derivedCreds;
+        }
+
+        // Derive failed or returned invalid data - create new credentials
+        console.log("Creating new User API Credentials...");
         const newCreds = await tempClient.createApiKey();
-        console.log(`Successfully created new User API Credentials`);
+        console.log("Successfully created new User API Credentials");
         return newCreds;
-      } catch (createErr: any) {
-        // If creation fails, try deriving existing
-        console.log(`Create failed, trying to derive existing...`, createErr?.message);
-        const derivedCreds = await tempClient.deriveApiKey();
-        console.log(`Successfully derived existing User API Credentials`);
-        return derivedCreds;
+      } catch (err) {
+        console.error("Failed to get credentials:", err);
+        throw err;
       }
     },
     [eoaAddress, ethersSigner]
