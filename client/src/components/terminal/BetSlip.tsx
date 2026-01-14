@@ -85,19 +85,22 @@ export function BetSlip({
     fetchOrderBook();
   }, [fetchOrderBook]);
   
-  // Calculate the execution price from order book (bestAsk + 0.01 for guaranteed fill)
+  // Calculate the execution price from order book (bestAsk + 0.03 for guaranteed instant fill)
+  // Using 3% buffer to ensure we cross the spread and match against existing orders
+  const PRICE_BUFFER = 0.03;
+  
   const getExecutionPrice = (): number => {
     if (orderBook && orderBook.bestAsk > 0) {
-      // Add 1 cent to ensure we cross the spread
-      return Math.min(orderBook.bestAsk + 0.01, 0.99);
+      // Add buffer to ensure we cross the spread and fill instantly
+      return Math.min(orderBook.bestAsk + PRICE_BUFFER, 0.99);
     }
     // Fallback to passed-in prices
     const fallbackPrice = betDirection === "yes" ? yesPrice : noPrice;
     if (fallbackPrice && fallbackPrice > 0) {
-      return Math.min(fallbackPrice + 0.01, 0.99);
+      return Math.min(fallbackPrice + PRICE_BUFFER, 0.99);
     }
     // Last resort: calculate from odds
-    return odds > 0 ? Math.min(1 / odds + 0.01, 0.99) : 0.5;
+    return odds > 0 ? Math.min(1 / odds + PRICE_BUFFER, 0.99) : 0.5;
   };
   
   const executionPrice = getExecutionPrice();

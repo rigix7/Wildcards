@@ -36,6 +36,8 @@ export interface OrderResult {
   orderID?: string;
   transactionsHashes?: string[];
   error?: string;
+  status?: "matched" | "open" | "cancelled" | "failed";
+  filled?: boolean;
 }
 
 export interface TransactionResult {
@@ -254,8 +256,8 @@ export function usePolymarketClient() {
           negRisk: params.negRisk ?? false,
         };
 
-        // Use GTC (Good Till Cancelled) - for instant fills, caller must set price 
-        // at or above bestAsk (for BUY) so the order matches existing sell orders
+        // Use GTC (Good Till Cancelled) - for instant fills, caller should set price 
+        // aggressively (bestAsk + buffer) so the order matches existing sell orders immediately
         const result = await client.createAndPostOrder(
           orderArgs,
           options,
