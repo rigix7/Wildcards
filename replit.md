@@ -128,3 +128,8 @@ Key API Endpoints:
   - Created Solana shim packages in build script (script/build.ts) to handle Privy's optional peer dependencies
   - Shims provide stub exports for @solana/kit, @solana-program/system, @solana-program/token
   - Required because Privy bundles Solana support even though we only use EVM/Polygon
+- Fixed Safe address derivation inconsistency (January 14, 2026)
+  - Updated useSafeDeployment to use dynamic factory address from RelayClient.contractConfig instead of hardcoded value
+  - Added deriveSafeFromRelayClient() function that gets factory address from RelayClient after initialization
+  - This ensures Safe address is consistent between dashboard and trading session (both now show 0x8474...)
+  - Safe address derivation is now async and happens after RelayClient is initialized
