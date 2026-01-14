@@ -27,7 +27,7 @@ export default function useTradingSession() {
   const { eoaAddress, walletClient } = useWallet();
   const { createOrDeriveUserApiCredentials } = useUserApiCredentials();
   const { checkAllTokenApprovals, setAllTokenApprovals } = useTokenApprovals();
-  const { derivedSafeAddressFromEoa, deriveSafeFromRelayClient, isSafeDeployed, deploySafe, clearSafeAddress } =
+  const { derivedSafeAddressFromEoa, isSafeDeployed, deploySafe } =
     useSafeDeployment(eoaAddress);
   const { relayClient, initializeRelayClient, clearRelayClient } =
     useRelayClient();
@@ -94,12 +94,12 @@ export default function useTradingSession() {
       // Builder's credentials (via remote signing server) for authentication
       const initializedRelayClient = await initializeRelayClient();
 
-      // Step 2: Get Safe address from RelayClient's contract config
-      // This ensures we use the correct factory address the relayer is configured with
-      const safeAddress = deriveSafeFromRelayClient(initializedRelayClient);
-      if (!safeAddress) {
-        throw new Error("Failed to derive Safe address from RelayClient");
+      // Step 2: Get Safe address (already derived synchronously via useMemo in useSafeDeployment)
+      // Uses official SDK deriveSafe function for correct address computation
+      if (!derivedSafeAddressFromEoa) {
+        throw new Error("Failed to derive Safe address");
       }
+      const safeAddress = derivedSafeAddressFromEoa;
       console.log("[TradingSession] Using Safe address:", safeAddress);
 
       // Step 3: Check if Safe is deployed (skip if we already have a session)
@@ -177,7 +177,7 @@ export default function useTradingSession() {
   }, [
     eoaAddress,
     relayClient,
-    deriveSafeFromRelayClient,
+    derivedSafeAddressFromEoa,
     isSafeDeployed,
     deploySafe,
     createOrDeriveUserApiCredentials,
@@ -196,10 +196,9 @@ export default function useTradingSession() {
     clearStoredSession(eoaAddress);
     setTradingSession(null);
     clearRelayClient();
-    clearSafeAddress();
     setCurrentStep("idle");
     setSessionError(null);
-  }, [eoaAddress, clearRelayClient, clearSafeAddress]);
+  }, [eoaAddress, clearRelayClient]);
 
   return {
     tradingSession,

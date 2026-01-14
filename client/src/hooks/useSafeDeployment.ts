@@ -1,63 +1,32 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import {
   RelayClient,
   RelayerTransactionState,
 } from "@polymarket/builder-relayer-client";
+import { deriveSafe } from "@polymarket/builder-relayer-client/dist/builder/derive";
 import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
-import {
-  getCreate2Address,
-  keccak256,
-  encodeAbiParameters,
-  type Address,
-} from "viem";
 import { useWallet } from "@/providers/WalletContext";
-
-// Safe init code hash for CREATE2 address derivation (from Polymarket SDK)
-const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf" as `0x${string}`;
-
-// Derive Safe wallet address from EOA using CREATE2 (same as Polymarket SDK)
-function deriveSafeAddress(eoaAddress: string, safeFactory: string): string {
-  return getCreate2Address({
-    bytecodeHash: SAFE_INIT_CODE_HASH,
-    from: safeFactory as Address,
-    salt: keccak256(encodeAbiParameters([{ name: 'address', type: 'address' }], [eoaAddress as Address])),
-  });
-}
+import { POLYGON_CHAIN_ID } from "@/constants/polymarket";
 
 // This hook is responsible for deploying the Safe wallet and offers helper functions
-// to check if the Safe is already deployed and derive the address from RelayClient config
+// to check if the Safe is already deployed and derive the address
+// Uses the official SDK deriveSafe function for correct address computation
 
 export default function useSafeDeployment(eoaAddress?: string) {
   const { publicClient } = useWallet();
-  const [derivedSafeAddressFromEoa, setDerivedSafeAddressFromEoa] = useState<string | undefined>(undefined);
-  const safeAddressRef = useRef<string | undefined>(undefined);
 
-  // This function derives the Safe address using the static factory from SDK's getContractConfig
-  // v0.0.8 relayClient.contractConfig can return stale factory addresses from the relayer
-  // Using getContractConfig(137) gives us the correct static factory bundled with the SDK
-  const deriveSafeFromRelayClient = useCallback((_relayClient: RelayClient): string | undefined => {
-    if (!eoaAddress) return undefined;
+  // Derive Safe address synchronously using the SDK's deriveSafe function
+  // This matches the official Polymarket privy-safe-builder-example exactly
+  const derivedSafeAddressFromEoa = useMemo(() => {
+    if (!eoaAddress || !POLYGON_CHAIN_ID) return undefined;
     
-    // Return cached value if available
-    if (safeAddressRef.current) {
-      return safeAddressRef.current;
-    }
-
     try {
-      // Get the factory address from the SDK's static contract config (not from relayer)
-      // This is the same approach as the official Polymarket Privy example
-      const config = getContractConfig(137); // Polygon chainId
-      const safeFactory = config.SafeContracts.SafeFactory;
-      console.log("[SafeDeployment] Using factory from SDK getContractConfig:", safeFactory);
-      
-      const address = deriveSafeAddress(eoaAddress, safeFactory);
-      safeAddressRef.current = address;
-      setDerivedSafeAddressFromEoa(address);
-      
-      console.log("[SafeDeployment] Derived Safe address:", address);
-      return address;
+      const config = getContractConfig(POLYGON_CHAIN_ID);
+      const safeAddress = deriveSafe(eoaAddress, config.SafeContracts.SafeFactory);
+      console.log("[SafeDeployment] Derived Safe address using SDK deriveSafe:", safeAddress);
+      return safeAddress;
     } catch (err) {
-      console.error("Error deriving Safe address from RelayClient:", err);
+      console.error("Error deriving Safe address:", err);
       return undefined;
     }
   }, [eoaAddress]);
@@ -86,10 +55,8 @@ export default function useSafeDeployment(eoaAddress?: string) {
   const deploySafe = useCallback(
     async (relayClient: RelayClient): Promise<string> => {
       try {
-        // Prompts signer for a signature
         const response = await relayClient.deploy();
 
-        // const result = await response.wait(); polls for a minute before timing out
         const result = await relayClient.pollUntilState(
           response.transactionID,
           [
@@ -107,11 +74,10 @@ export default function useSafeDeployment(eoaAddress?: string) {
 
         return result.proxyAddress;
       } catch (err) {
-        // Handle "safe already deployed" error - this is actually success
         const errorMessage = err instanceof Error ? err.message : String(err);
         if (errorMessage.toLowerCase().includes("already deployed")) {
           console.log("Safe already deployed, continuing...");
-          return safeAddressRef.current || "";
+          return derivedSafeAddressFromEoa || "";
         }
         
         const error =
@@ -119,20 +85,12 @@ export default function useSafeDeployment(eoaAddress?: string) {
         throw error;
       }
     },
-    []
+    [derivedSafeAddressFromEoa]
   );
-
-  // Reset cached address when EOA changes
-  const clearSafeAddress = useCallback(() => {
-    safeAddressRef.current = undefined;
-    setDerivedSafeAddressFromEoa(undefined);
-  }, []);
 
   return {
     derivedSafeAddressFromEoa,
-    deriveSafeFromRelayClient,
     isSafeDeployed,
     deploySafe,
-    clearSafeAddress,
   };
 }
