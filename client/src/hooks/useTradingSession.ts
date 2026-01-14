@@ -27,7 +27,7 @@ export default function useTradingSession() {
   const { eoaAddress, walletClient } = useWallet();
   const { createOrDeriveUserApiCredentials } = useUserApiCredentials();
   const { checkAllTokenApprovals, setAllTokenApprovals } = useTokenApprovals();
-  const { derivedSafeAddressFromEoa, isSafeDeployed, deploySafe } =
+  const { derivedSafeAddressFromEoa, deriveSafeFromRelayClient, isSafeDeployed, deploySafe, clearSafeAddress } =
     useSafeDeployment(eoaAddress);
   const { relayClient, initializeRelayClient, clearRelayClient } =
     useRelayClient();
@@ -79,18 +79,18 @@ export default function useTradingSession() {
       // Builder's credentials (via remote signing server) for authentication
       const initializedRelayClient = await initializeRelayClient();
 
-      // Step 2: Get Safe address (deterministic derivation from EOA)
-      if (!derivedSafeAddressFromEoa) {
-        throw new Error("Failed to derive Safe address");
+      // Step 2: Get Safe address from RelayClient's contract config
+      // This ensures we use the correct factory address the relayer is configured with
+      const safeAddress = deriveSafeFromRelayClient(initializedRelayClient);
+      if (!safeAddress) {
+        throw new Error("Failed to derive Safe address from RelayClient");
       }
+      console.log("[TradingSession] Using Safe address:", safeAddress);
 
       // Step 3: Check if Safe is deployed (skip if we already have a session)
       let isDeployed = tradingSession?.isSafeDeployed ?? false;
       if (!isDeployed) {
-        isDeployed = await isSafeDeployed(
-          initializedRelayClient,
-          derivedSafeAddressFromEoa
-        );
+        isDeployed = await isSafeDeployed(initializedRelayClient, safeAddress);
       }
 
       // Step 4: Deploy Safe if not already deployed
@@ -115,9 +115,7 @@ export default function useTradingSession() {
 
       // Step 6: Set all required token approvals for trading
       setCurrentStep("approvals");
-      const approvalStatus = await checkAllTokenApprovals(
-        derivedSafeAddressFromEoa
-      );
+      const approvalStatus = await checkAllTokenApprovals(safeAddress);
 
       let hasApprovals = false;
       if (approvalStatus.allApproved) {
@@ -129,7 +127,7 @@ export default function useTradingSession() {
       // Step 7: Create custom session object
       const newSession: TradingSession = {
         eoaAddress: eoaAddress,
-        safeAddress: derivedSafeAddressFromEoa,
+        safeAddress: safeAddress,
         isSafeDeployed: true,
         hasApiCredentials: true,
         hasApprovals,
@@ -150,7 +148,7 @@ export default function useTradingSession() {
   }, [
     eoaAddress,
     relayClient,
-    derivedSafeAddressFromEoa,
+    deriveSafeFromRelayClient,
     isSafeDeployed,
     deploySafe,
     createOrDeriveUserApiCredentials,
@@ -169,9 +167,10 @@ export default function useTradingSession() {
     clearStoredSession(eoaAddress);
     setTradingSession(null);
     clearRelayClient();
+    clearSafeAddress();
     setCurrentStep("idle");
     setSessionError(null);
-  }, [eoaAddress, clearRelayClient]);
+  }, [eoaAddress, clearRelayClient, clearSafeAddress]);
 
   return {
     tradingSession,
@@ -184,5 +183,7 @@ export default function useTradingSession() {
     initializeTradingSession,
     endTradingSession,
     relayClient,
+    // Expose the derived Safe address for components that need it before session is complete
+    derivedSafeAddress: derivedSafeAddressFromEoa,
   };
 }

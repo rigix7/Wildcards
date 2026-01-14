@@ -17,20 +17,24 @@ import { useWallet } from "@/providers/WalletContext";
 import useTradingSession from "@/hooks/useTradingSession";
 import useClobClient from "@/hooks/useClobClient";
 import useClobOrder from "@/hooks/useClobOrder";
-import useSafeDeployment from "@/hooks/useSafeDeployment";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures } from "@shared/schema";
 
 export default function HomePage() {
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
-  const { derivedSafeAddressFromEoa: safeAddress } = useSafeDeployment(address);
   const { 
     tradingSession, 
     currentStep, 
     isTradingSessionComplete, 
     initializeTradingSession, 
     endTradingSession,
-    relayClient 
+    relayClient,
+    derivedSafeAddress 
   } = useTradingSession();
+  
+  // Use Safe address from trading session (derived from RelayClient config)
+  // This ensures we use the same address the relayer is configured with
+  const safeAddress = tradingSession?.safeAddress || derivedSafeAddress;
+  
   const { clobClient } = useClobClient(tradingSession, isTradingSessionComplete, safeAddress);
   const { submitOrder, isSubmitting: isPolymarketSubmitting, error: polymarketError } = useClobOrder(clobClient, safeAddress);
   

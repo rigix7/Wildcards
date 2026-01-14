@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useState, useRef } from "react";
 import {
   RelayClient,
   RelayerTransactionState,
@@ -10,10 +10,7 @@ import {
   type Address,
 } from "viem";
 import { useWallet } from "@/providers/WalletContext";
-import { POLYGON_CHAIN_ID } from "@/constants/polymarket";
 
-// Safe factory address on Polygon (from Polymarket SDK)
-const SAFE_FACTORY_ADDRESS = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
 // Safe init code hash for CREATE2 address derivation (from Polymarket SDK)
 const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf" as `0x${string}`;
 
@@ -26,20 +23,37 @@ function deriveSafeAddress(eoaAddress: string, safeFactory: string): string {
   });
 }
 
-// This hook is responsible for deploying the Safe wallet and offers two additional helper functions
-// to check if the Safe is already deployed and what the deterministic address is for the Safe
+// This hook is responsible for deploying the Safe wallet and offers helper functions
+// to check if the Safe is already deployed and derive the address from RelayClient config
 
 export default function useSafeDeployment(eoaAddress?: string) {
   const { publicClient } = useWallet();
+  const [derivedSafeAddressFromEoa, setDerivedSafeAddressFromEoa] = useState<string | undefined>(undefined);
+  const safeAddressRef = useRef<string | undefined>(undefined);
 
-  // This function derives the Safe address from the EOA address
-  const derivedSafeAddressFromEoa = useMemo(() => {
-    if (!eoaAddress || !POLYGON_CHAIN_ID) return undefined;
+  // This function derives the Safe address using the factory from RelayClient's contractConfig
+  // This ensures we use the same factory the relayer is configured with
+  const deriveSafeFromRelayClient = useCallback((relayClient: RelayClient): string | undefined => {
+    if (!eoaAddress) return undefined;
+    
+    // Return cached value if available
+    if (safeAddressRef.current) {
+      return safeAddressRef.current;
+    }
 
     try {
-      return deriveSafeAddress(eoaAddress, SAFE_FACTORY_ADDRESS);
+      // Get the factory address from the RelayClient's contract config
+      const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
+      console.log("[SafeDeployment] Using factory from RelayClient:", safeFactory);
+      
+      const address = deriveSafeAddress(eoaAddress, safeFactory);
+      safeAddressRef.current = address;
+      setDerivedSafeAddressFromEoa(address);
+      
+      console.log("[SafeDeployment] Derived Safe address:", address);
+      return address;
     } catch (err) {
-      console.error("Error deriving Safe address:", err);
+      console.error("Error deriving Safe address from RelayClient:", err);
       return undefined;
     }
   }, [eoaAddress]);
@@ -93,7 +107,7 @@ export default function useSafeDeployment(eoaAddress?: string) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         if (errorMessage.toLowerCase().includes("already deployed")) {
           console.log("Safe already deployed, continuing...");
-          return derivedSafeAddressFromEoa || "";
+          return safeAddressRef.current || "";
         }
         
         const error =
@@ -101,12 +115,20 @@ export default function useSafeDeployment(eoaAddress?: string) {
         throw error;
       }
     },
-    [derivedSafeAddressFromEoa]
+    []
   );
+
+  // Reset cached address when EOA changes
+  const clearSafeAddress = useCallback(() => {
+    safeAddressRef.current = undefined;
+    setDerivedSafeAddressFromEoa(undefined);
+  }, []);
 
   return {
     derivedSafeAddressFromEoa,
+    deriveSafeFromRelayClient,
     isSafeDeployed,
     deploySafe,
+    clearSafeAddress,
   };
 }
