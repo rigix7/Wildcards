@@ -1277,8 +1277,24 @@ export async function registerRoutes(
       
       const data = await response.json();
       // Data API returns positions directly as array or wrapped in object
-      const positions = Array.isArray(data) ? data : (data.positions || []);
-      console.log(`[Positions] Found ${positions.length} positions for ${address}`);
+      const rawPositions = Array.isArray(data) ? data : (data.positions || []);
+      console.log(`[Positions] Found ${rawPositions.length} positions for ${address}`);
+      
+      // Transform API response to match client-expected format
+      const positions = rawPositions.map((p: any) => ({
+        tokenId: p.asset || p.tokenId,
+        conditionId: p.conditionId,
+        marketQuestion: p.title || p.marketQuestion,
+        outcomeLabel: p.outcome || p.outcomeLabel,
+        side: p.side || "BUY",
+        size: parseFloat(p.size) || 0,
+        avgPrice: parseFloat(p.avgPrice) || 0,
+        currentPrice: parseFloat(p.curPrice) || parseFloat(p.currentPrice) || 0,
+        unrealizedPnl: parseFloat(p.cashPnl) || parseFloat(p.unrealizedPnl) || 0,
+        // If position exists and has size > 0, consider it "open"
+        status: parseFloat(p.size) > 0 ? "open" : (p.redeemable ? "claimable" : "closed"),
+      }));
+      
       res.json(positions);
     } catch (error) {
       console.error("Error fetching positions:", error);

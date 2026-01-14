@@ -765,10 +765,11 @@ function MarketGroupDisplay({
     onSelectMarket(market, eventTitle, group.type, direction);
   };
   
-  // Handle selection for moneyline
+  // Handle selection for moneyline - pass outcome label for display in BetSlip
   const handleMoneylineSelect = (market: ParsedMarket, outcomeIndex: number) => {
     const direction = outcomeIndex === 0 ? "yes" : "no";
-    onSelectMarket(market, eventTitle, group.type, direction);
+    const outcomeLabel = market.outcomes[outcomeIndex]?.label || market.groupItemTitle;
+    onSelectMarket(market, eventTitle, group.type, direction, outcomeLabel);
   };
   
   // Handle selection for soccer 3-way moneyline

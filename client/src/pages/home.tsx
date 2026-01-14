@@ -566,7 +566,11 @@ export default function HomePage() {
           noTokenId={selectedBet.noTokenId}
           getOrderBook={clobClient ? async (tokenId: string) => {
             try {
+              console.log("[OrderBook] Fetching for token:", tokenId);
+              console.log("[OrderBook] Selected bet yesTokenId:", selectedBet.yesTokenId);
+              console.log("[OrderBook] Selected bet noTokenId:", selectedBet.noTokenId);
               const book = await clobClient.getOrderBook(tokenId);
+              console.log("[OrderBook] Raw response:", JSON.stringify(book).slice(0, 500));
               const bids = (book.bids || []).map((b: any) => ({
                 price: parseFloat(b.price || "0"),
                 size: parseFloat(b.size || "0"),
@@ -577,6 +581,7 @@ export default function HomePage() {
               }));
               const bestBid = bids[0]?.price || 0;
               const bestAsk = asks[0]?.price || 0;
+              console.log("[OrderBook] Parsed - bestBid:", bestBid, "bestAsk:", bestAsk);
               const spread = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
               const spreadPercent = bestAsk > 0 && bestBid > 0 ? (spread / bestBid) * 100 : 0;
               const bidDepth = bids[0]?.size || 0;
