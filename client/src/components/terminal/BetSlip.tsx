@@ -50,12 +50,13 @@ export function BetSlip({
   
   const stakeNum = parseFloat(stake) || 0;
   
-  // Get the token ID for the current direction
-  const currentTokenId = betDirection === "yes" ? yesTokenId : noTokenId;
+  // Always use YES token for order book - Polymarket binary markets primarily trade on YES token
+  // NO token order books often have poor liquidity
+  const currentTokenId = yesTokenId;
   
-  // Fetch order book for the selected direction
+  // Fetch order book for the YES token (primary liquidity source)
   const fetchOrderBook = useCallback(async () => {
-    if (!getOrderBook || !currentTokenId) {
+    if (!getOrderBook || !yesTokenId) {
       setOrderBook(null);
       return;
     }
@@ -64,7 +65,7 @@ export function BetSlip({
     setBookError(null);
     
     try {
-      const book = await getOrderBook(currentTokenId);
+      const book = await getOrderBook(yesTokenId);
       setOrderBook(book);
       setLastFetchTime(Date.now());
       
@@ -78,21 +79,33 @@ export function BetSlip({
     } finally {
       setIsLoadingBook(false);
     }
-  }, [getOrderBook, currentTokenId]);
+  }, [getOrderBook, yesTokenId]);
   
   // Fetch order book on mount and when direction changes
   useEffect(() => {
     fetchOrderBook();
   }, [fetchOrderBook]);
   
-  // Calculate the execution price from order book (bestAsk + 0.03 for guaranteed instant fill)
+  // Calculate the execution price from order book
   // Using 3% buffer to ensure we cross the spread and match against existing orders
   const PRICE_BUFFER = 0.03;
   
   const getExecutionPrice = (): number => {
-    if (orderBook && orderBook.bestAsk > 0) {
-      // Add buffer to ensure we cross the spread and fill instantly
-      return Math.min(orderBook.bestAsk + PRICE_BUFFER, 0.99);
+    if (orderBook) {
+      if (betDirection === "yes") {
+        // For YES: use bestAsk from YES order book + buffer
+        if (orderBook.bestAsk > 0 && orderBook.bestAsk < 0.99) {
+          return Math.min(orderBook.bestAsk + PRICE_BUFFER, 0.99);
+        }
+      } else {
+        // For NO: derive from YES order book
+        // Buying NO at price X is equivalent to someone selling YES at (1-X)
+        // So NO price = 1 - YES bestBid
+        if (orderBook.bestBid > 0) {
+          const noPrice = 1 - orderBook.bestBid;
+          return Math.min(noPrice + PRICE_BUFFER, 0.99);
+        }
+      }
     }
     // Fallback to passed-in prices
     const fallbackPrice = betDirection === "yes" ? yesPrice : noPrice;
@@ -111,12 +124,22 @@ export function BetSlip({
   const insufficientBalance = stakeNum > maxBalance;
   
   // Minimum order validation
-  // orderMinSize is in shares, so convert to USDC using bestAsk (not buffered price)
-  // Use order book bestAsk if available, otherwise fall back to execution price
+  // orderMinSize is in shares, so convert to USDC using direction-aware pricing
   const minShares = orderMinSize ?? 5; // Default Polymarket minimum is 5 shares
-  const priceForMinCalc = orderBook?.bestAsk && orderBook.bestAsk > 0 
-    ? orderBook.bestAsk 
-    : executionPrice;
+  
+  // Use direction-aware price for min order calculation (without buffer for more accurate minimum)
+  const getMinOrderPrice = (): number => {
+    if (orderBook) {
+      if (betDirection === "yes" && orderBook.bestAsk > 0 && orderBook.bestAsk < 0.99) {
+        return orderBook.bestAsk;
+      } else if (betDirection === "no" && orderBook.bestBid > 0) {
+        return 1 - orderBook.bestBid; // NO price = 1 - YES bestBid
+      }
+    }
+    return executionPrice;
+  };
+  
+  const priceForMinCalc = getMinOrderPrice();
   const minOrderUSDC = minShares * priceForMinCalc;
   const isBelowMinimum = stakeNum > 0 && stakeNum < minOrderUSDC;
   
@@ -146,16 +169,30 @@ export function BetSlip({
     if (stakeNum <= 0) return;
     
     // If book is stale, refresh before submitting
-    if (isBookStale && getOrderBook && currentTokenId) {
+    if (isBookStale && getOrderBook && yesTokenId) {
       setIsLoadingBook(true);
       try {
-        const freshBook = await getOrderBook(currentTokenId);
+        const freshBook = await getOrderBook(yesTokenId);
         setOrderBook(freshBook);
         setLastFetchTime(Date.now());
         
-        if (freshBook && freshBook.bestAsk > 0) {
-          // Use same PRICE_BUFFER (3%) for consistent aggressive pricing
-          const freshPrice = Math.min(freshBook.bestAsk + PRICE_BUFFER, 0.99);
+        if (freshBook) {
+          let freshPrice: number;
+          if (betDirection === "yes") {
+            // For YES: use bestAsk from YES order book
+            if (freshBook.bestAsk > 0 && freshBook.bestAsk < 0.99) {
+              freshPrice = Math.min(freshBook.bestAsk + PRICE_BUFFER, 0.99);
+            } else {
+              freshPrice = executionPrice;
+            }
+          } else {
+            // For NO: derive from YES bestBid (NO price = 1 - YES bestBid)
+            if (freshBook.bestBid > 0) {
+              freshPrice = Math.min(1 - freshBook.bestBid + PRICE_BUFFER, 0.99);
+            } else {
+              freshPrice = executionPrice;
+            }
+          }
           const freshOdds = 1 / freshPrice;
           onConfirm(stakeNum, betDirection, freshOdds, freshPrice);
           return;
