@@ -99,18 +99,31 @@ export default function useTradingSession() {
         await deploySafe(initializedRelayClient);
       }
 
-      // Step 5: Get User API Credentials (derive or create)
-      // and store them in the trading session object
+      // Step 5: Get User API Credentials (derive or create) for the Safe address
+      // IMPORTANT: Credentials must be derived for the Safe proxy address (not EOA)
+      // because orders are signed with signatureType=2 where the Safe is the maker
       let apiCreds = tradingSession?.apiCredentials;
-      if (
+
+      // Check if credentials need re-derivation:
+      // - No credentials stored
+      // - Credentials were derived for wrong address (migration from EOA to Safe)
+      const needsCredentials =
         !tradingSession?.hasApiCredentials ||
         !apiCreds ||
         !apiCreds.key ||
         !apiCreds.secret ||
-        !apiCreds.passphrase
-      ) {
+        !apiCreds.passphrase ||
+        (tradingSession?.credentialsDerivedFor &&
+          tradingSession.credentialsDerivedFor.toLowerCase() !==
+            safeAddress.toLowerCase()) ||
+        !tradingSession?.credentialsDerivedFor; // Force re-derive if field is missing (old session)
+
+      if (needsCredentials) {
         setCurrentStep("credentials");
-        apiCreds = await createOrDeriveUserApiCredentials();
+        console.log(
+          `[TradingSession] Deriving credentials for Safe address: ${safeAddress}`
+        );
+        apiCreds = await createOrDeriveUserApiCredentials(safeAddress);
       }
 
       // Step 6: Set all required token approvals for trading
@@ -132,6 +145,7 @@ export default function useTradingSession() {
         hasApiCredentials: true,
         hasApprovals,
         apiCredentials: apiCreds,
+        credentialsDerivedFor: safeAddress, // Track that credentials are for Safe address
         lastChecked: Date.now(),
       };
 

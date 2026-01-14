@@ -9,6 +9,9 @@ export interface TradingSession {
     secret: string;
     passphrase: string;
   };
+  // Track which address credentials were derived for
+  // If undefined or mismatched with safeAddress, credentials need re-derivation
+  credentialsDerivedFor?: string;
   lastChecked: number;
 }
 
