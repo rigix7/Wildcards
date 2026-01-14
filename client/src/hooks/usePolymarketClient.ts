@@ -207,7 +207,7 @@ export function usePolymarketClient() {
           
           const builderConfig = new BuilderConfig({
             remoteBuilderConfig: {
-              url: "/api/polymarket/sign",
+              url: `${window.location.origin}/api/polymarket/sign`,
             },
           });
           
@@ -482,7 +482,7 @@ export function usePolymarketClient() {
         // Configure Builder with remote signing via our server endpoint
         const builderConfig = new BuilderConfig({
           remoteBuilderConfig: {
-            url: "/api/polymarket/sign",
+            url: `${window.location.origin}/api/polymarket/sign`,
           },
         });
 
