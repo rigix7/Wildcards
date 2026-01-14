@@ -3,6 +3,7 @@ import {
   RelayClient,
   RelayerTransactionState,
 } from "@polymarket/builder-relayer-client";
+import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
 import {
   getCreate2Address,
   keccak256,
@@ -31,9 +32,10 @@ export default function useSafeDeployment(eoaAddress?: string) {
   const [derivedSafeAddressFromEoa, setDerivedSafeAddressFromEoa] = useState<string | undefined>(undefined);
   const safeAddressRef = useRef<string | undefined>(undefined);
 
-  // This function derives the Safe address using the factory from RelayClient's contractConfig
-  // This ensures we use the same factory the relayer is configured with
-  const deriveSafeFromRelayClient = useCallback((relayClient: RelayClient): string | undefined => {
+  // This function derives the Safe address using the static factory from SDK's getContractConfig
+  // v0.0.8 relayClient.contractConfig can return stale factory addresses from the relayer
+  // Using getContractConfig(137) gives us the correct static factory bundled with the SDK
+  const deriveSafeFromRelayClient = useCallback((_relayClient: RelayClient): string | undefined => {
     if (!eoaAddress) return undefined;
     
     // Return cached value if available
@@ -42,9 +44,11 @@ export default function useSafeDeployment(eoaAddress?: string) {
     }
 
     try {
-      // Get the factory address from the RelayClient's contract config
-      const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
-      console.log("[SafeDeployment] Using factory from RelayClient:", safeFactory);
+      // Get the factory address from the SDK's static contract config (not from relayer)
+      // This is the same approach as the official Polymarket Privy example
+      const config = getContractConfig(137); // Polygon chainId
+      const safeFactory = config.SafeContracts.SafeFactory;
+      console.log("[SafeDeployment] Using factory from SDK getContractConfig:", safeFactory);
       
       const address = deriveSafeAddress(eoaAddress, safeFactory);
       safeAddressRef.current = address;

@@ -1,6 +1,7 @@
 import { useCallback, useState, useRef, useMemo } from "react";
 import { ClobClient, Side, OrderType } from "@polymarket/clob-client";
 import { RelayClient, RelayerTxType } from "@polymarket/builder-relayer-client";
+import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
 import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import { providers } from "ethers";
 import {
@@ -194,11 +195,14 @@ export function usePolymarketClient() {
         
         relayClientRef.current = relayClient;
         
-        // Derive the Safe address from the EOA using RelayClient's contract config
-        const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
+        // Derive the Safe address from the EOA using SDK's static contract config
+        // v0.0.8 relayClient.contractConfig can return stale factory from relayer
+        // Using getContractConfig(137) gives us the correct static factory bundled with SDK
+        const config = getContractConfig(137); // Polygon chainId
+        const safeFactory = config.SafeContracts.SafeFactory;
         safeAddress = deriveSafe(address, safeFactory);
         safeAddressRef.current = safeAddress;
-        console.log("[PolymarketClient] Safe address:", safeAddress, "from factory:", safeFactory);
+        console.log("[PolymarketClient] Safe address:", safeAddress, "from SDK factory:", safeFactory);
       }
 
       if (!safeAddress) {
