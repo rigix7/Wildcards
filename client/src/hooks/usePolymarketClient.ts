@@ -184,58 +184,62 @@ export function usePolymarketClient() {
       addressRef.current = address;
       console.log("[PolymarketClient] Connected wallet:", address);
 
-      // Create initial client for deriving API credentials
-      const initClient = new ClobClient(CLOB_HOST, CHAIN_ID, signer);
-
-      // Derive or create API credentials (L1 auth - requires wallet signature)
-      console.log("[PolymarketClient] Deriving API credentials...");
-      const creds = await initClient.createOrDeriveApiKey();
-      credsRef.current = creds;
-      console.log("[PolymarketClient] API credentials obtained");
-
-      // Get Safe address from RelayClient (where USDC is deposited)
+      // STEP 1: Derive Safe address FIRST before creating any ClobClient
       // The Safe is deterministically derived from the EOA address
       let safeAddress = safeAddressRef.current;
       if (!safeAddress) {
         console.log("[PolymarketClient] Deriving Safe address...");
-        const privyProvider = await getProvider();
-        if (privyProvider) {
-          const viemWallet = createWalletClient({
-            chain: polygon,
-            transport: custom(privyProvider as any),
-          });
-          
-          const builderConfig = new BuilderConfig({
-            remoteBuilderConfig: {
-              url: `${window.location.origin}/api/polymarket/sign`,
-            },
-          });
-          
-          const relayClient = new RelayClient(
-            RELAYER_HOST,
-            CHAIN_ID,
-            viemWallet,
-            builderConfig,
-            RelayerTxType.SAFE,
-          );
-          
-          relayClientRef.current = relayClient;
-          
-          // Derive the Safe address from the EOA using RelayClient's contract config
-          const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
-          safeAddress = deriveSafe(address, safeFactory);
-          safeAddressRef.current = safeAddress;
-          console.log("[PolymarketClient] Safe address:", safeAddress, "from factory:", safeFactory);
-        }
+        const viemWallet = createWalletClient({
+          chain: polygon,
+          transport: custom(privyProvider as any),
+        });
+        
+        const builderConfig = new BuilderConfig({
+          remoteBuilderConfig: {
+            url: `${window.location.origin}/api/polymarket/sign`,
+          },
+        });
+        
+        const relayClient = new RelayClient(
+          RELAYER_HOST,
+          CHAIN_ID,
+          viemWallet,
+          builderConfig,
+          RelayerTxType.SAFE,
+        );
+        
+        relayClientRef.current = relayClient;
+        
+        // Derive the Safe address from the EOA using RelayClient's contract config
+        const safeFactory = relayClient.contractConfig.SafeContracts.SafeFactory;
+        safeAddress = deriveSafe(address, safeFactory);
+        safeAddressRef.current = safeAddress;
+        console.log("[PolymarketClient] Safe address:", safeAddress, "from factory:", safeFactory);
       }
 
       if (!safeAddress) {
         throw new Error("Failed to derive Safe address");
       }
 
-      // Create authenticated client with credentials
-      // signatureType: 2 = Safe proxy wallet (where USDC lives)
-      // funder = Safe address (not the EOA)
+      // STEP 2: Create ClobClient with Safe wallet config for API key derivation
+      // This ensures the API key is tied to the Safe wallet, not the EOA
+      // signatureType: 2 = Safe proxy wallet
+      const initClient = new ClobClient(
+        CLOB_HOST,
+        CHAIN_ID,
+        signer,
+        undefined, // No creds yet - we're deriving them
+        2, // signatureType: 2 = Safe proxy wallet
+        safeAddress, // funder = Safe address where USDC is deposited
+      );
+
+      // STEP 3: Derive or create API credentials with Safe wallet configuration
+      console.log("[PolymarketClient] Deriving API credentials for Safe wallet...");
+      const creds = await initClient.createOrDeriveApiKey();
+      credsRef.current = creds;
+      console.log("[PolymarketClient] API credentials obtained for Safe wallet");
+
+      // STEP 4: Create authenticated client with credentials (same Safe config)
       const authenticatedClient = new ClobClient(
         CLOB_HOST,
         CHAIN_ID,
