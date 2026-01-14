@@ -84,11 +84,14 @@ export default function useTradingSession() {
         throw new Error("Failed to derive Safe address");
       }
 
-      // Step 3: Check if Safe is deployed
-      let isDeployed = await isSafeDeployed(
-        initializedRelayClient,
-        derivedSafeAddressFromEoa
-      );
+      // Step 3: Check if Safe is deployed (skip if we already have a session)
+      let isDeployed = tradingSession?.isSafeDeployed ?? false;
+      if (!isDeployed) {
+        isDeployed = await isSafeDeployed(
+          initializedRelayClient,
+          derivedSafeAddressFromEoa
+        );
+      }
 
       // Step 4: Deploy Safe if not already deployed
       if (!isDeployed) {
@@ -152,6 +155,7 @@ export default function useTradingSession() {
     deploySafe,
     createOrDeriveUserApiCredentials,
     initializeRelayClient,
+    tradingSession?.isSafeDeployed,
     tradingSession?.hasApiCredentials,
     tradingSession?.apiCredentials,
     checkAllTokenApprovals,

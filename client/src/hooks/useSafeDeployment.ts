@@ -89,12 +89,19 @@ export default function useSafeDeployment(eoaAddress?: string) {
 
         return result.proxyAddress;
       } catch (err) {
+        // Handle "safe already deployed" error - this is actually success
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.toLowerCase().includes("already deployed")) {
+          console.log("Safe already deployed, continuing...");
+          return derivedSafeAddressFromEoa || "";
+        }
+        
         const error =
           err instanceof Error ? err : new Error("Failed to deploy Safe");
         throw error;
       }
     },
-    []
+    [derivedSafeAddressFromEoa]
   );
 
   return {
