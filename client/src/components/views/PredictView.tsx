@@ -526,7 +526,7 @@ function SoccerMoneylineDisplay({
             <button
               key={market.id}
               onClick={() => onSelect(market, "yes", fullLabel)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-4 rounded-lg border text-sm transition-all ${colorClass} text-zinc-100`}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${colorClass} text-zinc-100`}
               data-testid={`soccer-moneyline-${market.id}`}
             >
               <div className="flex items-center gap-1.5">
@@ -537,7 +537,7 @@ function SoccerMoneylineDisplay({
                   </span>
                 )}
               </div>
-              <span className="font-mono font-bold text-lg text-white">{priceInCents}¢</span>
+              <span className="font-mono font-bold text-sm text-white">{priceInCents}¢</span>
             </button>
           );
         })}
@@ -602,7 +602,7 @@ function MoneylineMarketDisplay({
             <button
               key={idx}
               onClick={() => onSelect(market, idx)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 px-4 py-4 rounded-lg border text-sm transition-all ${
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${
                 isSelected 
                   ? idx === 0 
                     ? "bg-teal-600 border-teal-500 text-white" 
@@ -621,7 +621,7 @@ function MoneylineMarketDisplay({
                   </span>
                 )}
               </div>
-              <span className="font-mono font-bold text-lg text-white">
+              <span className="font-mono font-bold text-sm text-white">
                 {priceInCents}¢
               </span>
             </button>
