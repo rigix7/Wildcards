@@ -449,6 +449,14 @@ export function BetSlip({
                 ${amount}
               </button>
             ))}
+            <button
+              onClick={() => setStake(Math.floor(maxBalance).toString())}
+              className="flex-1 py-2 text-sm font-bold bg-wild-gold/20 hover:bg-wild-gold/30 rounded text-wild-gold transition-colors border border-wild-gold/30"
+              disabled={isPending || maxBalance <= 0}
+              data-testid="button-quick-max"
+            >
+              MAX
+            </button>
           </div>
 
           <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
@@ -466,14 +474,6 @@ export function BetSlip({
               <span className="text-zinc-500">Available Balance</span>
               <span className="font-mono text-zinc-400">${maxBalance.toFixed(2)} USDC</span>
             </div>
-            {orderBook && (
-              <div className="flex justify-between text-xs border-t border-zinc-700 pt-2 mt-2">
-                <span className="text-zinc-500">Order Book Spread</span>
-                <span className={`font-mono ${orderBook.spreadPercent > 5 ? 'text-amber-400' : 'text-zinc-400'}`}>
-                  {orderBook.spreadPercent.toFixed(1)}%
-                </span>
-              </div>
-            )}
           </div>
 
           {insufficientBalance && (
