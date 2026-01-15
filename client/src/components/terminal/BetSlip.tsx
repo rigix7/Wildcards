@@ -450,7 +450,7 @@ export function BetSlip({
               </button>
             ))}
             <button
-              onClick={() => setStake(Math.floor(maxBalance).toString())}
+              onClick={() => setStake((Math.floor(maxBalance * 100) / 100).toString())}
               className="flex-1 py-2 text-sm font-bold bg-wild-gold/20 hover:bg-wild-gold/30 rounded text-wild-gold transition-colors border border-wild-gold/30"
               disabled={isPending || maxBalance <= 0}
               data-testid="button-quick-max"
