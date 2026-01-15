@@ -1,8 +1,115 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OrderBookData } from "@/hooks/usePolymarketClient";
+
+// Simulate filling an order through multiple price levels
+// Returns fill simulation with total available depth across all levels
+interface FillSimulation {
+  canFill: boolean;
+  avgPrice: number;
+  slippagePercent: number;
+  wouldSlip: boolean;
+  depthAtBestAsk: number;
+  totalDepth: number;       // Total $ available across all ask levels
+  noOrderBook: boolean;     // True if order book has no asks
+}
+
+function simulateFill(
+  stakeUSDC: number,
+  asks: { price: number; size: number }[],
+  bestAsk: number
+): FillSimulation {
+  // Handle missing or empty order book
+  if (!asks || asks.length === 0) {
+    return { 
+      canFill: false, 
+      avgPrice: bestAsk, 
+      slippagePercent: 0, 
+      wouldSlip: false, 
+      depthAtBestAsk: 0,
+      totalDepth: 0,
+      noOrderBook: true
+    };
+  }
+  
+  if (stakeUSDC <= 0) {
+    // No stake entered yet - don't show warning
+    const totalDepth = asks.reduce((sum, ask) => sum + ask.size * ask.price, 0);
+    return { 
+      canFill: true, 
+      avgPrice: bestAsk, 
+      slippagePercent: 0, 
+      wouldSlip: false, 
+      depthAtBestAsk: asks[0].size * asks[0].price,
+      totalDepth,
+      noOrderBook: false
+    };
+  }
+  
+  // Calculate depth at bestAsk price level (in USDC)
+  const depthAtBestAsk = asks[0].size * asks[0].price;
+  
+  // Calculate total depth across all levels
+  const totalDepth = asks.reduce((sum, ask) => sum + ask.size * ask.price, 0);
+  
+  // If stake fits entirely at bestAsk, no slippage
+  if (stakeUSDC <= depthAtBestAsk) {
+    return { 
+      canFill: true, 
+      avgPrice: bestAsk, 
+      slippagePercent: 0, 
+      wouldSlip: false, 
+      depthAtBestAsk,
+      totalDepth,
+      noOrderBook: false
+    };
+  }
+  
+  // Walk through ask levels to simulate fill
+  let remaining = stakeUSDC;
+  let totalCost = 0;
+  let totalShares = 0;
+  
+  for (const ask of asks) {
+    if (remaining <= 0) break;
+    
+    const levelLiquidity = ask.size * ask.price; // $ available at this level
+    const fillAmount = Math.min(remaining, levelLiquidity);
+    const sharesBought = fillAmount / ask.price;
+    
+    totalCost += fillAmount;
+    totalShares += sharesBought;
+    remaining -= fillAmount;
+  }
+  
+  // If we couldn't fill the entire order
+  if (remaining > 0) {
+    return { 
+      canFill: false, 
+      avgPrice: totalShares > 0 ? totalCost / totalShares : bestAsk,
+      slippagePercent: 0,
+      wouldSlip: true,
+      depthAtBestAsk,
+      totalDepth,
+      noOrderBook: false
+    };
+  }
+  
+  const avgPrice = totalCost / totalShares;
+  const slippagePercent = ((avgPrice - bestAsk) / bestAsk) * 100;
+  
+  return { 
+    canFill: true, 
+    avgPrice, 
+    slippagePercent, 
+    wouldSlip: slippagePercent > 0.5, // Consider > 0.5% as meaningful slippage
+    depthAtBestAsk,
+    totalDepth,
+    noOrderBook: false
+  };
+}
 
 interface BetSlipProps {
   marketTitle: string;
@@ -124,10 +231,31 @@ export function BetSlip({
   const minOrderUSDC = minShares * priceForMinCalc;
   const isBelowMinimum = stakeNum > 0 && stakeNum < minOrderUSDC;
   
-  // Liquidity warnings
-  const isLowLiquidity = orderBook?.isLowLiquidity ?? false;
-  const isWideSpread = orderBook?.isWideSpread ?? false;
-  const hasLiquidityWarning = isLowLiquidity || isWideSpread;
+  // Smart liquidity analysis - only warn if user's stake would cause slippage
+  const fillSimulation = useMemo((): FillSimulation => {
+    if (!orderBook || !orderBook.asks || orderBook.asks.length === 0) {
+      // No order book data - show warning only if user has entered a stake
+      return { 
+        canFill: false, 
+        avgPrice: executionPrice, 
+        slippagePercent: 0, 
+        wouldSlip: false, 
+        depthAtBestAsk: 0,
+        totalDepth: 0,
+        noOrderBook: true
+      };
+    }
+    return simulateFill(stakeNum, orderBook.asks, orderBook.bestAsk);
+  }, [orderBook, stakeNum, executionPrice]);
+  
+  // Only show liquidity warning if:
+  // 1. User has entered a stake AND
+  // 2. Either no order book, can't fully fill, or would experience slippage
+  const hasLiquidityWarning = stakeNum > 0 && (
+    fillSimulation.noOrderBook || 
+    !fillSimulation.canFill || 
+    fillSimulation.wouldSlip
+  );
   
   // Check if order book is stale (older than 10 seconds)
   const isBookStale = Date.now() - lastFetchTime > 10000;
@@ -246,19 +374,22 @@ export function BetSlip({
             </div>
           )}
 
-          {/* Liquidity Warnings */}
-          {hasLiquidityWarning && !isLoadingBook && orderBook && (
+          {/* Smart Liquidity Warning - shown for no order book, insufficient depth, or slippage */}
+          {hasLiquidityWarning && !isLoadingBook && (
             <div className="rounded-lg p-3 space-y-1 bg-amber-500/10 border border-amber-500/30">
               <div className="flex items-center gap-2 text-amber-400 text-sm font-medium">
                 <AlertTriangle className="w-4 h-4" />
-                <span>Low Liquidity Warning</span>
+                <span>{fillSimulation.noOrderBook ? "No Order Book" : "Liquidity Warning"}</span>
               </div>
               <div className="text-xs text-amber-400/80 space-y-0.5">
-                {isWideSpread && (
-                  <p>Wide spread ({orderBook.spreadPercent.toFixed(1)}%) - you may experience slippage</p>
-                )}
-                {isLowLiquidity && (
-                  <p>Thin order book (${orderBook.askDepth.toFixed(0)} available) - large orders may not fully fill</p>
+                {fillSimulation.noOrderBook ? (
+                  <p>Order book data unavailable - order may not fill at expected price</p>
+                ) : !fillSimulation.canFill ? (
+                  <p>Order too large - only ${fillSimulation.totalDepth.toFixed(0)} total available (${fillSimulation.depthAtBestAsk.toFixed(0)} at best price)</p>
+                ) : fillSimulation.slippagePercent > 0 ? (
+                  <p>Your ${stakeNum} bet will fill at avg price ${fillSimulation.avgPrice.toFixed(3)} (+{fillSimulation.slippagePercent.toFixed(1)}% slippage from ${orderBook?.bestAsk.toFixed(3)})</p>
+                ) : (
+                  <p>Large order may experience price impact</p>
                 )}
               </div>
             </div>
@@ -338,7 +469,7 @@ export function BetSlip({
             {orderBook && (
               <div className="flex justify-between text-xs border-t border-zinc-700 pt-2 mt-2">
                 <span className="text-zinc-500">Order Book Spread</span>
-                <span className={`font-mono ${isWideSpread ? 'text-amber-400' : 'text-zinc-400'}`}>
+                <span className={`font-mono ${orderBook.spreadPercent > 5 ? 'text-amber-400' : 'text-zinc-400'}`}>
                   {orderBook.spreadPercent.toFixed(1)}%
                 </span>
               </div>
