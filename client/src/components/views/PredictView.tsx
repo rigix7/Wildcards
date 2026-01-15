@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { Market, Futures, AdminSettings, SportMarketConfig } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
 import { getTeamAbbreviation } from "@/lib/polymarket";
+import { OrderBookProvider, useOrderBookContext } from "@/contexts/OrderBookContext";
 
 // Context for sport market configs
 const SportConfigContext = createContext<Map<string, SportMarketConfig>>(new Map());
@@ -318,6 +319,8 @@ function SpreadMarketDisplay({
   onSelect: (market: ParsedMarket, direction: "home" | "away") => void;
   selectedDirection?: "home" | "away" | null;
 }) {
+  const { getBestAsk } = useOrderBookContext();
+  
   // Parse the question to extract home team: "Spread: Eagles (-4.5)" -> Eagles is home with -4.5
   // The outcomes array: [homeTeam, awayTeam] - index 0 is home (gets the negative line)
   const outcomes = market.outcomes;
@@ -334,9 +337,11 @@ function SpreadMarketDisplay({
   const homeLine = line; // Already negative from API
   const awayLine = -line; // Flip sign for away team
   
-  // Prices: use bestAsk for the market (primary price), and outcome.price as fallback
-  const homePrice = Math.round((outcomes[0].price || market.bestAsk) * 100);
-  const awayPrice = Math.round((outcomes[1].price || (1 - market.bestAsk)) * 100);
+  // Prices: use live bestAsk from order book, fallback to outcome.price or market.bestAsk
+  const homeLiveAsk = outcomes[0].tokenId ? getBestAsk(outcomes[0].tokenId) : null;
+  const awayLiveAsk = outcomes[1].tokenId ? getBestAsk(outcomes[1].tokenId) : null;
+  const homePrice = Math.round((homeLiveAsk ?? outcomes[0].price ?? market.bestAsk) * 100);
+  const awayPrice = Math.round((awayLiveAsk ?? outcomes[1].price ?? (1 - market.bestAsk)) * 100);
   
   const isHomeSelected = selectedDirection === "home";
   const isAwaySelected = selectedDirection === "away";
@@ -385,15 +390,19 @@ function TotalsMarketDisplay({
   onSelect: (market: ParsedMarket, direction: "over" | "under") => void;
   selectedDirection?: "over" | "under" | null;
 }) {
+  const { getBestAsk } = useOrderBookContext();
+  
   const outcomes = market.outcomes;
   if (outcomes.length < 2) return null;
   
   // Use market.line if available, otherwise try to parse from groupItemTitle
   const line = market.line ?? parseLineFromTitle(market.groupItemTitle) ?? 0;
   
-  // Outcomes: ["Over", "Under"] with their prices (use bestAsk with fallback to outcome.price)
-  const overPrice = Math.round((outcomes[0].price || market.bestAsk) * 100);
-  const underPrice = Math.round((outcomes[1].price || (1 - market.bestAsk)) * 100);
+  // Outcomes: ["Over", "Under"] with their prices - use live order book bestAsk
+  const overLiveAsk = outcomes[0].tokenId ? getBestAsk(outcomes[0].tokenId) : null;
+  const underLiveAsk = outcomes[1].tokenId ? getBestAsk(outcomes[1].tokenId) : null;
+  const overPrice = Math.round((overLiveAsk ?? outcomes[0].price ?? market.bestAsk) * 100);
+  const underPrice = Math.round((underLiveAsk ?? outcomes[1].price ?? (1 - market.bestAsk)) * 100);
   
   const isOverSelected = selectedDirection === "over";
   const isUnderSelected = selectedDirection === "under";
@@ -443,6 +452,8 @@ function SoccerMoneylineDisplay({
   selectedMarketId?: string;
   selectedDirection?: string | null;
 }) {
+  const { getBestAsk } = useOrderBookContext();
+  
   // Soccer markets come as separate markets for Home Win, Draw, Away Win
   // Each market has a question like "Will Genoa win?" or "Will the match be a draw?"
   // We parse the team name from the question field
@@ -478,9 +489,10 @@ function SoccerMoneylineDisplay({
   return (
     <div className="flex gap-2">
       {sortedMarkets.map((market, idx) => {
-        // Get Yes price (outcome[0] is typically "Yes")
-        const yesPrice = market.outcomes[0]?.price || market.bestAsk || 0;
-        const priceInCents = Math.round(yesPrice * 100);
+        // Get live bestAsk from order book, fallback to outcome price or market.bestAsk
+        const tokenId = market.outcomes[0]?.tokenId;
+        const liveAsk = tokenId ? getBestAsk(tokenId) : null;
+        const priceInCents = Math.round((liveAsk ?? market.outcomes[0]?.price ?? market.bestAsk ?? 0) * 100);
         
         // Use groupItemTitle directly - it contains the team name (e.g., "Sevilla FC", "Draw", "RC Celta")
         // Fall back to parsing from question if groupItemTitle is not available
@@ -538,13 +550,15 @@ function MoneylineMarketDisplay({
   onSelect: (market: ParsedMarket, outcomeIndex: number) => void;
   selectedOutcomeIndex?: number | null;
 }) {
+  const { getBestAsk } = useOrderBookContext();
   const outcomes = market.outcomes;
   
   return (
     <div className="flex flex-wrap gap-2">
       {outcomes.map((outcome, idx) => {
-        // Use outcome.price with bestAsk fallback
-        const priceInCents = Math.round((outcome.price || market.bestAsk) * 100);
+        // Use live order book bestAsk, fallback to outcome.price or market.bestAsk
+        const liveAsk = outcome.tokenId ? getBestAsk(outcome.tokenId) : null;
+        const priceInCents = Math.round((liveAsk ?? outcome.price ?? market.bestAsk) * 100);
         const abbr = getTeamAbbreviation(outcome.label);
         const isSelected = selectedOutcomeIndex === idx;
         
@@ -615,6 +629,7 @@ function SimplifiedMarketRow({
   selectedMarketId?: string;
   selectedOutcomeIndex?: number;
 }) {
+  const { getBestAsk } = useOrderBookContext();
   const isThisMarket = selectedMarketId === market.id;
   
   return (
@@ -622,7 +637,9 @@ function SimplifiedMarketRow({
       <div className="text-sm text-zinc-300">{market.question}</div>
       <div className="flex gap-2">
         {market.outcomes.map((outcome, idx) => {
-          const price = outcome.price || (idx === 0 ? market.bestAsk : market.bestBid) || 0;
+          // Use live order book bestAsk, fallback to outcome.price
+          const liveAsk = outcome.tokenId ? getBestAsk(outcome.tokenId) : null;
+          const price = liveAsk ?? outcome.price ?? (idx === 0 ? market.bestAsk : market.bestBid) ?? 0;
           const priceInCents = Math.round(price * 100);
           const isSelected = isThisMarket && selectedOutcomeIndex === idx;
           
@@ -1264,6 +1281,7 @@ export function PredictView({
         
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {activeSubTab === "matchday" && (
+          <OrderBookProvider events={filteredEvents}>
           <div className="space-y-3">
             <LeagueFilters 
               leagues={availableLeagues}
@@ -1331,6 +1349,7 @@ export function PredictView({
               </>
             )}
           </div>
+          </OrderBookProvider>
         )}
 
         {activeSubTab === "futures" && (
