@@ -44,7 +44,7 @@ interface PredictViewProps {
   onPlaceBet: (marketId: string, outcomeId: string, odds: number, marketTitle?: string, outcomeLabel?: string, marketType?: string, direction?: "yes" | "no", yesTokenId?: string, noTokenId?: string, yesPrice?: number, noPrice?: number, orderMinSize?: number) => void;
   selectedBet?: { marketId: string; outcomeId: string; direction?: string };
   adminSettings?: AdminSettings;
-  userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string }[];
+  userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; unrealizedPnl?: number }[];
 }
 
 function formatVolume(vol: number): string {
@@ -938,6 +938,8 @@ interface UserPosition {
   size: number;
   avgPrice: number;
   outcomeLabel?: string;
+  marketQuestion?: string;
+  unrealizedPnl?: number;
 }
 
 // New EventCard component using DisplayEvent
@@ -982,19 +984,36 @@ function EventCard({
   
   return (
     <Card className="p-4 space-y-4" data-testid={`event-card-${event.id}`}>
-      {/* Position Indicator */}
+      {/* Position Indicator - Dashboard style */}
       {eventPositions.length > 0 && (
-        <div className="bg-wild-trade/10 border border-wild-trade/30 rounded-md p-2.5" data-testid="position-indicator">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="bg-wild-trade/10 border border-wild-trade/30 rounded-md overflow-hidden" data-testid="position-indicator">
+          <div className="px-3 py-2 border-b border-wild-trade/20 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-wild-trade animate-pulse" />
             <span className="text-[10px] font-bold text-wild-trade uppercase tracking-wider">Your Position</span>
           </div>
-          {eventPositions.map((pos, i) => (
-            <div key={i} className="flex justify-between items-center text-xs">
-              <span className="text-zinc-300">{pos.outcomeLabel}</span>
-              <span className="font-mono text-wild-trade">{pos.size.toFixed(2)} @ {(pos.avgPrice * 100).toFixed(0)}¢</span>
-            </div>
-          ))}
+          <div className="divide-y divide-zinc-800/50">
+            {eventPositions.map((pos, i) => (
+              <div key={i} className="px-3 py-2" data-testid={`event-position-${i}`}>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white truncate">{pos.marketQuestion || event.title}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || "Yes"}</span>
+                      <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                    {pos.unrealizedPnl !== undefined && (
+                      <div className={`text-[10px] font-mono ${pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"}`}>
+                        {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       
