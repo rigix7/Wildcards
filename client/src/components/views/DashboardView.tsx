@@ -50,6 +50,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   };
 
+  const [claimingAll, setClaimingAll] = useState(false);
+
   const redeemMutation = useMutation({
     mutationFn: async ({ conditionId }: { conditionId: string }) => {
       if (!walletAddress) throw new Error("No wallet connected");
@@ -63,6 +65,25 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       refreshPositions();
     },
   });
+
+  const handleClaimAll = async () => {
+    const claimable = positions.filter(p => p.status === "claimable" && p.conditionId);
+    if (claimable.length === 0) return;
+    
+    setClaimingAll(true);
+    try {
+      for (const pos of claimable) {
+        if (pos.conditionId) {
+          await redeemPositions(pos.conditionId, [1, 2]);
+        }
+      }
+      await refreshPositions();
+    } catch (error) {
+      console.error("Claim all failed:", error);
+    } finally {
+      setClaimingAll(false);
+    }
+  };
 
   const withdrawMutation = useMutation({
     mutationFn: async ({ amount, toAddress }: { amount: number; toAddress: string }) => {
@@ -101,7 +122,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   }, 0);
 
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
-  const claimablePositions = positions.filter(p => p.status === "resolved" || p.status === "claimable");
+  const claimablePositions = positions.filter(p => p.status === "claimable");
+  const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
 
   if (isLoading) {
     return (
@@ -346,33 +368,41 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
         {claimablePositions.length > 0 && (
           <div className="bg-zinc-900 border border-wild-scout/30 rounded-md overflow-hidden">
-            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
-              <Coins className="w-4 h-4 text-wild-scout" />
-              <h3 className="text-xs font-bold text-wild-scout tracking-wider">CLAIM WINNINGS</h3>
+            <div className="p-3 border-b border-zinc-800 flex justify-between items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Coins className="w-4 h-4 text-wild-scout" />
+                <h3 className="text-xs font-bold text-wild-scout tracking-wider">CLAIMABLE WINNINGS</h3>
+                <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-wild-scout border-wild-scout text-zinc-950 text-xs shrink-0"
+                onClick={handleClaimAll}
+                disabled={claimingAll || claimablePositions.length === 0}
+                data-testid="button-claim-all"
+              >
+                {claimingAll ? (
+                  <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+                ) : (
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                )}
+                Claim All ({claimablePositions.length})
+              </Button>
             </div>
             <div className="divide-y divide-zinc-800/50">
               {claimablePositions.map((pos, i) => (
-                <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center" data-testid={`claimable-${i}`}>
+                <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`claimable-${i}`}>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
-                    <div className="text-[10px] font-mono text-wild-scout">${pos.size.toFixed(2)} USDC</div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-wild-scout/20 text-wild-scout">WON</span>
+                      <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
+                    </div>
+                    <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-wild-scout hover:bg-wild-scout/80 text-zinc-950 text-xs h-7"
-                    onClick={() => pos.conditionId && redeemMutation.mutate({ conditionId: pos.conditionId })}
-                    disabled={redeemMutation.isPending || !pos.conditionId}
-                    data-testid={`button-claim-${i}`}
-                  >
-                    {redeemMutation.isPending ? (
-                      <RefreshCw className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Claim
-                      </>
-                    )}
-                  </Button>
+                  <div className="text-right shrink-0 ml-2">
+                    <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -437,20 +467,21 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
         {bets.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-            <div className="p-3 border-b border-zinc-800">
-              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">RECENT BETS</h3>
+            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+              <History className="w-4 h-4 text-zinc-500" />
+              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">HISTORY</h3>
             </div>
             <div className="divide-y divide-zinc-800/50">
-              {bets.slice(0, 5).map((bet) => (
+              {bets.slice(0, 10).map((bet) => (
                 <div
                   key={bet.id}
                   className="flex justify-between items-center p-3"
                   data-testid={`bet-${bet.id}`}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span
                       className={cn(
-                        "px-1.5 py-0.5 rounded text-[9px] font-bold",
+                        "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
                         bet.status === "won"
                           ? "bg-wild-scout/20 text-wild-scout"
                           : bet.status === "lost"
@@ -460,10 +491,15 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     >
                       {bet.status.toUpperCase()}
                     </span>
-                    <span className="text-xs text-white">@{bet.odds.toFixed(2)}</span>
+                    <span className="text-xs text-white truncate">@{bet.odds.toFixed(2)}</span>
                   </div>
-                  <div className="text-right font-mono">
-                    <div className="text-xs text-white">${bet.amount.toFixed(2)}</div>
+                  <div className="text-right font-mono shrink-0 ml-2">
+                    <div className={cn(
+                      "text-xs font-bold",
+                      bet.status === "won" ? "text-wild-scout" : bet.status === "lost" ? "text-wild-brand" : "text-white"
+                    )}>
+                      {bet.status === "won" ? "+" : bet.status === "lost" ? "-" : ""}${bet.amount.toFixed(2)}
+                    </div>
                     <div className="text-[10px] text-zinc-500">
                       {formatTime(bet.placedAt)}
                     </div>

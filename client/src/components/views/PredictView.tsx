@@ -1481,6 +1481,12 @@ export function PredictView({
               data-testid="link-polymarket-attribution"
             >
               <span className="text-xs font-medium">Powered by</span>
+              <img 
+                src="https://polymarket.com/images/brand/icon-white.png" 
+                alt="Polymarket" 
+                className="h-4 w-4 opacity-60"
+                data-testid="img-polymarket-logo"
+              />
               <span className="text-xs font-bold tracking-wide">POLYMARKET</span>
             </a>
           </Button>
