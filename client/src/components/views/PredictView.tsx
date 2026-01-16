@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Market, Futures, AdminSettings, SportMarketConfig } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
-import { getTeamAbbreviation } from "@/lib/polymarket";
 import type { UseLivePricesResult } from "@/hooks/useLivePrices";
 
 // Type for live prices map
@@ -181,14 +180,14 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
     
     for (const market of moneylineGroup.markets.slice(0, 3)) {
       const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
-      // Get full team name from groupItemTitle or question
-      const fullName = market.groupItemTitle || 
-                       parseSoccerOutcomeName(market.question) ||
-                       "TBD";
       // Check if it's a draw
+      const fullName = market.groupItemTitle || market.question || "";
       const isDraw = fullName.toLowerCase().includes("draw") || fullName.toLowerCase().includes("tie");
-      // Use the same getTeamAbbreviation function as the buttons for consistency
-      const abbrev = isDraw ? "Draw" : getTeamAbbreviation(fullName);
+      // Use official teamAbbrev from Polymarket API when available
+      // Fallback to groupItemTitle first 3 chars only if no abbreviation
+      const abbrev = isDraw 
+        ? "Draw" 
+        : market.teamAbbrev || fullName.slice(0, 3).toUpperCase();
       
       outcomes.push({
         abbrev,
@@ -387,8 +386,9 @@ function SpreadMarketDisplay({
   const line = market.line ?? parseLineFromTitle(market.groupItemTitle) ?? 0;
   const homeTeam = outcomes[0].label;
   const awayTeam = outcomes[1].label;
-  const homeAbbr = getTeamAbbreviation(homeTeam);
-  const awayAbbr = getTeamAbbreviation(awayTeam);
+  // For spreads, outcome labels are team names - use first 3 chars as abbreviation
+  const homeAbbr = homeTeam.slice(0, 3).toUpperCase();
+  const awayAbbr = awayTeam.slice(0, 3).toUpperCase();
   
   // Home team gets negative line (e.g., -4.5), away team gets positive (+4.5)
   const homeLine = line; // Already negative from API
@@ -570,8 +570,8 @@ function SoccerMoneylineDisplay({
           const lowerLabel = fullLabel.toLowerCase();
           const isDraw = lowerLabel.includes("draw") || lowerLabel.includes("tie");
           
-          // Use 3-letter abbreviation for teams, "DRAW" for draw
-          const displayLabel = isDraw ? "DRAW" : getTeamAbbreviation(fullLabel);
+          // Use official teamAbbrev from Polymarket API, fallback to first 3 chars
+          const displayLabel = isDraw ? "DRAW" : (market.teamAbbrev || fullLabel.slice(0, 3).toUpperCase());
           
           const isSelected = selectedMarketId === market.id;
           const isYesSelected = isSelected && selectedDirection === "yes";
@@ -670,7 +670,8 @@ function MoneylineMarketDisplay({
       <div className="flex gap-2">
         {outcomes.map((outcome, idx) => {
           const priceInCents = Math.round(prices[idx] * 100);
-          const abbr = getTeamAbbreviation(outcome.label);
+          // Use official teamAbbrev from Polymarket API, fallback to first 3 chars of outcome label
+          const abbr = market.teamAbbrev || outcome.label.slice(0, 3).toUpperCase();
           const isSelected = selectedOutcomeIndex === idx;
           const isFavorite = idx === favoriteIndex && isFavoriteStrong;
           
@@ -1412,14 +1413,15 @@ export function PredictView({
       if (marketType === "spreads" && market.line !== undefined) {
         const line = market.line;
         if (direction === "home") {
-          outcomeLabel = `${getTeamAbbreviation(market.outcomes[0].label)} ${line > 0 ? "+" : ""}${line}`;
+          outcomeLabel = `${market.outcomes[0].label.slice(0, 3).toUpperCase()} ${line > 0 ? "+" : ""}${line}`;
         } else {
-          outcomeLabel = `${getTeamAbbreviation(market.outcomes[1].label)} ${-line > 0 ? "+" : ""}${-line}`;
+          outcomeLabel = `${market.outcomes[1].label.slice(0, 3).toUpperCase()} ${-line > 0 ? "+" : ""}${-line}`;
         }
       } else if (marketType === "totals" && market.line !== undefined) {
         outcomeLabel = direction === "over" ? `O ${market.line}` : `U ${market.line}`;
       } else if (outcome) {
-        outcomeLabel = getTeamAbbreviation(outcome.label);
+        // Use official teamAbbrev from Polymarket API, fallback to first 3 chars
+        outcomeLabel = market.teamAbbrev || outcome.label.slice(0, 3).toUpperCase();
       }
     }
     

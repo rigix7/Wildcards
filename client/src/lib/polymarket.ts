@@ -71,6 +71,8 @@ export interface GammaMarket {
   clobTokenIds?: string;
   line?: number;
   orderMinSize?: number;
+  // Official team abbreviation from Polymarket (e.g., "LAL", "MCI")
+  teamAbbrev?: string;
 }
 
 export interface GammaEvent {
@@ -470,6 +472,8 @@ export interface ParsedMarket {
   }>;
   clobTokenIds?: string[];
   orderMinSize?: number;
+  // Official team abbreviation from Polymarket (e.g., "LAL", "MCI")
+  teamAbbrev?: string;
 }
 
 // Grouped markets by type within an event
@@ -600,6 +604,7 @@ export function gammaEventToDisplayEvent(event: GammaEvent): DisplayEvent | null
       outcomes,
       clobTokenIds: clobTokenIds.length > 0 ? clobTokenIds : undefined,
       orderMinSize: market.orderMinSize,
+      teamAbbrev: market.teamAbbrev,
     };
     
     if (!marketsByType.has(marketType)) {
