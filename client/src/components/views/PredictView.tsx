@@ -164,17 +164,23 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
   
   if (filteredEvents.length === 0) return null;
   
-  // Extract ticker items from all events' moneyline markets
-  const tickerItems: { title: string; price: number }[] = [];
+  // Extract ticker items showing OUTCOME + PRICE (e.g., "Lakers: 65¢")
+  const tickerItems: { outcome: string; league: string; price: number }[] = [];
   
-  for (const event of filteredEvents.slice(0, 8)) {
+  for (const event of filteredEvents.slice(0, 12)) {
     const moneylineGroup = event.marketGroups.find(g => g.type === "moneyline");
     if (!moneylineGroup) continue;
     
     for (const market of moneylineGroup.markets.slice(0, 3)) {
       const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
+      // Get outcome label from the market (e.g., "Lakers", "Thunder", "Draw")
+      const outcomeLabel = market.outcomes[0]?.label || 
+                           parseSoccerOutcomeName(market.question) ||
+                           market.groupItemTitle?.split(" ").pop() || 
+                           "TBD";
       tickerItems.push({
-        title: `${event.league}: ${market.groupItemTitle}`,
+        outcome: outcomeLabel,
+        league: event.league,
         price: Math.round(yesPrice * 100),
       });
     }
@@ -182,29 +188,33 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
   
   if (tickerItems.length === 0) return null;
   
-  // Calculate animation duration based on number of items (5x faster animation)
-  const animationDuration = Math.max(2, tickerItems.length * 0.4);
+  // Animation speed: slower for better readability, ~3s per item for smooth scroll
+  const animationDuration = Math.max(20, tickerItems.length * 2);
   
   return (
     <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
       <style>
         {`
-          @keyframes marquee {
+          @keyframes ticker-scroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
-          .ticker-content {
-            animation: marquee ${animationDuration}s linear infinite;
+          .ticker-track {
+            display: flex;
+            width: fit-content;
+            animation: ticker-scroll ${animationDuration}s linear infinite;
           }
-          .ticker-content:hover {
+          .ticker-track:hover {
             animation-play-state: paused;
           }
         `}
       </style>
-      <div className="ticker-content flex whitespace-nowrap py-2 px-3 gap-8">
+      <div className="ticker-track whitespace-nowrap py-2 px-3">
+        {/* Duplicate the content for seamless loop */}
         {[...tickerItems, ...tickerItems].map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 text-xs shrink-0">
-            <span className="text-zinc-400">{item.title}</span>
+          <div key={idx} className="inline-flex items-center gap-1 text-xs mr-6">
+            <span className="text-zinc-500 text-[10px]">{item.league}</span>
+            <span className="text-zinc-300">{item.outcome}</span>
             <span className="text-wild-gold font-mono font-bold">{item.price}¢</span>
           </div>
         ))}

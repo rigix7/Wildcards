@@ -1313,30 +1313,33 @@ export async function registerRoutes(
       
       // Transform API response to match client-expected format
       // Win/loss detection:
-      // - redeemable=true means market resolved AND user holds winning tokens (authoritative)
-      // - For losses: redeemable=false/undefined AND curPrice=0 indicates losing outcome
-      // - curPrice in between (0.01-0.99) means market is likely still unresolved
+      // - redeemable=true indicates market is resolved (applies to ALL resolved positions)
+      // - Must ALSO check curPrice to determine win vs loss:
+      //   - curPrice=1 means user's outcome won → claimable
+      //   - curPrice=0 means user's outcome lost → not claimable
       const positions = rawPositions.map((p: any) => {
         const size = parseFloat(p.size) || 0;
         const curPrice = parseFloat(p.curPrice) || 0;
         const redeemable = p.redeemable === true;
         
-        // Determine status based on redeemable flag and current price
+        // Determine status based on BOTH redeemable flag AND current price
         let status = "open";
         if (size === 0) {
           status = "closed"; // No position
-        } else if (redeemable) {
-          // redeemable=true is the authoritative signal that user has winning tokens
+        } else if (redeemable && curPrice >= 0.99) {
+          // Market resolved AND user's outcome won → can claim winnings
           status = "claimable";
+        } else if (redeemable && curPrice <= 0.01) {
+          // Market resolved BUT user's outcome lost → no claim available
+          status = "lost";
         } else if (curPrice <= 0.01) {
-          // curPrice=0 with size>0 and not redeemable = resolved market, user lost
-          // This catches positions where the outcome resolved to NO
+          // Edge case: market resolved to NO but redeemable not set
           status = "lost";
         } else if (curPrice >= 0.99) {
-          // Edge case: curPrice=1 but redeemable not set - might be pending redemption
+          // Edge case: market resolved to YES but redeemable not set
           status = "claimable";
         }
-        // Otherwise size > 0 and price is between 0.01-0.99, market is unresolved
+        // Otherwise: market is unresolved (price between 0.01-0.99)
         
         return {
           tokenId: p.asset || p.tokenId,
