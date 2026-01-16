@@ -183,8 +183,8 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
       // Check if it's a draw
       const fullName = market.groupItemTitle || market.question || "";
       const isDraw = fullName.toLowerCase().includes("draw") || fullName.toLowerCase().includes("tie");
-      // Use official teamAbbrev from Polymarket API when available
-      // Fallback to groupItemTitle first 3 chars only if no abbreviation
+      // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
+      // Only fall back to first 3 chars if no slug abbreviation available
       const abbrev = isDraw 
         ? "Draw" 
         : market.teamAbbrev || fullName.slice(0, 3).toUpperCase();
@@ -570,7 +570,7 @@ function SoccerMoneylineDisplay({
           const lowerLabel = fullLabel.toLowerCase();
           const isDraw = lowerLabel.includes("draw") || lowerLabel.includes("tie");
           
-          // Use official teamAbbrev from Polymarket API, fallback to first 3 chars
+          // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
           const displayLabel = isDraw ? "DRAW" : (market.teamAbbrev || fullLabel.slice(0, 3).toUpperCase());
           
           const isSelected = selectedMarketId === market.id;
@@ -670,7 +670,7 @@ function MoneylineMarketDisplay({
       <div className="flex gap-2">
         {outcomes.map((outcome, idx) => {
           const priceInCents = Math.round(prices[idx] * 100);
-          // Use official teamAbbrev from Polymarket API, fallback to first 3 chars of outcome label
+          // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
           const abbr = market.teamAbbrev || outcome.label.slice(0, 3).toUpperCase();
           const isSelected = selectedOutcomeIndex === idx;
           const isFavorite = idx === favoriteIndex && isFavoriteStrong;
@@ -1420,7 +1420,7 @@ export function PredictView({
       } else if (marketType === "totals" && market.line !== undefined) {
         outcomeLabel = direction === "over" ? `O ${market.line}` : `U ${market.line}`;
       } else if (outcome) {
-        // Use official teamAbbrev from Polymarket API, fallback to first 3 chars
+        // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
         outcomeLabel = market.teamAbbrev || outcome.label.slice(0, 3).toUpperCase();
       }
     }
