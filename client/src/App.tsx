@@ -7,14 +7,12 @@ import WalletProvider from "@/providers/WalletProvider";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import AdminPage from "@/pages/admin";
-import PredictComparePage from "@/pages/predict-compare";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/admin" component={AdminPage} />
-      <Route path="/compare" component={PredictComparePage} />
       <Route component={NotFound} />
     </Switch>
   );
