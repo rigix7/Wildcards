@@ -1306,21 +1306,37 @@ export async function registerRoutes(
       const rawPositions = Array.isArray(data) ? data : (data.positions || []);
       console.log(`[Positions] Found ${rawPositions.length} positions for ${address}`);
       
+      // Log raw position data for debugging
+      for (const p of rawPositions.slice(0, 5)) {
+        console.log(`[Positions] Raw: title="${p.title?.substring(0, 40)}", curPrice=${p.curPrice}, redeemable=${p.redeemable}, size=${p.size}`);
+      }
+      
       // Transform API response to match client-expected format
-      // Per Polymarket Data API docs: redeemable=true means market is resolved and user holds winning tokens
-      // See: https://docs.polymarket.com/developers/misc-endpoints/data-api-get-positions
+      // Win/loss detection:
+      // - redeemable=true means market resolved AND user holds winning tokens (authoritative)
+      // - For losses: redeemable=false/undefined AND curPrice=0 indicates losing outcome
+      // - curPrice in between (0.01-0.99) means market is likely still unresolved
       const positions = rawPositions.map((p: any) => {
         const size = parseFloat(p.size) || 0;
+        const curPrice = parseFloat(p.curPrice) || 0;
         const redeemable = p.redeemable === true;
         
-        // Determine status: redeemable takes priority (winning resolved markets)
-        // redeemable is the authoritative field from Polymarket indicating claimable winnings
-        let status = "closed";
-        if (redeemable) {
-          status = "claimable"; // Market resolved, user has winning tokens to redeem
-        } else if (size > 0) {
-          status = "open"; // Active position in unresolved market
+        // Determine status based on redeemable flag and current price
+        let status = "open";
+        if (size === 0) {
+          status = "closed"; // No position
+        } else if (redeemable) {
+          // redeemable=true is the authoritative signal that user has winning tokens
+          status = "claimable";
+        } else if (curPrice <= 0.01) {
+          // curPrice=0 with size>0 and not redeemable = resolved market, user lost
+          // This catches positions where the outcome resolved to NO
+          status = "lost";
+        } else if (curPrice >= 0.99) {
+          // Edge case: curPrice=1 but redeemable not set - might be pending redemption
+          status = "claimable";
         }
+        // Otherwise size > 0 and price is between 0.01-0.99, market is unresolved
         
         return {
           tokenId: p.asset || p.tokenId,
@@ -1330,7 +1346,7 @@ export async function registerRoutes(
           side: p.side || "BUY",
           size,
           avgPrice: parseFloat(p.avgPrice) || 0,
-          currentPrice: parseFloat(p.curPrice) || parseFloat(p.currentPrice) || 0,
+          currentPrice: curPrice,
           unrealizedPnl: parseFloat(p.cashPnl) || parseFloat(p.unrealizedPnl) || 0,
           status,
         };

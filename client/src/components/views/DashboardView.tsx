@@ -150,14 +150,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
   const claimablePositions = positions.filter(p => p.status === "claimable");
+  const lostPositions = positions.filter(p => p.status === "lost");
+  const resolvedPositions = [...claimablePositions, ...lostPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
   
   // Determine default tab based on what has content
   const getDefaultTab = () => {
-    if (claimablePositions.length > 0) return "claimable";
+    if (resolvedPositions.length > 0) return "resolved";
     if (openPositions.length > 0) return "open";
     if (activity.length > 0) return "history";
-    return "claimable"; // Default to claimable even if empty
+    return "resolved"; // Default to resolved even if empty
   };
 
   if (isLoading) {
@@ -371,14 +373,14 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           <Tabs defaultValue={getDefaultTab()} className="w-full">
             <TabsList className="w-full justify-start rounded-none border-b border-zinc-800 bg-transparent h-auto p-0 gap-0 flex-wrap">
               <TabsTrigger 
-                value="claimable" 
+                value="resolved" 
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-scout data-[state=active]:bg-transparent data-[state=active]:text-wild-scout px-3 py-2 text-xs"
-                data-testid="tab-claimable"
+                data-testid="tab-resolved"
               >
-                Claimable
-                {claimablePositions.length > 0 && (
+                Resolved
+                {resolvedPositions.length > 0 && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-scout/20 text-wild-scout">
-                    {claimablePositions.length}
+                    {resolvedPositions.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -408,11 +410,11 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
               </TabsTrigger>
             </TabsList>
 
-            {/* Claimable Tab */}
-            <TabsContent value="claimable" className="mt-0">
+            {/* Resolved Tab - Shows both won and lost positions */}
+            <TabsContent value="resolved" className="mt-0">
               {claimablePositions.length > 0 && (
                 <div className="p-2 border-b border-zinc-800 bg-wild-scout/5 flex justify-between items-center gap-2">
-                  <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)} total</span>
+                  <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)} to claim</span>
                   <Button
                     size="sm"
                     variant="default"
@@ -431,26 +433,38 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 </div>
               )}
               <div className="divide-y divide-zinc-800/50">
-                {claimablePositions.length === 0 ? (
+                {resolvedPositions.length === 0 ? (
                   <div className="p-4 text-center">
                     <Coins className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                    <p className="text-xs text-zinc-500">No winnings to claim</p>
+                    <p className="text-xs text-zinc-500">No resolved positions</p>
                   </div>
                 ) : (
-                  claimablePositions.map((pos, i) => (
-                    <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`claimable-${i}`}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-wild-scout/20 text-wild-scout shrink-0">WON</span>
-                          <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
+                  resolvedPositions.map((pos, i) => {
+                    const isWin = pos.status === "claimable";
+                    return (
+                      <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`resolved-${i}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                              isWin ? "bg-wild-scout/20 text-wild-scout" : "bg-wild-brand/20 text-wild-brand"
+                            )}>
+                              {isWin ? "WON" : "LOST"}
+                            </span>
+                            <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
+                          </div>
+                          <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
                         </div>
-                        <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
+                        <div className="text-right shrink-0 ml-2">
+                          {isWin ? (
+                            <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
+                          ) : (
+                            <div className="text-sm font-mono text-zinc-500">-${(pos.size * pos.avgPrice).toFixed(2)}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </TabsContent>

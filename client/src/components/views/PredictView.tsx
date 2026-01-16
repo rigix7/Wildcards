@@ -182,8 +182,8 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
   
   if (tickerItems.length === 0) return null;
   
-  // Calculate animation duration based on number of items (faster animation)
-  const animationDuration = Math.max(10, tickerItems.length * 2);
+  // Calculate animation duration based on number of items (5x faster animation)
+  const animationDuration = Math.max(2, tickerItems.length * 0.4);
   
   return (
     <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
