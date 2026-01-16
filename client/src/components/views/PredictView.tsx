@@ -181,14 +181,19 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
     
     for (const market of moneylineGroup.markets.slice(0, 3)) {
       const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
-      // Get outcome label/abbreviation from the market
-      let abbrev = market.outcomes[0]?.label || 
-                   parseSoccerOutcomeName(market.question) ||
-                   market.groupItemTitle?.split(" ").pop() || 
+      // Get outcome label from question or title (NOT from outcomes array which is just Yes/No)
+      let abbrev = parseSoccerOutcomeName(market.question) ||
+                   market.groupItemTitle?.replace(/^Will\s+/i, "").replace(/\s+win\??$/i, "").trim() ||
                    "TBD";
-      // Shorten long names to abbreviations
+      // Shorten long names to abbreviations (keep Draw as-is)
       if (abbrev.length > 6 && abbrev !== "Draw") {
-        abbrev = abbrev.substring(0, 3).toUpperCase();
+        // Try to create a 3-letter abbreviation from first letters of words
+        const words = abbrev.split(/\s+/);
+        if (words.length >= 2) {
+          abbrev = words.map(w => w[0]).join("").toUpperCase().substring(0, 3);
+        } else {
+          abbrev = abbrev.substring(0, 3).toUpperCase();
+        }
       }
       outcomes.push({
         abbrev,
