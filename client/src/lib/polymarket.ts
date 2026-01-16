@@ -469,6 +469,7 @@ export interface ParsedMarket {
     price: number;           // Mid/last trade price (for display)
     executionPrice: number;  // Best ask price for this outcome (for order submission)
     tokenId?: string;
+    abbrev?: string;         // Official abbreviation from Polymarket slug (e.g., "SABALEN")
   }>;
   clobTokenIds?: string[];
   orderMinSize?: number;
@@ -556,6 +557,11 @@ function getMarketTeamAbbrev(
   const marketSlug = market.slug?.toLowerCase() || "";
   const groupTitle = market.groupItemTitle?.toLowerCase() || "";
   
+  // Check if groupItemTitle contains "draw" - no team abbreviation for draws
+  if (groupTitle.includes("draw") || groupTitle.includes("tie")) {
+    return undefined;
+  }
+  
   // Check if market slug ends with a team abbreviation (e.g., "sea-udi-int-2026-01-18-udi")
   const slugParts = marketSlug.split("-");
   if (slugParts.length > 0) {
@@ -564,14 +570,30 @@ function getMarketTeamAbbrev(
     if (lastPart === teamAbbrevs.awayAbbrev) return teamAbbrevs.awayAbbrev;
   }
   
-  // Check if groupItemTitle contains "draw" - no team abbreviation for draws
-  if (groupTitle.includes("draw") || groupTitle.includes("tie")) {
-    return undefined;
+  // Fuzzy match: check if groupItemTitle contains/starts with the abbreviation
+  // This handles cases like "Aryna Sabalenka" matching "SABALEN" from slug
+  const homeAbbrevLower = teamAbbrevs.homeAbbrev.toLowerCase();
+  const awayAbbrevLower = teamAbbrevs.awayAbbrev.toLowerCase();
+  
+  // Remove spaces and check if any word in groupTitle starts with abbreviation
+  const titleWords = groupTitle.replace(/[^a-z\s]/g, "").split(/\s+/);
+  for (const word of titleWords) {
+    if (word.startsWith(homeAbbrevLower) || homeAbbrevLower.startsWith(word.slice(0, 4))) {
+      return teamAbbrevs.homeAbbrev;
+    }
+    if (word.startsWith(awayAbbrevLower) || awayAbbrevLower.startsWith(word.slice(0, 4))) {
+      return teamAbbrevs.awayAbbrev;
+    }
   }
   
-  // Fall back to checking if groupItemTitle position indicates home vs away
-  // For 3-way markets, first team in title is usually home
-  // This is less reliable, so only use as fallback
+  // Last resort: check if any slug segment (before date) matches
+  const eventSlugParts = eventSlug.split("-");
+  for (let i = slugParts.length - 1; i >= 0; i--) {
+    const part = slugParts[i].toUpperCase();
+    if (part === teamAbbrevs.homeAbbrev) return teamAbbrevs.homeAbbrev;
+    if (part === teamAbbrevs.awayAbbrev) return teamAbbrevs.awayAbbrev;
+  }
+  
   return undefined;
 }
 
@@ -645,11 +667,32 @@ export function gammaEventToDisplayEvent(event: GammaEvent): DisplayEvent | null
           }
         }
         
+        // Determine abbreviation for this outcome
+        // For 2-way markets, match outcome labels with slug abbreviations
+        let abbrev: string | undefined;
+        if (teamAbbrevs && outcomeLabels.length === 2) {
+          // Check if this outcome label matches home or away abbreviation
+          const labelLower = label.toLowerCase().replace(/[^a-z]/g, "");
+          const homeAbbrevLower = teamAbbrevs.homeAbbrev.toLowerCase();
+          const awayAbbrevLower = teamAbbrevs.awayAbbrev.toLowerCase();
+          
+          // Check if label contains/starts with abbreviation
+          if (labelLower.includes(homeAbbrevLower) || homeAbbrevLower.includes(labelLower.slice(0, 4))) {
+            abbrev = teamAbbrevs.homeAbbrev;
+          } else if (labelLower.includes(awayAbbrevLower) || awayAbbrevLower.includes(labelLower.slice(0, 4))) {
+            abbrev = teamAbbrevs.awayAbbrev;
+          } else {
+            // Fallback: first outcome = home, second = away
+            abbrev = i === 0 ? teamAbbrevs.homeAbbrev : teamAbbrevs.awayAbbrev;
+          }
+        }
+        
         return {
           label,
           price: midPrice,
           executionPrice,
           tokenId: clobTokenIds[i],
+          abbrev,
         };
       });
     } catch {

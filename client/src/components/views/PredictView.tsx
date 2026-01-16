@@ -178,21 +178,41 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
     // Collect outcomes with abbreviations and prices
     const outcomes: { abbrev: string; price: number }[] = [];
     
-    for (const market of moneylineGroup.markets.slice(0, 3)) {
-      const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
-      // Check if it's a draw
-      const fullName = market.groupItemTitle || market.question || "";
-      const isDraw = fullName.toLowerCase().includes("draw") || fullName.toLowerCase().includes("tie");
-      // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
-      // Only fall back to first 3 chars if no slug abbreviation available
-      const abbrev = isDraw 
-        ? "Draw" 
-        : market.teamAbbrev || fullName.slice(0, 3).toUpperCase();
-      
-      outcomes.push({
-        abbrev,
-        price: Math.round(yesPrice * 100),
-      });
+    // For 2-way markets (tennis, etc), use the outcome labels directly
+    // For 3-way markets (soccer), use individual market groupItemTitle
+    const isTwoWayEvent = moneylineGroup.markets.length === 1 && 
+                          moneylineGroup.markets[0].outcomes.length === 2;
+    
+    if (isTwoWayEvent) {
+      // 2-way: single market with 2 outcomes (e.g., Player A vs Player B)
+      const market = moneylineGroup.markets[0];
+      for (let i = 0; i < market.outcomes.length; i++) {
+        const outcome = market.outcomes[i];
+        const price = outcome.price || 0;
+        // Use outcome-level abbrev (from slug parsing), or fall back to outcome label
+        const abbrev = outcome.abbrev || outcome.label.slice(0, 7).toUpperCase();
+        outcomes.push({
+          abbrev,
+          price: Math.round(price * 100),
+        });
+      }
+    } else {
+      // 3-way: multiple markets (each for a team/draw)
+      for (const market of moneylineGroup.markets.slice(0, 3)) {
+        const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
+        // Check if it's a draw
+        const fullName = market.groupItemTitle || market.question || "";
+        const isDraw = fullName.toLowerCase().includes("draw") || fullName.toLowerCase().includes("tie");
+        // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
+        const abbrev = isDraw 
+          ? "Draw" 
+          : market.teamAbbrev || fullName.slice(0, 3).toUpperCase();
+        
+        outcomes.push({
+          abbrev,
+          price: Math.round(yesPrice * 100),
+        });
+      }
     }
     
     if (outcomes.length > 0) {
@@ -670,8 +690,8 @@ function MoneylineMarketDisplay({
       <div className="flex gap-2">
         {outcomes.map((outcome, idx) => {
           const priceInCents = Math.round(prices[idx] * 100);
-          // Use official teamAbbrev from Polymarket slug (can be up to 7 chars)
-          const abbr = market.teamAbbrev || outcome.label.slice(0, 3).toUpperCase();
+          // Use outcome-level abbrev first (for 2-way markets), then market-level, then fallback
+          const abbr = outcome.abbrev || market.teamAbbrev || outcome.label.slice(0, 7).toUpperCase();
           const isSelected = selectedOutcomeIndex === idx;
           const isFavorite = idx === favoriteIndex && isFavoriteStrong;
           
