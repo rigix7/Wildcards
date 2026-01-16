@@ -156,7 +156,7 @@ function parseSoccerOutcomeName(question: string | undefined, fallback?: string)
 }
 
 // Price ticker showing all events with moneyline odds
-// Format: {category} {event}: {team1} {price} | {team2} {price}
+// Format: {category} {event}: {team1Abbr} {price} | {team2Abbr} {price}
 function PriceTicker({ events }: { events: DisplayEvent[] }) {
   if (events.length === 0) return null;
   
@@ -181,20 +181,15 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
     
     for (const market of moneylineGroup.markets.slice(0, 3)) {
       const yesPrice = market.bestAsk || market.outcomes[0]?.price || 0;
-      // Get outcome label from question or title (NOT from outcomes array which is just Yes/No)
-      let abbrev = parseSoccerOutcomeName(market.question) ||
-                   market.groupItemTitle?.replace(/^Will\s+/i, "").replace(/\s+win\??$/i, "").trim() ||
-                   "TBD";
-      // Shorten long names to abbreviations (keep Draw as-is)
-      if (abbrev.length > 6 && abbrev !== "Draw") {
-        // Try to create a 3-letter abbreviation from first letters of words
-        const words = abbrev.split(/\s+/);
-        if (words.length >= 2) {
-          abbrev = words.map(w => w[0]).join("").toUpperCase().substring(0, 3);
-        } else {
-          abbrev = abbrev.substring(0, 3).toUpperCase();
-        }
-      }
+      // Get full team name from groupItemTitle or question
+      const fullName = market.groupItemTitle || 
+                       parseSoccerOutcomeName(market.question) ||
+                       "TBD";
+      // Check if it's a draw
+      const isDraw = fullName.toLowerCase().includes("draw") || fullName.toLowerCase().includes("tie");
+      // Use the same getTeamAbbreviation function as the buttons for consistency
+      const abbrev = isDraw ? "Draw" : getTeamAbbreviation(fullName);
+      
       outcomes.push({
         abbrev,
         price: Math.round(yesPrice * 100),
