@@ -98,11 +98,6 @@ Key API Endpoints:
   - Scans 50 events per sport instead of 20 for better market type coverage
   - Added v2 sample endpoint with 30-event search and full raw market data
   - UI shows market type count, labels, and configured status
-- Added UI Comparison page at /compare route (January 12, 2026)
-  - A/B testing between current UI and simplified Polymarket-style approach
-  - Simplified view uses question text directly (no field mapping needed)
-  - Groups all markets by event (moneyline, spread, total together)
-  - Side-by-side and tabs view modes for easy comparison
 - Implemented hybrid UI approach for EventCard (January 12, 2026)
   - Core markets (moneyline, spreads, totals) use polished styled UI
   - Additional markets (team totals, player props, etc.) in expandable "More Markets" section
@@ -160,9 +155,31 @@ Key API Endpoints:
   - getLivePrice() helper falls back to static Gamma API prices when WebSocket data unavailable
   - 15-second delayed position refresh after successful bet placement to account for Polymarket API latency
 
+- Implemented slug-based team abbreviation parsing (January 16, 2026)
+  - Team/player abbreviations are now extracted from Polymarket event slugs
+  - Slug format: `{league}-{homeAbbrev}-{awayAbbrev}-{date}` (e.g., "wta-sabalen-rakotom-2026-01-18")
+  - Abbreviations can be 1-7 characters (e.g., "SABALEN", "INT", "MCI")
+  - parseTeamAbbrevsFromEventSlug() extracts home/away abbreviations
+  - Outcome-level abbrev field for 2-way markets (tennis, individual sports)
+  - Consistent abbreviations across ticker, event cards, and bet slip
+- Code housekeeping cleanup (January 16, 2026)
+  - Removed unused /compare route and predict-compare.tsx page
+  - Removed deprecated hardcoded team abbreviation maps (NFL_TEAM_ABBREVIATIONS, NBA_TEAM_ABBREVIATIONS)
+  - Removed unused functions: getTeamAbbreviation(), fetchPolymarketSports(), fetchCategorizedTags
+  - All terminal components in use: BetSlip, BottomNav, DemoBadge (Scout/Trade), Header, etc.
+
 ## Geo-Blocking Behavior
 Polymarket enforces geo-restrictions at the API level for trading/orders. Blocked countries include:
 - Singapore, France, Switzerland, Poland, Romania, UK, Australia, Netherlands
 - OFAC-sanctioned countries (Iran, Cuba, North Korea, Syria, etc.)
 
 When geo-blocked, users see "no liquidity available" error. Viewing markets/prices still works.
+
+## Team Abbreviation Parsing
+Team and player abbreviations are derived from Polymarket event slugs to ensure consistency with official Polymarket display:
+- **Slug Format**: `{league}-{homeAbbrev}-{awayAbbrev}-{date}`
+- **Example**: `wta-sabalen-rakotom-2026-01-18` → SABALEN vs RAKOTOM
+- **Example**: `sea-udi-int-2026-01-18` → UDI vs INT (Serie A: Udinese vs Inter)
+- Abbreviations support 1-7 characters for flexibility across sports
+- For 2-way markets (tennis), abbreviations are set at the outcome level
+- For 3-way markets (soccer), abbreviations are matched via market slug suffix
