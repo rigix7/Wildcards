@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
 import { usePolymarketClient } from "@/hooks/usePolymarketClient";
@@ -124,6 +125,17 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
   const claimablePositions = positions.filter(p => p.status === "claimable");
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
+  
+  // History: resolved positions (already claimed) or from bets if available
+  const historyPositions = positions.filter(p => p.status === "resolved" || p.status === "redeemed" || p.status === "lost");
+  const hasHistory = bets.length > 0 || historyPositions.length > 0;
+  
+  // Determine default tab based on what has content
+  const getDefaultTab = () => {
+    if (claimablePositions.length > 0) return "claimable";
+    if (openPositions.length > 0) return "open";
+    return "history";
+  };
 
   if (isLoading) {
     return (
@@ -315,99 +327,224 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           </div>
         </div>
 
+        {/* Unified Activity Tabs */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-          <div className="p-3 border-b border-zinc-800 flex justify-between items-center">
+          <div className="p-3 border-b border-zinc-800 flex justify-between items-center gap-2">
             <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-wild-trade" />
-              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">POSITIONS</h3>
+              <Activity className="w-4 h-4 text-wild-trade" />
+              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">ACTIVITY</h3>
             </div>
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-6 w-6"
+              size="icon"
               onClick={refreshPositions}
               disabled={positionsLoading}
               data-testid="button-refresh-positions"
             >
-              <RefreshCw className={cn("w-3 h-3 text-zinc-500", positionsLoading && "animate-spin")} />
+              <RefreshCw className={cn("w-4 h-4 text-zinc-500", positionsLoading && "animate-spin")} />
             </Button>
           </div>
-          <div className="divide-y divide-zinc-800/50">
-            {openPositions.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="text-xs text-zinc-500">No open positions</p>
-              </div>
-            ) : (
-              openPositions.map((pos, i) => (
-                <div key={`${pos.tokenId}-${i}`} className="p-3" data-testid={`position-${i}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-white truncate">{pos.marketQuestion || "Unknown Market"}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || pos.side}</span>
-                        <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
+          
+          <Tabs defaultValue={getDefaultTab()} className="w-full">
+            <TabsList className="w-full justify-start rounded-none border-b border-zinc-800 bg-transparent h-auto p-0 gap-0 flex-wrap">
+              <TabsTrigger 
+                value="claimable" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-scout data-[state=active]:bg-transparent data-[state=active]:text-wild-scout px-3 py-2 text-xs"
+                data-testid="tab-claimable"
+              >
+                Claimable
+                {claimablePositions.length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-scout/20 text-wild-scout">
+                    {claimablePositions.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="open" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-trade data-[state=active]:bg-transparent data-[state=active]:text-wild-trade px-3 py-2 text-xs"
+                data-testid="tab-open"
+              >
+                Open
+                {openPositions.length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-trade/20 text-wild-trade">
+                    {openPositions.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-zinc-400 data-[state=active]:bg-transparent data-[state=active]:text-zinc-300 px-3 py-2 text-xs"
+                data-testid="tab-history"
+              >
+                History
+                {(bets.length > 0 || historyPositions.length > 0) && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-zinc-700 text-zinc-300">
+                    {bets.length + historyPositions.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Claimable Tab */}
+            <TabsContent value="claimable" className="mt-0">
+              {claimablePositions.length > 0 && (
+                <div className="p-2 border-b border-zinc-800 bg-wild-scout/5 flex justify-between items-center gap-2">
+                  <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)} total</span>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="bg-wild-scout border-wild-scout text-zinc-950 text-xs shrink-0"
+                    onClick={handleClaimAll}
+                    disabled={claimingAll || claimablePositions.length === 0}
+                    data-testid="button-claim-all"
+                  >
+                    {claimingAll ? (
+                      <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+                    ) : (
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                    )}
+                    Claim All
+                  </Button>
+                </div>
+              )}
+              <div className="divide-y divide-zinc-800/50">
+                {claimablePositions.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <Coins className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">No winnings to claim</p>
+                  </div>
+                ) : (
+                  claimablePositions.map((pos, i) => (
+                    <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`claimable-${i}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-wild-scout/20 text-wild-scout shrink-0">WON</span>
+                          <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
+                        </div>
+                        <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-2">
-                      <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
-                      {pos.unrealizedPnl !== undefined && (
-                        <div className={cn(
-                          "text-[10px] font-mono",
-                          pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
-                        )}>
-                          {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {claimablePositions.length > 0 && (
-          <div className="bg-zinc-900 border border-wild-scout/30 rounded-md overflow-hidden">
-            <div className="p-3 border-b border-zinc-800 flex justify-between items-center gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Coins className="w-4 h-4 text-wild-scout" />
-                <h3 className="text-xs font-bold text-wild-scout tracking-wider">CLAIMABLE WINNINGS</h3>
-                <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)}</span>
-              </div>
-              <Button
-                size="sm"
-                variant="default"
-                className="bg-wild-scout border-wild-scout text-zinc-950 text-xs shrink-0"
-                onClick={handleClaimAll}
-                disabled={claimingAll || claimablePositions.length === 0}
-                data-testid="button-claim-all"
-              >
-                {claimingAll ? (
-                  <RefreshCw className="w-3 h-3 animate-spin mr-1" />
-                ) : (
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  ))
                 )}
-                Claim All ({claimablePositions.length})
-              </Button>
-            </div>
-            <div className="divide-y divide-zinc-800/50">
-              {claimablePositions.map((pos, i) => (
-                <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`claimable-${i}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-wild-scout/20 text-wild-scout">WON</span>
-                      <div className="text-xs text-white truncate">{pos.marketQuestion || "Winning Position"}</div>
+              </div>
+            </TabsContent>
+
+            {/* Open Positions Tab */}
+            <TabsContent value="open" className="mt-0">
+              <div className="divide-y divide-zinc-800/50">
+                {openPositions.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <Package className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">No open positions</p>
+                  </div>
+                ) : (
+                  openPositions.map((pos, i) => (
+                    <div key={`${pos.tokenId}-${i}`} className="p-3" data-testid={`position-${i}`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-white truncate">{pos.marketQuestion || "Unknown Market"}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || pos.side}</span>
+                            <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                          {pos.unrealizedPnl !== undefined && (
+                            <div className={cn(
+                              "text-[10px] font-mono",
+                              pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
+                            )}>
+                              {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            {/* History Tab */}
+            <TabsContent value="history" className="mt-0">
+              <div className="divide-y divide-zinc-800/50">
+                {!hasHistory ? (
+                  <div className="p-4 text-center">
+                    <History className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">No history yet</p>
                   </div>
-                  <div className="text-right shrink-0 ml-2">
-                    <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                ) : (
+                  <>
+                    {/* Show history positions first */}
+                    {historyPositions.map((pos, i) => (
+                      <div key={`hist-${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`history-pos-${i}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                              pos.status === "lost" ? "bg-wild-brand/20 text-wild-brand" : "bg-zinc-700 text-zinc-400"
+                            )}>
+                              {pos.status === "lost" ? "LOST" : "RESOLVED"}
+                            </span>
+                            <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
+                          </div>
+                          <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className={cn(
+                            "text-sm font-mono font-bold",
+                            pos.status === "lost" ? "text-wild-brand" : "text-zinc-400"
+                          )}>
+                            {pos.status === "lost" ? "-" : ""}${pos.size.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Then show bets */}
+                    {bets.slice(0, 10).map((bet) => (
+                      <div
+                        key={bet.id}
+                        className="flex justify-between items-center p-3 gap-2"
+                        data-testid={`bet-${bet.id}`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                              bet.status === "won"
+                                ? "bg-wild-scout/20 text-wild-scout"
+                                : bet.status === "lost"
+                                ? "bg-wild-brand/20 text-wild-brand"
+                                : "bg-wild-gold/20 text-wild-gold"
+                            )}
+                          >
+                            {bet.status.toUpperCase()}
+                          </span>
+                          <span className="text-xs text-white truncate">@{bet.odds.toFixed(2)}</span>
+                        </div>
+                        <div className="text-right font-mono shrink-0 ml-2">
+                          <div className={cn(
+                            "text-xs font-bold",
+                            bet.status === "won" ? "text-wild-scout" : bet.status === "lost" ? "text-wild-brand" : "text-white"
+                          )}>
+                            {bet.status === "won" ? "+" : bet.status === "lost" ? "-" : ""}${bet.amount.toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-zinc-500">
+                            {formatTime(bet.placedAt)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {wallet && wallet.usdcBalance > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
@@ -439,7 +576,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 />
               </div>
               <Button
-                className="w-full bg-wild-gold hover:bg-wild-gold/80 text-zinc-950"
+                className="w-full bg-wild-gold border-wild-gold text-zinc-950"
                 disabled={!withdrawAmount || !withdrawTo || withdrawMutation.isPending}
                 onClick={() => withdrawMutation.mutate({ 
                   amount: parseFloat(withdrawAmount), 
@@ -465,60 +602,6 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           </div>
         )}
 
-        {bets.length > 0 && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
-              <History className="w-4 h-4 text-zinc-500" />
-              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">HISTORY</h3>
-            </div>
-            <div className="divide-y divide-zinc-800/50">
-              {bets.slice(0, 10).map((bet) => (
-                <div
-                  key={bet.id}
-                  className="flex justify-between items-center p-3"
-                  data-testid={`bet-${bet.id}`}
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span
-                      className={cn(
-                        "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
-                        bet.status === "won"
-                          ? "bg-wild-scout/20 text-wild-scout"
-                          : bet.status === "lost"
-                          ? "bg-wild-brand/20 text-wild-brand"
-                          : "bg-wild-gold/20 text-wild-gold"
-                      )}
-                    >
-                      {bet.status.toUpperCase()}
-                    </span>
-                    <span className="text-xs text-white truncate">@{bet.odds.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right font-mono shrink-0 ml-2">
-                    <div className={cn(
-                      "text-xs font-bold",
-                      bet.status === "won" ? "text-wild-scout" : bet.status === "lost" ? "text-wild-brand" : "text-white"
-                    )}>
-                      {bet.status === "won" ? "+" : bet.status === "lost" ? "-" : ""}${bet.amount.toFixed(2)}
-                    </div>
-                    <div className="text-[10px] text-zinc-500">
-                      {formatTime(bet.placedAt)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {bets.length === 0 && trades.length === 0 && openPositions.length === 0 && (
-          <div className="text-center py-8 opacity-60">
-            <Activity className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-            <h3 className="font-bold text-zinc-500">No Activity Yet</h3>
-            <p className="text-xs text-zinc-600 mt-2">
-              Start predicting to see your stats here
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
