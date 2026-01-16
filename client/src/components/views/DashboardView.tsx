@@ -33,6 +33,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const { 
     withdrawUSDC, 
     redeemPositions,
+    batchRedeemPositions,
   } = usePolymarketClient();
   
   useEffect(() => {
@@ -89,9 +90,15 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     
     setClaimingAll(true);
     try {
-      for (const pos of claimable) {
-        if (pos.conditionId) {
-          await redeemPositions(pos.conditionId, [1, 2]);
+      // Collect all conditionIds and batch redeem in ONE transaction (single signature!)
+      const conditionIds = claimable
+        .map(p => p.conditionId)
+        .filter((id): id is string => !!id);
+      
+      if (conditionIds.length > 0) {
+        const result = await batchRedeemPositions(conditionIds, [1, 2]);
+        if (!result.success) {
+          console.error("Batch claim failed:", result.error);
         }
       }
       await refreshPositions();
