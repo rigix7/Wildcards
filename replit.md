@@ -153,6 +153,12 @@ Key API Endpoints:
 - Added Dashboard Activity tab with Polymarket activity history (January 16, 2026)
   - Fetches complete trade history from Polymarket Data API /activity endpoint
   - Shows BOUGHT (teal), SOLD (gold), CLAIMED (green) badges with amounts and timestamps
+- Implemented real-time price updates via WebSocket (January 16, 2026)
+  - Added useLivePrices hook using @nevuamarkets/poly-websockets package
+  - Subscribes to visible market token IDs for live best_ask price updates
+  - All market display components (SpreadMarketDisplay, TotalsMarketDisplay, MoneylineMarketDisplay, SoccerMoneylineDisplay, SimplifiedMarketRow) now use live prices
+  - getLivePrice() helper falls back to static Gamma API prices when WebSocket data unavailable
+  - 15-second delayed position refresh after successful bet placement to account for Polymarket API latency
 
 ## Geo-Blocking Behavior
 Polymarket enforces geo-restrictions at the API level for trading/orders. Blocked countries include:

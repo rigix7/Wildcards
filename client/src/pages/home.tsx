@@ -17,6 +17,7 @@ import { useWallet } from "@/providers/WalletContext";
 import useTradingSession from "@/hooks/useTradingSession";
 import useClobClient from "@/hooks/useClobClient";
 import useClobOrder from "@/hooks/useClobOrder";
+import { useLivePrices } from "@/hooks/useLivePrices";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures } from "@shared/schema";
 
 export default function HomePage() {
@@ -67,6 +68,9 @@ export default function HomePage() {
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [userPositions, setUserPositions] = useState<PolymarketPosition[]>([]);
   const { showToast, ToastContainer } = useTerminalToast();
+  
+  // Live prices from WebSocket
+  const livePrices = useLivePrices();
 
   const { data: demoMarkets = [], isLoading: demoMarketsLoading } = useQuery<Market[]>({
     queryKey: ["/api/markets"],
@@ -425,7 +429,14 @@ export default function HomePage() {
   const handleBetSuccess = () => {
     const walletAddr = safeAddress || address;
     if (walletAddr && !walletAddr.startsWith("0xDemo")) {
+      // Immediate fetch attempt
       fetchPositions(walletAddr).then(setUserPositions);
+      
+      // Delayed fetch after 15 seconds to account for Polymarket API latency
+      setTimeout(() => {
+        console.log("[Positions] Delayed refresh after 15 seconds");
+        fetchPositions(walletAddr).then(setUserPositions);
+      }, 15000);
     }
     fetchBalance();
   };
@@ -476,6 +487,7 @@ export default function HomePage() {
               selectedBet={selectedBet}
               adminSettings={adminSettings}
               userPositions={userPositions}
+              livePrices={livePrices}
             />
           )}
           {activeTab === "scout" && (
