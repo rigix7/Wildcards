@@ -1158,27 +1158,58 @@ export async function registerRoutes(
     try {
       const GAMMA_API = "https://gamma-api.polymarket.com";
       
-      // Fetch Match Day events from Gamma API (active sports events)
+      // Sports keywords - same list used by Match Day for consistency
+      const SPORTS_KEYWORDS = [
+        "nba", "nfl", "mlb", "nhl", "soccer", "football", "basketball", 
+        "tennis", "mma", "boxing", "golf", "esports", "epl", "ucl", 
+        "la-liga", "serie-a", "bundesliga", "ligue-1", "champions-league",
+        "atp", "wta", "f1", "nascar", "ufc", "pga", "hockey", "baseball",
+        "ncaa", "college-football", "college-basketball", "cfb", "cbb",
+        "premier-league", "world-cup", "fifa", "sports"
+      ];
+      
+      // Helper to check if an event has sports-related tags
+      const isSportsEvent = (tags: Array<{ slug?: string; label?: string }>) => {
+        if (!tags || !Array.isArray(tags)) return false;
+        return tags.some(tag => 
+          SPORTS_KEYWORDS.some(keyword => 
+            tag.slug?.toLowerCase().includes(keyword) || 
+            tag.label?.toLowerCase().includes(keyword)
+          )
+        );
+      };
+      
+      // Fetch Match Day events from Gamma API
       const eventsResponse = await fetch(
         `${GAMMA_API}/events?active=true&closed=false&limit=200`
       );
       if (!eventsResponse.ok) {
         throw new Error(`Gamma API events error: ${eventsResponse.status}`);
       }
-      const matchDayEvents = await eventsResponse.json() as Array<{
+      const allEvents = await eventsResponse.json() as Array<{
         id: string;
         tags: Array<{ id: string; label: string; slug: string }>;
       }>;
       
+      // Filter to only sports events
+      const sportsEvents = allEvents.filter(event => isSportsEvent(event.tags));
+      
       // Get Futures from database
       const futures = await storage.getFutures();
       
-      // Extract unique tags from Match Day events
+      // Extract unique sports-related tags from Match Day events
       const tagMap = new Map<string, { id: string; label: string; slug: string; eventCount: number }>();
       
-      for (const event of matchDayEvents) {
+      for (const event of sportsEvents) {
         if (event.tags && Array.isArray(event.tags)) {
-          for (const tag of event.tags) {
+          // Only include tags that match sports keywords
+          const sportsTags = event.tags.filter(tag =>
+            SPORTS_KEYWORDS.some(keyword =>
+              tag.slug?.toLowerCase().includes(keyword) ||
+              tag.label?.toLowerCase().includes(keyword)
+            )
+          );
+          for (const tag of sportsTags) {
             if (tag.id && tag.slug) {
               const existing = tagMap.get(tag.id);
               tagMap.set(tag.id, {
