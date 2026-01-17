@@ -1,0 +1,269 @@
+2polygon.ts:43 Error fetching USDC balance: ContractFunctionExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  data:  0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f
+ 
+Contract Call:
+  address:   0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  function:  balanceOf(address account)
+  args:               (0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f)
+
+Docs: https://viem.sh/docs/contract/readContract
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getContractError (chunk-YVFS6OR4.js?v=18b6e877:136:10)
+    at readContract (chunk-YVFS6OR4.js?v=18b6e877:1520:11)
+    at async getUSDCBalance (polygon.ts:34:21)
+    at async home.tsx:125:25Caused by: CallExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  data:  0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getCallError (chunk-33ZS5IM3.js?v=18b6e877:7553:10)
+    at call (chunk-33ZS5IM3.js?v=18b6e877:7792:11)
+    at async readContract (chunk-YVFS6OR4.js?v=18b6e877:1508:22)
+    at async getUSDCBalance (polygon.ts:34:21)
+    at async home.tsx:125:25Caused by: RpcRequestError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at request (chunk-WEHEFL4M.js?v=18b6e877:7444:17)
+    at async withRetry.delay.count.count (chunk-WEHEFL4M.js?v=18b6e877:3428:16)
+    at async attemptRetry (chunk-WEHEFL4M.js?v=18b6e877:2063:22)
+getUSDCBalance @ polygon.ts:43
+await in getUSDCBalance
+(anonymous) @ home.tsx:125
+(anonymous) @ home.tsx:153
+commitHookEffectListMount @ chunk-CX6EDVIC.js?v=18b6e877:23836
+commitPassiveMountOnFiber @ chunk-CX6EDVIC.js?v=18b6e877:25079
+commitPassiveMountEffects_complete @ chunk-CX6EDVIC.js?v=18b6e877:25052
+commitPassiveMountEffects_begin @ chunk-CX6EDVIC.js?v=18b6e877:25042
+commitPassiveMountEffects @ chunk-CX6EDVIC.js?v=18b6e877:25032
+flushPassiveEffectsImpl @ chunk-CX6EDVIC.js?v=18b6e877:26416
+flushPassiveEffects @ chunk-CX6EDVIC.js?v=18b6e877:26373
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:26254
+workLoop @ chunk-CX6EDVIC.js?v=18b6e877:462
+flushWork @ chunk-CX6EDVIC.js?v=18b6e877:441
+performWorkUntilDeadline @ chunk-CX6EDVIC.js?v=18b6e877:649
+approvals.ts:94 Failed to check ERC1155 approval for 0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E: ContractFunctionExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f0000000000000000000000004bfb41d5b3570defd03c39a9a4d8de6bd8b8982e","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  data:  0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f0000000000000000000000004bfb41d5b3570defd03c39a9a4d8de6bd8b8982e
+ 
+Contract Call:
+  address:   0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  function:  isApprovedForAll(address account, address operator)
+  args:                      (0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f, 0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E)
+
+Docs: https://viem.sh/docs/contract/readContract
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getContractError (chunk-YVFS6OR4.js?v=18b6e877:136:10)
+    at readContract (chunk-YVFS6OR4.js?v=18b6e877:1520:11)
+    at async checkERC1155ApprovalForSpender (approvals.ts:85:24)
+    at async approvals.ts:120:37
+    at async Promise.all (/index 0)
+    at async checkAllApprovals (approvals.ts:118:3)
+    at async useTokenApprovals.ts:10:14
+    at async useTradingSession.ts:192:30Caused by: CallExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f0000000000000000000000004bfb41d5b3570defd03c39a9a4d8de6bd8b8982e","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  data:  0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f0000000000000000000000004bfb41d5b3570defd03c39a9a4d8de6bd8b8982e
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getCallError (chunk-33ZS5IM3.js?v=18b6e877:7553:10)
+    at call (chunk-33ZS5IM3.js?v=18b6e877:7792:11)
+    at async readContract (chunk-YVFS6OR4.js?v=18b6e877:1508:22)
+    at async checkERC1155ApprovalForSpender (approvals.ts:85:24)
+    at async approvals.ts:120:37
+    at async Promise.all (/index 0)
+    at async checkAllApprovals (approvals.ts:118:3)
+    at async useTokenApprovals.ts:10:14
+    at async useTradingSession.ts:192:30Caused by: RpcRequestError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f0000000000000000000000004bfb41d5b3570defd03c39a9a4d8de6bd8b8982e","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at request (chunk-WEHEFL4M.js?v=18b6e877:7444:17)
+    at async withRetry.delay.count.count (chunk-WEHEFL4M.js?v=18b6e877:3428:16)
+    at async attemptRetry (chunk-WEHEFL4M.js?v=18b6e877:2063:22)
+checkERC1155ApprovalForSpender @ approvals.ts:94
+await in checkERC1155ApprovalForSpender
+(anonymous) @ approvals.ts:120
+checkAllApprovals @ approvals.ts:119
+await in checkAllApprovals
+(anonymous) @ useTokenApprovals.ts:10
+(anonymous) @ useTradingSession.ts:192
+await in (anonymous)
+(anonymous) @ useTradingSession.ts:248
+commitHookEffectListMount @ chunk-CX6EDVIC.js?v=18b6e877:23836
+commitPassiveMountOnFiber @ chunk-CX6EDVIC.js?v=18b6e877:25079
+commitPassiveMountEffects_complete @ chunk-CX6EDVIC.js?v=18b6e877:25052
+commitPassiveMountEffects_begin @ chunk-CX6EDVIC.js?v=18b6e877:25042
+commitPassiveMountEffects @ chunk-CX6EDVIC.js?v=18b6e877:25032
+flushPassiveEffectsImpl @ chunk-CX6EDVIC.js?v=18b6e877:26416
+flushPassiveEffects @ chunk-CX6EDVIC.js?v=18b6e877:26373
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:26254
+workLoop @ chunk-CX6EDVIC.js?v=18b6e877:462
+flushWork @ chunk-CX6EDVIC.js?v=18b6e877:441
+performWorkUntilDeadline @ chunk-CX6EDVIC.js?v=18b6e877:649
+approvals.ts:94 Failed to check ERC1155 approval for 0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296: ContractFunctionExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f000000000000000000000000d91e80cf2e7be2e162c6513ced06f1dd0da35296","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  data:  0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f000000000000000000000000d91e80cf2e7be2e162c6513ced06f1dd0da35296
+ 
+Contract Call:
+  address:   0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  function:  isApprovedForAll(address account, address operator)
+  args:                      (0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f, 0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296)
+
+Docs: https://viem.sh/docs/contract/readContract
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getContractError (chunk-YVFS6OR4.js?v=18b6e877:136:10)
+    at readContract (chunk-YVFS6OR4.js?v=18b6e877:1520:11)
+    at async checkERC1155ApprovalForSpender (approvals.ts:85:24)
+    at async approvals.ts:120:37
+    at async Promise.all (/index 2)
+    at async checkAllApprovals (approvals.ts:118:3)
+    at async useTokenApprovals.ts:10:14
+    at async useTradingSession.ts:192:30Caused by: CallExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f000000000000000000000000d91e80cf2e7be2e162c6513ced06f1dd0da35296","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x4d97dcd97ec945f40cf65f87097ace5ea0476045
+  data:  0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f000000000000000000000000d91e80cf2e7be2e162c6513ced06f1dd0da35296
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getCallError (chunk-33ZS5IM3.js?v=18b6e877:7553:10)
+    at call (chunk-33ZS5IM3.js?v=18b6e877:7792:11)
+    at async readContract (chunk-YVFS6OR4.js?v=18b6e877:1508:22)
+    at async checkERC1155ApprovalForSpender (approvals.ts:85:24)
+    at async approvals.ts:120:37
+    at async Promise.all (/index 2)
+    at async checkAllApprovals (approvals.ts:118:3)
+    at async useTokenApprovals.ts:10:14
+    at async useTradingSession.ts:192:30Caused by: RpcRequestError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0xe985e9c50000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f000000000000000000000000d91e80cf2e7be2e162c6513ced06f1dd0da35296","to":"0x4d97dcd97ec945f40cf65f87097ace5ea0476045"},"latest"]}
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at request (chunk-WEHEFL4M.js?v=18b6e877:7444:17)
+    at async withRetry.delay.count.count (chunk-WEHEFL4M.js?v=18b6e877:3428:16)
+    at async attemptRetry (chunk-WEHEFL4M.js?v=18b6e877:2063:22)
+checkERC1155ApprovalForSpender @ approvals.ts:94
+await in checkERC1155ApprovalForSpender
+(anonymous) @ approvals.ts:120
+checkAllApprovals @ approvals.ts:119
+await in checkAllApprovals
+(anonymous) @ useTokenApprovals.ts:10
+(anonymous) @ useTradingSession.ts:192
+await in (anonymous)
+(anonymous) @ useTradingSession.ts:248
+commitHookEffectListMount @ chunk-CX6EDVIC.js?v=18b6e877:23836
+commitPassiveMountOnFiber @ chunk-CX6EDVIC.js?v=18b6e877:25079
+commitPassiveMountEffects_complete @ chunk-CX6EDVIC.js?v=18b6e877:25052
+commitPassiveMountEffects_begin @ chunk-CX6EDVIC.js?v=18b6e877:25042
+commitPassiveMountEffects @ chunk-CX6EDVIC.js?v=18b6e877:25032
+flushPassiveEffectsImpl @ chunk-CX6EDVIC.js?v=18b6e877:26416
+flushPassiveEffects @ chunk-CX6EDVIC.js?v=18b6e877:26373
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:26254
+workLoop @ chunk-CX6EDVIC.js?v=18b6e877:462
+flushWork @ chunk-CX6EDVIC.js?v=18b6e877:441
+performWorkUntilDeadline @ chunk-CX6EDVIC.js?v=18b6e877:649
+useTokenApprovals.ts:22 Executing safe transactions...
+5polygon.ts:43 Error fetching USDC balance: ContractFunctionExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  data:  0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f
+ 
+Contract Call:
+  address:   0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  function:  balanceOf(address account)
+  args:               (0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f)
+
+Docs: https://viem.sh/docs/contract/readContract
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getContractError (chunk-YVFS6OR4.js?v=18b6e877:136:10)
+    at readContract (chunk-YVFS6OR4.js?v=18b6e877:1520:11)
+    at async getUSDCBalance (polygon.ts:34:21)
+    at async home.tsx:125:25Caused by: CallExecutionError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+ 
+Raw Call Arguments:
+  to:    0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+  data:  0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at getCallError (chunk-33ZS5IM3.js?v=18b6e877:7553:10)
+    at call (chunk-33ZS5IM3.js?v=18b6e877:7792:11)
+    at async readContract (chunk-YVFS6OR4.js?v=18b6e877:1508:22)
+    at async getUSDCBalance (polygon.ts:34:21)
+    at async home.tsx:125:25Caused by: RpcRequestError: RPC Request failed.
+
+URL: https://polygon-rpc.com
+Request body: {"method":"eth_call","params":[{"data":"0x70a082310000000000000000000000007291726d8bfbab3fb3f059a441b53cca64d03d0f","to":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"},"latest"]}
+
+Details: Too many requests, reason: call rate limit exhausted, retry in 10s
+Version: viem@2.43.5
+    at request (chunk-WEHEFL4M.js?v=18b6e877:7444:17)
+    at async withRetry.delay.count.count (chunk-WEHEFL4M.js?v=18b6e877:3428:16)
+    at async attemptRetry (chunk-WEHEFL4M.js?v=18b6e877:2063:22)
+getUSDCBalance @ polygon.ts:43
+await in getUSDCBalance
+(anonymous) @ home.tsx:125
+(anonymous) @ home.tsx:153
+commitHookEffectListMount @ chunk-CX6EDVIC.js?v=18b6e877:23836
+commitPassiveMountOnFiber @ chunk-CX6EDVIC.js?v=18b6e877:25079
+commitPassiveMountEffects_complete @ chunk-CX6EDVIC.js?v=18b6e877:25052
+commitPassiveMountEffects_begin @ chunk-CX6EDVIC.js?v=18b6e877:25042
+commitPassiveMountEffects @ chunk-CX6EDVIC.js?v=18b6e877:25032
+flushPassiveEffectsImpl @ chunk-CX6EDVIC.js?v=18b6e877:26416
+flushPassiveEffects @ chunk-CX6EDVIC.js?v=18b6e877:26373
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:26254
+workLoop @ chunk-CX6EDVIC.js?v=18b6e877:462
+flushWork @ chunk-CX6EDVIC.js?v=18b6e877:441
+performWorkUntilDeadline @ chunk-CX6EDVIC.js?v=18b6e877:649
+(index):1 Access to fetch at 'https://auth.privy.io/api/v1/analytics_events' from origin 'https://652830ff-97fc-44e7-923b-a0bc785dc4f8-00-2g8u5tdcfukny.picard.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+chunk-CAXPCQPR.js?v=18b6e877:11975  POST https://auth.privy.io/api/v1/analytics_events net::ERR_FAILED 422 (Unprocessable Content)

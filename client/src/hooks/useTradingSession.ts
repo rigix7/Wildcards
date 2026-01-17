@@ -9,9 +9,13 @@ import {
   loadSession,
   saveSession,
   clearSession as clearStoredSession,
+  forceSessionClearIfNeeded,
   TradingSession,
   SessionStep,
 } from "@/utils/session";
+
+// Run force session clear once on module load (one-time migration)
+forceSessionClearIfNeeded();
 
 // Save Safe deployment status to database
 async function saveSafeStatusToDb(eoaAddress: string, safeAddress: string): Promise<void> {
@@ -160,14 +164,15 @@ export default function useTradingSession() {
         await deploySafe(initializedRelayClient);
       }
 
-      // Step 5: Get User API Credentials (derive or create) for the Safe address
-      // IMPORTANT: Credentials must be derived for the Safe proxy address (not EOA)
-      // because orders are signed with signatureType=2 where the Safe is the maker
+      // Step 5: Get User API Credentials (derive or create)
+      // NOTE: Per official Polymarket example, credentials are derived with EOA-only client
+      // The ClobClient with signatureType=2 handles Safe association for order building
       let apiCreds = tradingSession?.apiCredentials;
 
       // Check if credentials need re-derivation:
       // - No credentials stored
-      // - Credentials were derived for wrong address (migration from EOA to Safe)
+      // - Credentials were derived for wrong address
+      // NOTE: Credentials are derived with EOA-only client, so credentialsDerivedFor should match EOA
       const needsCredentials =
         !tradingSession?.hasApiCredentials ||
         !apiCreds ||
@@ -176,13 +181,13 @@ export default function useTradingSession() {
         !apiCreds.passphrase ||
         (tradingSession?.credentialsDerivedFor &&
           tradingSession.credentialsDerivedFor.toLowerCase() !==
-            safeAddress.toLowerCase()) ||
+            eoaAddress.toLowerCase()) ||
         !tradingSession?.credentialsDerivedFor; // Force re-derive if field is missing (old session)
 
       if (needsCredentials) {
         setCurrentStep("credentials");
         console.log(
-          `[TradingSession] Deriving credentials for Safe address: ${safeAddress}`
+          `[TradingSession] Deriving credentials with EOA: ${eoaAddress} (Safe: ${safeAddress})`
         );
         apiCreds = await createOrDeriveUserApiCredentials(safeAddress);
       }
@@ -206,7 +211,7 @@ export default function useTradingSession() {
         hasApiCredentials: true,
         hasApprovals,
         apiCredentials: apiCreds,
-        credentialsDerivedFor: safeAddress, // Track that credentials are for Safe address
+        credentialsDerivedFor: eoaAddress, // Track EOA that derived credentials (EOA-only client)
         lastChecked: Date.now(),
       };
 
