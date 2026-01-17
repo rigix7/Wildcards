@@ -384,34 +384,6 @@ function parseLineFromTitle(title: string): number | null {
   return null;
 }
 
-// Parse spread line from question text - this is the source of truth
-// Question format: "Spread: 76ers (-3.5)" or "1H Spread: 76ers (-0.5)"
-// Returns: { team: "76ers", line: -3.5 } or null if parsing fails
-function parseSpreadFromQuestion(question: string): { team: string; line: number } | null {
-  // Match pattern: "Team Name (±X.X)" where the line is in parentheses
-  const match = question.match(/:\s*([^(]+?)\s*\(([+-]?\d+\.?\d*)\)/);
-  if (match) {
-    const team = match[1].trim();
-    const line = parseFloat(match[2]);
-    return { team, line };
-  }
-  return null;
-}
-
-// Check if a parsed team name matches an outcome
-// Uses direct label matching - both are team names (e.g., "Rockets" vs "Rockets")
-function doesTeamMatchOutcome(
-  parsedTeam: string, 
-  outcome: { label: string; abbrev?: string }
-): boolean {
-  const teamLower = parsedTeam.toLowerCase();
-  const labelLower = outcome.label.toLowerCase();
-  
-  // Direct match: label contains team name or vice versa
-  // This works because outcome.label is the team name (e.g., "Lakers", "Rockets")
-  return labelLower.includes(teamLower) || teamLower.includes(labelLower);
-}
-
 // Spread market display component - shows two buttons with team abbreviation + price
 // The line selector below determines which spread line is being shown
 // Bet slip shows the full question for clarity on which side to back
@@ -1451,37 +1423,10 @@ export function PredictView({
     let outcomeLabel = soccerOutcomeLabel || market.groupItemTitle;
     if (!soccerOutcomeLabel) {
       if (marketType === "spreads") {
-        // Parse from question text - authoritative source of truth
-        const parsed = parseSpreadFromQuestion(market.question || "");
-        if (parsed) {
-          // Use smart matching to find which outcome corresponds to the parsed team
-          const outcome0Match = doesTeamMatchOutcome(parsed.team, market.outcomes[0]);
-          const outcome1Match = doesTeamMatchOutcome(parsed.team, market.outcomes[1]);
-          
-          // Determine which outcome has the parsed line
-          let parsedTeamIsOutcome0 = outcome0Match && !outcome1Match;
-          // If ambiguous, default to outcome0 having the parsed line
-          if (!outcome0Match && !outcome1Match) parsedTeamIsOutcome0 = true;
-          if (outcome0Match && outcome1Match) parsedTeamIsOutcome0 = true;
-          
-          // Determine line for selected outcome
-          let selectedLine: number;
-          let selectedAbbr: string;
-          if (direction === "home") {
-            selectedAbbr = market.outcomes[0].abbrev || market.outcomes[0].label.slice(0, 3).toUpperCase();
-            selectedLine = parsedTeamIsOutcome0 ? parsed.line : -parsed.line;
-          } else {
-            selectedAbbr = market.outcomes[1].abbrev || market.outcomes[1].label.slice(0, 3).toUpperCase();
-            selectedLine = parsedTeamIsOutcome0 ? -parsed.line : parsed.line;
-          }
-          outcomeLabel = `${selectedAbbr} ${selectedLine > 0 ? "+" : ""}${selectedLine}`;
-        } else {
-          // Fallback to old logic
-          const fallbackLine = market.line ?? 0;
-          const selectedAbbr = outcome.abbrev || outcome.label.slice(0, 3).toUpperCase();
-          const selectedLine = outcomeIndex === 0 ? fallbackLine : -fallbackLine;
-          outcomeLabel = `${selectedAbbr} ${selectedLine > 0 ? "+" : ""}${selectedLine}`;
-        }
+        // For spreads, just use the team abbreviation/label as the outcome
+        // The bet slip will show the full question (e.g., "Spread: Kings (-6.5)") for clarity
+        const selectedAbbr = outcome.abbrev || outcome.label.slice(0, 3).toUpperCase();
+        outcomeLabel = selectedAbbr;
       } else if (marketType === "totals") {
         const line = Math.abs(market.line ?? parseLineFromTitle(market.groupItemTitle) ?? 0);
         outcomeLabel = direction === "over" ? `O ${line}` : `U ${line}`;
