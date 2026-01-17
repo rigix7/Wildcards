@@ -96,6 +96,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tags/enabled"] });
       toast({ title: "Tags synced from Polymarket" });
     },
     onError: () => {
@@ -109,6 +110,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tags/enabled"] });
     },
   });
 

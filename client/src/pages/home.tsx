@@ -164,9 +164,11 @@ export default function HomePage() {
     }
   }, [safeAddress, address]);
 
+  const enabledTagSlugs = useMemo(() => enabledTags.map(t => t.slug).sort().join(','), [enabledTags]);
+  
   useEffect(() => {
     const loadLiveMarkets = async () => {
-      const tagSlugs = enabledTags.map(t => t.slug);
+      const tagSlugs = enabledTagSlugs ? enabledTagSlugs.split(',') : [];
       if (tagSlugs.length === 0) {
         setLiveMarkets([]);
         setDisplayEvents([]);
@@ -211,7 +213,7 @@ export default function HomePage() {
     };
 
     loadLiveMarkets();
-  }, [enabledTags]);
+  }, [enabledTagSlugs]);
 
   const hasLiveMarkets = enabledTags.length > 0;
   const markets = hasLiveMarkets ? liveMarkets : demoMarkets;
