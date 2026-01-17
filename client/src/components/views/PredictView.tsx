@@ -397,61 +397,64 @@ function SpreadMarketDisplay({
   selectedDirection?: "home" | "away" | null;
   livePrices?: LivePricesMap;
 }) {
-  // Parse the question to extract home team: "Spread: Eagles (-4.5)" -> Eagles is home with -4.5
-  // The outcomes array: [homeTeam, awayTeam] - index 0 is home (gets the negative line)
+  // Polymarket spread data structure:
+  // - outcomes[0] = favorite (team with negative spread in API)
+  // - outcomes[1] = underdog (team with positive spread)
+  // - line is always negative from API (favorite's handicap)
   const outcomes = market.outcomes;
   if (outcomes.length < 2) return null;
   
   // Use market.line if available, otherwise try to parse from groupItemTitle
   const line = market.line ?? parseLineFromTitle(market.groupItemTitle) ?? 0;
-  const homeTeam = outcomes[0].label;
-  const awayTeam = outcomes[1].label;
+  const favoriteTeam = outcomes[0].label;
+  const underdogTeam = outcomes[1].label;
   // Use official abbreviations from Polymarket slug if available, fallback to first 3 chars
-  const homeAbbr = outcomes[0].abbrev || homeTeam.slice(0, 3).toUpperCase();
-  const awayAbbr = outcomes[1].abbrev || awayTeam.slice(0, 3).toUpperCase();
+  const favoriteAbbr = outcomes[0].abbrev || favoriteTeam.slice(0, 3).toUpperCase();
+  const underdogAbbr = outcomes[1].abbrev || underdogTeam.slice(0, 3).toUpperCase();
   
-  // Home team gets negative line (e.g., -4.5), away team gets positive (+4.5)
-  const homeLine = line; // Already negative from API
-  const awayLine = -line; // Flip sign for away team
+  // Favorite gets negative line (e.g., -4.5), underdog gets positive (+4.5)
+  const favoriteLine = line; // Already negative from API
+  const underdogLine = -line; // Flip sign for underdog
   
   // Prices: use live prices from WebSocket if available, fall back to Gamma API
-  const homeStaticPrice = outcomes[0].price ?? market.bestAsk ?? 0.5;
-  const awayStaticPrice = outcomes[1].price ?? (1 - market.bestAsk) ?? 0.5;
-  const homePrice = Math.round(getLivePrice(outcomes[0].tokenId, homeStaticPrice, livePrices) * 100);
-  const awayPrice = Math.round(getLivePrice(outcomes[1].tokenId, awayStaticPrice, livePrices) * 100);
+  const favoriteStaticPrice = outcomes[0].price ?? market.bestAsk ?? 0.5;
+  const underdogStaticPrice = outcomes[1].price ?? (1 - market.bestAsk) ?? 0.5;
+  const favoritePrice = Math.round(getLivePrice(outcomes[0].tokenId, favoriteStaticPrice, livePrices) * 100);
+  const underdogPrice = Math.round(getLivePrice(outcomes[1].tokenId, underdogStaticPrice, livePrices) * 100);
   
-  const isHomeSelected = selectedDirection === "home";
-  const isAwaySelected = selectedDirection === "away";
+  // "home" = favorite (outcomes[0]), "away" = underdog (outcomes[1]) for betting direction
+  const isFavoriteSelected = selectedDirection === "home";
+  const isUnderdogSelected = selectedDirection === "away";
   
   return (
     <div className="flex gap-2">
       <button
         onClick={() => onSelect(market, "away")}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-          isAwaySelected 
+          isUnderdogSelected 
             ? "bg-red-600 border border-red-500 text-white" 
             : "bg-red-900/40 border border-red-800/50 hover:bg-red-800/50 text-zinc-100"
         }`}
-        data-testid={`spread-away-${market.id}`}
+        data-testid={`spread-underdog-${market.id}`}
       >
         <span className="font-bold">
-          {awayAbbr} {awayLine > 0 ? "+" : ""}{awayLine}
+          {underdogAbbr} {underdogLine > 0 ? "+" : ""}{underdogLine}
         </span>
-        <span className="font-mono font-bold text-white">{awayPrice}¢</span>
+        <span className="font-mono font-bold text-white">{underdogPrice}¢</span>
       </button>
       <button
         onClick={() => onSelect(market, "home")}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-          isHomeSelected 
+          isFavoriteSelected 
             ? "bg-teal-600 border border-teal-500 text-white" 
             : "bg-teal-900/40 border border-teal-800/50 hover:bg-teal-800/50 text-zinc-100"
         }`}
-        data-testid={`spread-home-${market.id}`}
+        data-testid={`spread-favorite-${market.id}`}
       >
         <span className="font-bold">
-          {homeAbbr} {homeLine > 0 ? "+" : ""}{homeLine}
+          {favoriteAbbr} {favoriteLine > 0 ? "+" : ""}{favoriteLine}
         </span>
-        <span className="font-mono font-bold text-white">{homePrice}¢</span>
+        <span className="font-mono font-bold text-white">{favoritePrice}¢</span>
       </button>
     </div>
   );
@@ -1432,10 +1435,13 @@ export function PredictView({
     if (!soccerOutcomeLabel) {
       if (marketType === "spreads" && market.line !== undefined) {
         const line = market.line;
+        // direction="home" = favorite (outcomes[0]), direction="away" = underdog (outcomes[1])
         if (direction === "home") {
-          outcomeLabel = `${market.outcomes[0].label.slice(0, 3).toUpperCase()} ${line > 0 ? "+" : ""}${line}`;
+          const favoriteAbbr = market.outcomes[0].abbrev || market.outcomes[0].label.slice(0, 3).toUpperCase();
+          outcomeLabel = `${favoriteAbbr} ${line > 0 ? "+" : ""}${line}`;
         } else {
-          outcomeLabel = `${market.outcomes[1].label.slice(0, 3).toUpperCase()} ${-line > 0 ? "+" : ""}${-line}`;
+          const underdogAbbr = market.outcomes[1].abbrev || market.outcomes[1].label.slice(0, 3).toUpperCase();
+          outcomeLabel = `${underdogAbbr} ${-line > 0 ? "+" : ""}${-line}`;
         }
       } else if (marketType === "totals" && market.line !== undefined) {
         outcomeLabel = direction === "over" ? `O ${market.line}` : `U ${market.line}`;
