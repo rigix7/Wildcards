@@ -1553,19 +1553,25 @@ export function PredictView({
         // Parse from question text - authoritative source of truth
         const parsed = parseSpreadFromQuestion(market.question || "");
         if (parsed) {
-          const parsedTeamLower = parsed.team.toLowerCase();
-          const outcome0Match = market.outcomes[0].label.toLowerCase().includes(parsedTeamLower) || 
-                                parsedTeamLower.includes(market.outcomes[0].label.toLowerCase());
+          // Use smart matching to find which outcome corresponds to the parsed team
+          const outcome0Match = doesTeamMatchOutcome(parsed.team, market.outcomes[0], eventTitle);
+          const outcome1Match = doesTeamMatchOutcome(parsed.team, market.outcomes[1], eventTitle);
+          
+          // Determine which outcome has the parsed line
+          let parsedTeamIsOutcome0 = outcome0Match && !outcome1Match;
+          // If ambiguous, default to outcome0 having the parsed line
+          if (!outcome0Match && !outcome1Match) parsedTeamIsOutcome0 = true;
+          if (outcome0Match && outcome1Match) parsedTeamIsOutcome0 = true;
           
           // Determine line for selected outcome
           let selectedLine: number;
           let selectedAbbr: string;
           if (direction === "home") {
             selectedAbbr = market.outcomes[0].abbrev || market.outcomes[0].label.slice(0, 3).toUpperCase();
-            selectedLine = outcome0Match ? parsed.line : -parsed.line;
+            selectedLine = parsedTeamIsOutcome0 ? parsed.line : -parsed.line;
           } else {
             selectedAbbr = market.outcomes[1].abbrev || market.outcomes[1].label.slice(0, 3).toUpperCase();
-            selectedLine = outcome0Match ? -parsed.line : parsed.line;
+            selectedLine = parsedTeamIsOutcome0 ? -parsed.line : parsed.line;
           }
           outcomeLabel = `${selectedAbbr} ${selectedLine > 0 ? "+" : ""}${selectedLine}`;
         } else {
