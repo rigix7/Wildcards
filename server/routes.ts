@@ -421,6 +421,27 @@ export async function registerRoutes(
     }
   });
 
+  // Fetch teams from Gamma API for team name → abbreviation lookup
+  // Used to accurately match team names in questions to outcome labels
+  app.get("/api/polymarket/teams", async (req, res) => {
+    try {
+      const { league } = req.query;
+      let url = `${GAMMA_API_BASE}/teams?limit=500`;
+      if (league) {
+        url += `&league=${league}`;
+      }
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Gamma API error: ${response.status}`);
+      }
+      const teams = await response.json();
+      res.json(teams);
+    } catch (error) {
+      console.error("Error fetching Polymarket teams:", error);
+      res.status(500).json({ error: "Failed to fetch teams" });
+    }
+  });
+
   // Fetch sports with hierarchical market types for granular selection
   // Returns sports with nested market type options fetched dynamically from each league's events
   app.get("/api/polymarket/tags", async (req, res) => {

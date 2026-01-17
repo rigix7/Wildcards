@@ -1,5 +1,81 @@
 import { apiRequest } from "./queryClient";
 
+// Team data from Gamma API for name → abbreviation lookup
+export interface GammaTeam {
+  id: number;
+  name: string;
+  league: string;
+  abbreviation: string;
+  alias: string | null;
+  logo?: string;
+  color?: string;
+}
+
+// Team lookup map: team name/alias (lowercase) → abbreviation (lowercase)
+let teamLookupCache: Map<string, string> | null = null;
+let teamLookupPromise: Promise<Map<string, string>> | null = null;
+
+// Fetch teams from Gamma API and build lookup map
+async function buildTeamLookup(): Promise<Map<string, string>> {
+  if (teamLookupCache) return teamLookupCache;
+  
+  try {
+    const response = await fetch("/api/polymarket/teams");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch teams: ${response.status}`);
+    }
+    const teams: GammaTeam[] = await response.json();
+    
+    const lookup = new Map<string, string>();
+    for (const team of teams) {
+      const abbrev = team.abbreviation.toLowerCase();
+      // Map by name
+      if (team.name) {
+        lookup.set(team.name.toLowerCase(), abbrev);
+      }
+      // Map by alias (if different from name)
+      if (team.alias && team.alias.toLowerCase() !== team.name?.toLowerCase()) {
+        lookup.set(team.alias.toLowerCase(), abbrev);
+      }
+    }
+    
+    teamLookupCache = lookup;
+    return lookup;
+  } catch (error) {
+    console.error("Error building team lookup:", error);
+    return new Map();
+  }
+}
+
+// Get team abbreviation from name/alias (case-insensitive)
+// Returns lowercase abbreviation or null if not found
+export async function getTeamAbbreviation(teamName: string): Promise<string | null> {
+  // Ensure we only fetch once
+  if (!teamLookupPromise) {
+    teamLookupPromise = buildTeamLookup();
+  }
+  const lookup = await teamLookupPromise;
+  return lookup.get(teamName.toLowerCase()) || null;
+}
+
+// Synchronous lookup (returns null if cache not ready)
+export function getTeamAbbreviationSync(teamName: string): string | null {
+  if (!teamLookupCache) return null;
+  return teamLookupCache.get(teamName.toLowerCase()) || null;
+}
+
+// Pre-fetch teams to populate cache (call on app startup)
+export function prefetchTeams(): void {
+  if (!teamLookupPromise) {
+    teamLookupPromise = buildTeamLookup();
+  }
+}
+
+// Check if team lookup is ready
+export function isTeamLookupReady(): boolean {
+  return teamLookupCache !== null;
+}
+
 export interface GammaTag {
   id: string;
   label: string;
