@@ -11,7 +11,6 @@ import {
   clearSession as clearStoredSession,
   TradingSession,
   SessionStep,
-  TRADING_SESSION_VERSION,
 } from "@/utils/session";
 
 // Save Safe deployment status to database
@@ -72,19 +71,6 @@ export default function useTradingSession() {
     }
 
     const stored = loadSession(eoaAddress);
-
-    // CRITICAL: Check session version and clear outdated sessions
-    // v2: Fixed credential derivation to use Safe context (signatureType=2) instead of EOA-only
-    if (stored && (!stored.sessionVersion || stored.sessionVersion < TRADING_SESSION_VERSION)) {
-      console.log(
-        `[TradingSession] Detected outdated session (v${stored.sessionVersion || 1} < v${TRADING_SESSION_VERSION}) - clearing to force re-initialization`
-      );
-      clearStoredSession(eoaAddress);
-      setTradingSession(null);
-      setCurrentStep("idle");
-      setSessionError(null);
-      return;
-    }
 
     // CRITICAL: Detect stale sessions that have credentials derived for EOA (or no tracking field)
     // These sessions MUST be cleared to force re-derivation with Safe-based credentials
@@ -174,14 +160,14 @@ export default function useTradingSession() {
         await deploySafe(initializedRelayClient);
       }
 
-      // Step 5: Get User API Credentials (derive or create)
-      // Per official Polymarket pattern: credentials are derived with EOA-only client
-      // signatureType=2 is only used in the trading ClobClient for order placement
+      // Step 5: Get User API Credentials (derive or create) for the Safe address
+      // IMPORTANT: Credentials must be derived for the Safe proxy address (not EOA)
+      // because orders are signed with signatureType=2 where the Safe is the maker
       let apiCreds = tradingSession?.apiCredentials;
 
       // Check if credentials need re-derivation:
       // - No credentials stored
-      // - Credentials were derived for wrong address (EOA changed)
+      // - Credentials were derived for wrong address (migration from EOA to Safe)
       const needsCredentials =
         !tradingSession?.hasApiCredentials ||
         !apiCreds ||
@@ -190,13 +176,15 @@ export default function useTradingSession() {
         !apiCreds.passphrase ||
         (tradingSession?.credentialsDerivedFor &&
           tradingSession.credentialsDerivedFor.toLowerCase() !==
-            eoaAddress.toLowerCase()) ||
+            safeAddress.toLowerCase()) ||
         !tradingSession?.credentialsDerivedFor; // Force re-derive if field is missing (old session)
 
       if (needsCredentials) {
         setCurrentStep("credentials");
-        console.log("[TradingSession] Deriving User API credentials (EOA-based, per official Polymarket pattern)");
-        apiCreds = await createOrDeriveUserApiCredentials();
+        console.log(
+          `[TradingSession] Deriving credentials for Safe address: ${safeAddress}`
+        );
+        apiCreds = await createOrDeriveUserApiCredentials(safeAddress);
       }
 
       // Step 6: Set all required token approvals for trading
@@ -218,8 +206,7 @@ export default function useTradingSession() {
         hasApiCredentials: true,
         hasApprovals,
         apiCredentials: apiCreds,
-        credentialsDerivedFor: eoaAddress, // Track EOA (credentials derived with EOA-only client)
-        sessionVersion: TRADING_SESSION_VERSION, // Track version for future migrations
+        credentialsDerivedFor: safeAddress, // Track that credentials are for Safe address
         lastChecked: Date.now(),
       };
 
