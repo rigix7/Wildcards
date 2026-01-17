@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Market, Futures, AdminSettings, SportMarketConfig } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
-import { prefetchTeams, getTeamAbbreviationSync, parseTeamsFromTitle, getTitleTeamAbbrevs } from "@/lib/polymarket";
+import { prefetchTeams } from "@/lib/polymarket";
 import type { UseLivePricesResult } from "@/hooks/useLivePrices";
 
 // Type for live prices map
@@ -398,79 +398,18 @@ function parseSpreadFromQuestion(question: string): { team: string; line: number
   return null;
 }
 
-// Fallback mapping for team aliases not always in Gamma API
-// These are common nicknames/aliases that may not map directly
-const FALLBACK_TEAM_ALIASES: Record<string, string> = {
-  "76ers": "phi", "sixers": "phi", "blazers": "por", "trail blazers": "por",
-  "49ers": "sf", "niners": "sf",
-};
-
 // Check if a parsed team name matches an outcome
-// Uses title-derived team mapping for accuracy: parses title, looks up both teams' abbreviations
-// Returns true if the team name corresponds to the outcome's label/abbrev
+// Uses direct label matching - both are team names (e.g., "Rockets" vs "Rockets")
 function doesTeamMatchOutcome(
   parsedTeam: string, 
-  outcome: { label: string; abbrev?: string },
-  eventTitle?: string
+  outcome: { label: string; abbrev?: string }
 ): boolean {
   const teamLower = parsedTeam.toLowerCase();
   const labelLower = outcome.label.toLowerCase();
-  const abbrevLower = (outcome.abbrev || "").toLowerCase();
   
-  // Direct match: label or abbrev contains team name or vice versa
-  if (labelLower.includes(teamLower) || teamLower.includes(labelLower)) {
-    return true;
-  }
-  if (abbrevLower && (abbrevLower.includes(teamLower) || teamLower.includes(abbrevLower))) {
-    return true;
-  }
-  
-  // Use Gamma API team lookup: team name → abbreviation (e.g., "Rockets" → "hou")
-  const gammaAbbrev = getTeamAbbreviationSync(parsedTeam);
-  if (gammaAbbrev) {
-    // gammaAbbrev is lowercase (e.g., "hou"), compare case-insensitively
-    if (labelLower === gammaAbbrev || abbrevLower === gammaAbbrev) {
-      return true;
-    }
-    // Also check if label starts with the mapped abbrev
-    if (labelLower.startsWith(gammaAbbrev) || gammaAbbrev.startsWith(labelLower)) {
-      return true;
-    }
-  }
-  
-  // Fallback: check hardcoded aliases for uncommon team nicknames
-  const fallbackAbbrev = FALLBACK_TEAM_ALIASES[teamLower];
-  if (fallbackAbbrev) {
-    if (labelLower === fallbackAbbrev || abbrevLower === fallbackAbbrev) {
-      return true;
-    }
-  }
-  
-  // Title-based fallback: parse teams from event title and match via their abbreviations
-  if (eventTitle) {
-    const titleTeams = getTitleTeamAbbrevs(eventTitle);
-    if (titleTeams) {
-      // Check if parsedTeam matches team1 or team2 from title
-      const team1NameLower = titleTeams.team1.name.toLowerCase();
-      const team2NameLower = titleTeams.team2.name.toLowerCase();
-      
-      // If parsedTeam matches a title team name, check if outcome matches that team's abbrev
-      if (team1NameLower.includes(teamLower) || teamLower.includes(team1NameLower)) {
-        const team1Abbrev = titleTeams.team1.abbrev;
-        if (team1Abbrev && (labelLower === team1Abbrev || abbrevLower === team1Abbrev)) {
-          return true;
-        }
-      }
-      if (team2NameLower.includes(teamLower) || teamLower.includes(team2NameLower)) {
-        const team2Abbrev = titleTeams.team2.abbrev;
-        if (team2Abbrev && (labelLower === team2Abbrev || abbrevLower === team2Abbrev)) {
-          return true;
-        }
-      }
-    }
-  }
-  
-  return false;
+  // Direct match: label contains team name or vice versa
+  // This works because outcome.label is the team name (e.g., "Lakers", "Rockets")
+  return labelLower.includes(teamLower) || teamLower.includes(labelLower);
 }
 
 // Spread market display component - shows two buttons like [SF +4.5 48¢] [PHI -4.5 53¢]
@@ -1562,8 +1501,8 @@ export function PredictView({
         const parsed = parseSpreadFromQuestion(market.question || "");
         if (parsed) {
           // Use smart matching to find which outcome corresponds to the parsed team
-          const outcome0Match = doesTeamMatchOutcome(parsed.team, market.outcomes[0], eventTitle);
-          const outcome1Match = doesTeamMatchOutcome(parsed.team, market.outcomes[1], eventTitle);
+          const outcome0Match = doesTeamMatchOutcome(parsed.team, market.outcomes[0]);
+          const outcome1Match = doesTeamMatchOutcome(parsed.team, market.outcomes[1]);
           
           // Determine which outcome has the parsed line
           let parsedTeamIsOutcome0 = outcome0Match && !outcome1Match;
