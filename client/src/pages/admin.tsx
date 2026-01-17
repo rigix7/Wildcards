@@ -20,7 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchSportsWithMarketTypes, type SportWithMarketTypes } from "@/lib/polymarket";
-import type { Market, Player, InsertMarket, InsertPlayer, AdminSettings, Futures, SportFieldConfig, SportMarketConfig } from "@shared/schema";
+import type { Market, Player, InsertMarket, InsertPlayer, AdminSettings, Futures, SportFieldConfig, SportMarketConfig, PolymarketTagRecord } from "@shared/schema";
 
 const playerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -49,7 +49,7 @@ function extractSlugFromInput(input: string): string {
 
 export default function AdminPage() {
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<"matchday" | "futures" | "players" | "sportconfig">("matchday");
+  const [activeSection, setActiveSection] = useState<"tags" | "matchday" | "futures" | "players" | "sportconfig">("tags");
   const [sportsData, setSportsData] = useState<SportWithMarketTypes[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
@@ -84,6 +84,32 @@ export default function AdminPage() {
 
   const { data: adminSettings } = useQuery<AdminSettings>({
     queryKey: ["/api/admin/settings"],
+  });
+
+  const { data: polymarketTags = [], isLoading: tagsLoading } = useQuery<PolymarketTagRecord[]>({
+    queryKey: ["/api/admin/tags"],
+  });
+
+  const syncTagsMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/admin/tags/sync", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tags"] });
+      toast({ title: "Tags synced from Polymarket" });
+    },
+    onError: () => {
+      toast({ title: "Failed to sync tags", variant: "destructive" });
+    },
+  });
+
+  const toggleTagMutation = useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
+      return apiRequest("PATCH", `/api/admin/tags/${id}/enabled`, { enabled });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tags"] });
+    },
   });
 
   const updateSettingsMutation = useMutation({
@@ -415,6 +441,13 @@ export default function AdminPage() {
 
         <div className="flex gap-2 mb-6 flex-wrap">
           <Button
+            variant={activeSection === "tags" ? "default" : "secondary"}
+            onClick={() => setActiveSection("tags")}
+            data-testid="button-section-tags"
+          >
+            Tags ({polymarketTags.filter(t => t.enabled).length})
+          </Button>
+          <Button
             variant={activeSection === "matchday" ? "default" : "secondary"}
             onClick={() => setActiveSection("matchday")}
             data-testid="button-section-matchday"
@@ -443,6 +476,83 @@ export default function AdminPage() {
             Sport Config
           </Button>
         </div>
+
+        {activeSection === "tags" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
+              <div>
+                <h2 className="text-lg font-bold">Tag Management</h2>
+                <p className="text-sm text-zinc-500">
+                  Enable sports tags to show in both Match Day and Futures views
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => syncTagsMutation.mutate()}
+                disabled={syncTagsMutation.isPending}
+                data-testid="button-sync-tags"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncTagsMutation.isPending ? "animate-spin" : ""}`} />
+                Sync from Polymarket
+              </Button>
+            </div>
+
+            {tagsLoading ? (
+              <div className="text-zinc-500">Loading tags...</div>
+            ) : polymarketTags.length === 0 ? (
+              <Card className="p-8 text-center text-zinc-500">
+                No tags found. Click "Sync from Polymarket" to fetch sports tags.
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {polymarketTags
+                  .filter(tag => tag.category === "league")
+                  .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                  .map((tag) => (
+                    <Card
+                      key={tag.id}
+                      className={`p-4 flex items-center justify-between cursor-pointer transition-colors ${
+                        tag.enabled ? "bg-wild-brand/10 border-wild-brand/30" : ""
+                      }`}
+                      onClick={() => toggleTagMutation.mutate({ id: tag.id, enabled: !tag.enabled })}
+                      data-testid={`tag-${tag.slug}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={tag.enabled}
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={(checked) => toggleTagMutation.mutate({ id: tag.id, enabled: checked as boolean })}
+                        />
+                        <div>
+                          <div className="text-white font-medium">{tag.label}</div>
+                          <div className="text-xs text-zinc-500">{tag.slug}</div>
+                        </div>
+                      </div>
+                      {tag.enabled && <Check className="w-4 h-4 text-wild-brand" />}
+                    </Card>
+                  ))}
+              </div>
+            )}
+
+            {polymarketTags.filter(t => t.enabled).length > 0 && (
+              <div className="mt-4 p-4 bg-zinc-900 rounded-md">
+                <div className="text-sm text-zinc-400 mb-2">
+                  Enabled Tags - Events will be fetched for:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {polymarketTags.filter(t => t.enabled).map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="px-2 py-1 bg-wild-brand/20 text-wild-brand rounded text-xs"
+                    >
+                      {tag.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeSection === "matchday" && (
           <div className="space-y-4">

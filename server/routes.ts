@@ -1129,6 +1129,98 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================================
+  // POLYMARKET TAG MANAGEMENT
+  // ============================================================
+
+  app.get("/api/admin/tags", async (req, res) => {
+    try {
+      const tags = await storage.getPolymarketTags();
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch tags" });
+    }
+  });
+
+  app.get("/api/admin/tags/enabled", async (req, res) => {
+    try {
+      const tags = await storage.getEnabledPolymarketTags();
+      res.json(tags);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch enabled tags" });
+    }
+  });
+
+  app.post("/api/admin/tags/sync", async (req, res) => {
+    try {
+      const GAMMA_API = "https://gamma-api.polymarket.com";
+      const response = await fetch(`${GAMMA_API}/tags`);
+      if (!response.ok) {
+        throw new Error(`Gamma API error: ${response.status}`);
+      }
+      const allTags = await response.json() as Array<{
+        id: string;
+        label: string;
+        slug: string;
+        parentTagId?: string;
+        forceShow?: boolean;
+      }>;
+      
+      const sportsTag = allTags.find((t) => t.slug === "sports");
+      if (!sportsTag) {
+        return res.json({ synced: 0, tags: [] });
+      }
+      
+      const childTags = allTags.filter((t) => t.parentTagId === sportsTag.id);
+      const grandchildTags = allTags.filter((t) => 
+        childTags.some((child) => child.id === t.parentTagId)
+      );
+      
+      const allSportsTags = [sportsTag, ...childTags, ...grandchildTags];
+      
+      const existingTags = await storage.getPolymarketTags();
+      const existingMap = new Map(existingTags.map(t => [t.id, t]));
+      
+      const upsertedTags = [];
+      let sortOrder = 0;
+      for (const tag of allSportsTags) {
+        const existing = existingMap.get(tag.id);
+        const upserted = await storage.upsertPolymarketTag({
+          id: tag.id,
+          label: tag.label,
+          slug: tag.slug,
+          category: tag.parentTagId === sportsTag.id ? "league" : (tag.id === sportsTag.id ? "root" : "subleague"),
+          parentTagId: tag.parentTagId || null,
+          eventCount: 0,
+          enabled: existing?.enabled ?? false,
+          sortOrder: sortOrder++,
+        });
+        upsertedTags.push(upserted);
+      }
+      
+      res.json({ synced: upsertedTags.length, tags: upsertedTags });
+    } catch (error) {
+      console.error("Tag sync error:", error);
+      res.status(500).json({ error: "Failed to sync tags from Polymarket" });
+    }
+  });
+
+  app.patch("/api/admin/tags/:id/enabled", async (req, res) => {
+    try {
+      const { enabled } = req.body;
+      if (typeof enabled !== "boolean") {
+        return res.status(400).json({ error: "enabled must be a boolean" });
+      }
+      const updated = await storage.setTagEnabled(req.params.id, enabled);
+      if (!updated) {
+        return res.status(404).json({ error: "Tag not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update tag" });
+    }
+  });
+
   // Futures CRUD endpoints
   app.get("/api/futures", async (req, res) => {
     try {
