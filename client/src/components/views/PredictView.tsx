@@ -499,21 +499,28 @@ function SpreadMarketDisplay({
   let outcome1Line: number;
   
   if (parsed) {
-    // Use smart matching to find which outcome corresponds to the parsed team
-    const outcome0Match = doesTeamMatchOutcome(parsed.team, outcomes[0], eventTitle);
-    const outcome1Match = doesTeamMatchOutcome(parsed.team, outcomes[1], eventTitle);
+    // Outcome labels are the team names (e.g., "Lakers", "Rockets", "Knicks")
+    // Match the parsed team name directly against outcome labels
+    const parsedTeamLower = parsed.team.toLowerCase();
+    const outcome0Label = outcomes[0].label.toLowerCase();
+    const outcome1Label = outcomes[1].label.toLowerCase();
     
-    if (outcome0Match && !outcome1Match) {
+    // Direct label matching - this is reliable since both are team names
+    const outcome0IsParsedTeam = outcome0Label.includes(parsedTeamLower) || 
+                                  parsedTeamLower.includes(outcome0Label);
+    const outcome1IsParsedTeam = outcome1Label.includes(parsedTeamLower) || 
+                                  parsedTeamLower.includes(outcome1Label);
+    
+    if (outcome0IsParsedTeam && !outcome1IsParsedTeam) {
       // outcomes[0] is the team mentioned in question with the parsed line
       outcome0Line = parsed.line;
       outcome1Line = -parsed.line;
-    } else if (outcome1Match && !outcome0Match) {
+    } else if (outcome1IsParsedTeam && !outcome0IsParsedTeam) {
       // outcomes[1] is the team mentioned in question
       outcome1Line = parsed.line;
       outcome0Line = -parsed.line;
     } else {
-      // Ambiguous or no match - fallback to parsed line on outcomes[0]
-      // This preserves the original behavior when matching fails
+      // Fallback: assign based on outcome order (shouldn't happen with good data)
       outcome0Line = parsed.line;
       outcome1Line = -parsed.line;
     }
