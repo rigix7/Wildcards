@@ -1427,6 +1427,7 @@ export function PredictView({
 }: PredictViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
+  const [selectedFuturesTags, setSelectedFuturesTags] = useState<Set<string>>(new Set());
 
   // Load sport market configs for dynamic formatting
   const { data: sportConfigs = [] } = useQuery<SportMarketConfig[]>({
@@ -1505,6 +1506,47 @@ export function PredictView({
         newSet.delete(league);
       } else {
         newSet.add(league);
+      }
+      return newSet;
+    });
+  };
+
+  // Extract available tags from futures for filtering
+  const availableFuturesTags = useMemo(() => {
+    const tagLabels = new Set<string>();
+    for (const future of futures) {
+      if (future.tags && Array.isArray(future.tags)) {
+        for (const tag of future.tags) {
+          if (tag.label) {
+            tagLabels.add(tag.label);
+          }
+        }
+      }
+    }
+    return Array.from(tagLabels).sort();
+  }, [futures]);
+
+  // Filter futures by selected tags
+  const filteredFutures = useMemo(() => {
+    if (selectedFuturesTags.size === 0) return futures;
+    return futures.filter(future => {
+      if (!future.tags || !Array.isArray(future.tags)) return false;
+      return future.tags.some(tag => selectedFuturesTags.has(tag.label));
+    });
+  }, [futures, selectedFuturesTags]);
+
+  const handleFuturesTagToggle = (tag: string) => {
+    if (tag === "ALL") {
+      setSelectedFuturesTags(new Set());
+      return;
+    }
+    
+    setSelectedFuturesTags(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tag)) {
+        newSet.delete(tag);
+      } else {
+        newSet.add(tag);
       }
       return newSet;
     });
@@ -1698,13 +1740,19 @@ export function PredictView({
 
         {activeSubTab === "futures" && (
           <div className="space-y-3">
+            <LeagueFilters 
+              leagues={availableFuturesTags}
+              selectedLeagues={selectedFuturesTags}
+              onToggle={handleFuturesTagToggle}
+            />
+            
             {futuresLoading ? (
               <>
                 <MarketCardSkeleton />
                 <MarketCardSkeleton />
               </>
-            ) : futures.length > 0 ? (
-              futures.map((future) => (
+            ) : filteredFutures.length > 0 ? (
+              filteredFutures.map((future) => (
                 <FuturesCard
                   key={future.id}
                   future={future}
@@ -1714,6 +1762,12 @@ export function PredictView({
                   }
                 />
               ))
+            ) : futures.length > 0 ? (
+              <EmptyState
+                icon={Lock}
+                title="No Matching Futures"
+                description="No futures match the selected filter. Try selecting 'All' to see all futures."
+              />
             ) : (
               <EmptyState
                 icon={Lock}
