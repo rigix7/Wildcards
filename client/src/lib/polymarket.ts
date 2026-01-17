@@ -29,9 +29,18 @@ async function buildTeamLookup(): Promise<Map<string, string>> {
     const lookup = new Map<string, string>();
     for (const team of teams) {
       const abbrev = team.abbreviation.toLowerCase();
-      // Map by name
+      // Map by full name (e.g., "Houston Rockets")
       if (team.name) {
         lookup.set(team.name.toLowerCase(), abbrev);
+        // Also map by nickname (last word, e.g., "Rockets")
+        const words = team.name.trim().split(/\s+/);
+        if (words.length > 1) {
+          const nickname = words[words.length - 1].toLowerCase();
+          // Only add if nickname is at least 4 chars to avoid collisions
+          if (nickname.length >= 4 && !lookup.has(nickname)) {
+            lookup.set(nickname, abbrev);
+          }
+        }
       }
       // Map by alias (if different from name)
       if (team.alias && team.alias.toLowerCase() !== team.name?.toLowerCase()) {
@@ -74,6 +83,31 @@ export function prefetchTeams(): void {
 // Check if team lookup is ready
 export function isTeamLookupReady(): boolean {
   return teamLookupCache !== null;
+}
+
+// Parse team names from event title (e.g., "Timberwolves vs. Rockets" → ["Timberwolves", "Rockets"])
+export function parseTeamsFromTitle(title: string): { team1: string; team2: string } | null {
+  // Match patterns like "Team1 vs Team2", "Team1 vs. Team2", "Team1 v Team2"
+  const match = title.match(/^(.+?)\s+(?:vs\.?|v)\s+(.+?)$/i);
+  if (match) {
+    return { team1: match[1].trim(), team2: match[2].trim() };
+  }
+  return null;
+}
+
+// Get abbreviations for both teams in an event title
+// Returns { team1: { name, abbrev }, team2: { name, abbrev } } or null
+export function getTitleTeamAbbrevs(title: string): { 
+  team1: { name: string; abbrev: string | null }; 
+  team2: { name: string; abbrev: string | null };
+} | null {
+  const parsed = parseTeamsFromTitle(title);
+  if (!parsed) return null;
+  
+  return {
+    team1: { name: parsed.team1, abbrev: getTeamAbbreviationSync(parsed.team1) },
+    team2: { name: parsed.team2, abbrev: getTeamAbbreviationSync(parsed.team2) }
+  };
 }
 
 export interface GammaTag {

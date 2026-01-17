@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Market, Futures, AdminSettings, SportMarketConfig } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
-import { prefetchTeams, getTeamAbbreviationSync } from "@/lib/polymarket";
+import { prefetchTeams, getTeamAbbreviationSync, parseTeamsFromTitle, getTitleTeamAbbrevs } from "@/lib/polymarket";
 import type { UseLivePricesResult } from "@/hooks/useLivePrices";
 
 // Type for live prices map
@@ -406,7 +406,7 @@ const FALLBACK_TEAM_ALIASES: Record<string, string> = {
 };
 
 // Check if a parsed team name matches an outcome
-// Uses Gamma API team lookup with fallback mappings for robustness
+// Uses title-derived team mapping for accuracy: parses title, looks up both teams' abbreviations
 // Returns true if the team name corresponds to the outcome's label/abbrev
 function doesTeamMatchOutcome(
   parsedTeam: string, 
@@ -446,20 +446,26 @@ function doesTeamMatchOutcome(
     }
   }
   
-  // Last resort: event title position heuristic
-  // If team name appears in event title, check relative position to "vs"
+  // Title-based fallback: parse teams from event title and match via their abbreviations
   if (eventTitle) {
-    const titleLower = eventTitle.toLowerCase();
-    const teamInTitle = titleLower.includes(teamLower);
-    if (teamInTitle) {
-      const teamIdx = titleLower.indexOf(teamLower);
-      const vsIdx = titleLower.indexOf(" vs");
-      if (vsIdx !== -1) {
-        // Team before "vs" = first team (home), after = second team (away)
-        const teamIsFirst = teamIdx < vsIdx;
-        // Check if outcome position in array correlates
-        // This is a weak heuristic but helps when nothing else matches
-        return teamIsFirst;
+    const titleTeams = getTitleTeamAbbrevs(eventTitle);
+    if (titleTeams) {
+      // Check if parsedTeam matches team1 or team2 from title
+      const team1NameLower = titleTeams.team1.name.toLowerCase();
+      const team2NameLower = titleTeams.team2.name.toLowerCase();
+      
+      // If parsedTeam matches a title team name, check if outcome matches that team's abbrev
+      if (team1NameLower.includes(teamLower) || teamLower.includes(team1NameLower)) {
+        const team1Abbrev = titleTeams.team1.abbrev;
+        if (team1Abbrev && (labelLower === team1Abbrev || abbrevLower === team1Abbrev)) {
+          return true;
+        }
+      }
+      if (team2NameLower.includes(teamLower) || teamLower.includes(team2NameLower)) {
+        const team2Abbrev = titleTeams.team2.abbrev;
+        if (team2Abbrev && (labelLower === team2Abbrev || abbrevLower === team2Abbrev)) {
+          return true;
+        }
       }
     }
   }
