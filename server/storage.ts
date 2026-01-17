@@ -13,6 +13,7 @@ import {
   sportMarketConfigs,
   polymarketPositions,
   polymarketOrders,
+  polymarketTags,
   type Market,
   type InsertMarket,
   type Player,
@@ -34,6 +35,8 @@ import {
   type InsertPolymarketPosition,
   type PolymarketOrder,
   type InsertPolymarketOrder,
+  type PolymarketTagRecord,
+  type InsertPolymarketTag,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -90,6 +93,12 @@ export interface IStorage {
   getPolymarketPositions(walletAddress: string): Promise<PolymarketPosition[]>;
   createPolymarketPosition(position: InsertPolymarketPosition): Promise<PolymarketPosition>;
   updatePolymarketPosition(id: number, updates: Partial<PolymarketPosition>): Promise<PolymarketPosition | undefined>;
+
+  getPolymarketTags(): Promise<PolymarketTagRecord[]>;
+  getEnabledPolymarketTags(): Promise<PolymarketTagRecord[]>;
+  upsertPolymarketTag(tag: InsertPolymarketTag): Promise<PolymarketTagRecord>;
+  setTagEnabled(id: string, enabled: boolean): Promise<PolymarketTagRecord | undefined>;
+  updateFuturesTags(id: string, tags: Array<{ id: string; label: string; slug: string }>): Promise<Futures | undefined>;
 
   seedInitialData(): Promise<void>;
 }
@@ -623,6 +632,48 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(polymarketPositions)
       .set({ ...updates, updatedAt: new Date().toISOString() })
       .where(eq(polymarketPositions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getPolymarketTags(): Promise<PolymarketTagRecord[]> {
+    return await db.select().from(polymarketTags);
+  }
+
+  async getEnabledPolymarketTags(): Promise<PolymarketTagRecord[]> {
+    return await db.select().from(polymarketTags).where(eq(polymarketTags.enabled, true));
+  }
+
+  async upsertPolymarketTag(tag: InsertPolymarketTag): Promise<PolymarketTagRecord> {
+    const now = new Date().toISOString();
+    const existing = await db.select().from(polymarketTags).where(eq(polymarketTags.id, tag.id));
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(polymarketTags)
+        .set({ ...tag, updatedAt: now })
+        .where(eq(polymarketTags.id, tag.id))
+        .returning();
+      return updated;
+    } else {
+      const [newTag] = await db.insert(polymarketTags)
+        .values({ ...tag, createdAt: now, updatedAt: now })
+        .returning();
+      return newTag;
+    }
+  }
+
+  async setTagEnabled(id: string, enabled: boolean): Promise<PolymarketTagRecord | undefined> {
+    const [updated] = await db.update(polymarketTags)
+      .set({ enabled, updatedAt: new Date().toISOString() })
+      .where(eq(polymarketTags.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateFuturesTags(id: string, tags: Array<{ id: string; label: string; slug: string }>): Promise<Futures | undefined> {
+    const [updated] = await db.update(futures)
+      .set({ tags })
+      .where(eq(futures.id, id))
       .returning();
     return updated || undefined;
   }
