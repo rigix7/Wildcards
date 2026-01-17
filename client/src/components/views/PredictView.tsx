@@ -384,9 +384,10 @@ function parseLineFromTitle(title: string): number | null {
   return null;
 }
 
-// Spread market display component - shows two buttons with team abbreviation + price
+// Spread market display component - shows two buttons with team name + price
 // The line selector below determines which spread line is being shown
 // Bet slip shows the full question for clarity on which side to back
+// Ordering matches moneyline: outcomes[0] on left (teal), outcomes[1] on right (amber)
 function SpreadMarketDisplay({
   market,
   onSelect,
@@ -401,9 +402,9 @@ function SpreadMarketDisplay({
   const outcomes = market.outcomes;
   if (outcomes.length < 2) return null;
   
-  // Use official abbreviations from Polymarket slug if available
-  const outcome0Abbr = outcomes[0].abbrev || outcomes[0].label.slice(0, 3).toUpperCase();
-  const outcome1Abbr = outcomes[1].abbrev || outcomes[1].label.slice(0, 3).toUpperCase();
+  // Use full team name (outcome.label) for clarity
+  const outcome0Label = outcomes[0].label;
+  const outcome1Label = outcomes[1].label;
   
   // Prices: use live prices from WebSocket if available, fall back to Gamma API
   const outcome0StaticPrice = outcomes[0].price ?? market.bestAsk ?? 0.5;
@@ -415,20 +416,9 @@ function SpreadMarketDisplay({
   const isOutcome0Selected = selectedDirection === "home";
   const isOutcome1Selected = selectedDirection === "away";
   
+  // Match moneyline order: outcome[0] on LEFT (teal), outcome[1] on RIGHT (amber)
   return (
     <div className="flex gap-2">
-      <button
-        onClick={() => onSelect(market, "away")}
-        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-          isOutcome1Selected 
-            ? "bg-red-600 border border-red-500 text-white" 
-            : "bg-red-900/40 border border-red-800/50 hover:bg-red-800/50 text-zinc-100"
-        }`}
-        data-testid={`spread-outcome1-${market.id}`}
-      >
-        <span className="font-bold">{outcome1Abbr}</span>
-        <span className="font-mono font-bold text-white">{outcome1Price}¢</span>
-      </button>
       <button
         onClick={() => onSelect(market, "home")}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
@@ -438,8 +428,20 @@ function SpreadMarketDisplay({
         }`}
         data-testid={`spread-outcome0-${market.id}`}
       >
-        <span className="font-bold">{outcome0Abbr}</span>
-        <span className="font-mono font-bold text-white">{outcome0Price}¢</span>
+        <span className="font-bold truncate">{outcome0Label}</span>
+        <span className="font-mono font-bold text-white shrink-0">{outcome0Price}¢</span>
+      </button>
+      <button
+        onClick={() => onSelect(market, "away")}
+        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
+          isOutcome1Selected 
+            ? "bg-amber-600 border border-amber-500 text-white" 
+            : "bg-amber-900/40 border border-amber-800/50 hover:bg-amber-800/50 text-zinc-100"
+        }`}
+        data-testid={`spread-outcome1-${market.id}`}
+      >
+        <span className="font-bold truncate">{outcome1Label}</span>
+        <span className="font-mono font-bold text-white shrink-0">{outcome1Price}¢</span>
       </button>
     </div>
   );
