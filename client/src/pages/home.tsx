@@ -114,49 +114,87 @@ export default function HomePage() {
   // Track previous balance for deposit detection
   const prevBalanceRef = useRef<number>(0);
   const isFirstFetchRef = useRef<boolean>(true);
+  const lastFetchTimeRef = useRef<number>(0);
+  const BALANCE_POLL_INTERVAL = 60000; // 60 seconds instead of 10
+  const BALANCE_THROTTLE_MS = 5000; // Minimum 5 seconds between fetches
   
-  // Fetch balance function
+  // Fetch balance function with throttling
   const fetchBalance = useCallback(async (isManual = false) => {
     const walletAddr = safeAddress || address;
-    if (walletAddr && !walletAddr.startsWith("0xDemo")) {
-      if (isManual) setIsRefreshingBalance(true);
-      
-      try {
-        const balance = await getUSDCBalance(walletAddr);
-        
-        // Check for deposit (balance increased) - skip first fetch
-        if (!isFirstFetchRef.current && balance > prevBalanceRef.current) {
-          const deposited = (balance - prevBalanceRef.current).toFixed(2);
-          showToast(`Deposit received! +${deposited} USDC`, "success");
-        }
-        
-        prevBalanceRef.current = balance;
-        isFirstFetchRef.current = false;
-        setUsdcBalance(balance);
-      } finally {
-        if (isManual) setIsRefreshingBalance(false);
-      }
-    } else {
+    if (!walletAddr || walletAddr.startsWith("0xDemo")) {
       setUsdcBalance(0);
       prevBalanceRef.current = 0;
       isFirstFetchRef.current = true;
+      return;
+    }
+    
+    // Throttle non-manual fetches to prevent RPC spam
+    const now = Date.now();
+    if (!isManual && now - lastFetchTimeRef.current < BALANCE_THROTTLE_MS) {
+      return;
+    }
+    
+    if (isManual) setIsRefreshingBalance(true);
+    lastFetchTimeRef.current = now;
+    
+    try {
+      const balance = await getUSDCBalance(walletAddr);
+      
+      // Check for deposit (balance increased) - skip first fetch
+      if (!isFirstFetchRef.current && balance > prevBalanceRef.current) {
+        const deposited = (balance - prevBalanceRef.current).toFixed(2);
+        showToast(`Deposit received! +${deposited} USDC`, "success");
+      }
+      
+      prevBalanceRef.current = balance;
+      isFirstFetchRef.current = false;
+      setUsdcBalance(balance);
+    } finally {
+      if (isManual) setIsRefreshingBalance(false);
     }
   }, [safeAddress, address, showToast]);
 
-  // Fetch USDC balance with polling every 10 seconds
+  // Fetch USDC balance with polling every 60 seconds, pausing when tab is hidden
   useEffect(() => {
     // Reset on wallet change
     isFirstFetchRef.current = true;
     prevBalanceRef.current = 0;
     
+    const walletAddr = safeAddress || address;
+    if (!walletAddr || walletAddr.startsWith("0xDemo")) {
+      setUsdcBalance(0);
+      return;
+    }
+    
     // Initial fetch
     fetchBalance();
     
     // Set up polling interval
-    const intervalId = setInterval(fetchBalance, 10000);
+    let intervalId: NodeJS.Timeout | null = setInterval(fetchBalance, BALANCE_POLL_INTERVAL);
     
-    return () => clearInterval(intervalId);
-  }, [fetchBalance]);
+    // Pause polling when tab is hidden to save RPC calls
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } else {
+        // Resume polling and fetch immediately when tab becomes visible
+        if (!intervalId) {
+          fetchBalance();
+          intervalId = setInterval(fetchBalance, BALANCE_POLL_INTERVAL);
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchBalance, safeAddress, address]);
 
   // Fetch user positions when wallet is connected
   useEffect(() => {
