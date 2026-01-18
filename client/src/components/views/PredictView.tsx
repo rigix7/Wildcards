@@ -1667,9 +1667,10 @@ export function PredictView({
     const betDirection: "yes" | "no" = outcomeIndex === 0 ? "yes" : "no";
     
     // Determine if this is a soccer 3-way market (has Yes/No toggle in BetSlip)
-    // Soccer 3-way markets pass outcome labels like "Home Win", "Draw", "Away Win"
-    const isSoccer3Way = marketType === "moneyline" && !!passedOutcomeLabel && 
-      (passedOutcomeLabel.toLowerCase().includes("win") || passedOutcomeLabel.toLowerCase() === "draw");
+    // Soccer 3-way markets have questions like "Will Sevilla win?" or "Will the match be a draw?"
+    const questionLower = (market.question || "").toLowerCase();
+    const isSoccer3Way = marketType === "moneyline" && 
+      (questionLower.includes("win") || questionLower.includes("draw") || questionLower.includes("tie"));
     
     // Pass to parent with all info for bet slip
     onPlaceBet(
