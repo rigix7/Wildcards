@@ -167,6 +167,13 @@ Key API Endpoints:
   - Removed deprecated hardcoded team abbreviation maps (NFL_TEAM_ABBREVIATIONS, NBA_TEAM_ABBREVIATIONS)
   - Removed unused functions: getTeamAbbreviation(), fetchPolymarketSports(), fetchCategorizedTags
   - All terminal components in use: BetSlip, BottomNav, DemoBadge (Scout/Trade), Header, etc.
+- Fixed Wild Points crediting system (January 19, 2026)
+  - Wild Points now calculated from order history as source of truth (self-healing)
+  - Added `getCalculatedWildPoints()` function that sums filled order amounts
+  - Status check normalized to be case-insensitive and accept variations (filled, matched, executed, completed, success)
+  - FOK orders: price=0 means size field contains stake amount directly
+  - Limit orders: amount = price × size
+  - Wallet endpoint returns calculated points instead of stored incremental value
 
 ## Geo-Blocking Behavior
 Polymarket enforces geo-restrictions at the API level for trading/orders. Blocked countries include:
