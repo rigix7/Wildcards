@@ -535,7 +535,7 @@ export async function registerRoutes(
         const foundMarketTypes = new Set<string>();
         
         try {
-          const eventsUrl = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=20`;
+          const eventsUrl = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=500`;
           const eventsResponse = await fetch(eventsUrl);
           
           if (eventsResponse.ok) {
@@ -597,8 +597,8 @@ export async function registerRoutes(
       }
       
       // Prefer series_id for more specific results (actual game matches)
-      // Fetch 50 events to ensure we capture all games - Polymarket API returns events in non-chronological order
-      let url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=50`;
+      // Fetch 500 events to ensure we capture all games including live ones - Polymarket API returns events in non-chronological order
+      let url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=500`;
       if (seriesId) {
         url += `&series_id=${seriesId}`;
       } else if (tagSlug) {
@@ -858,8 +858,8 @@ export async function registerRoutes(
       const { seriesId } = req.params;
       const foundMarketTypes = new Map<string, { count: number; sampleQuestion: string }>();
       
-      // Fetch more events (up to 50) to discover all market types
-      const url = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=50`;
+      // Fetch more events (up to 500) to discover all market types
+      const url = `${GAMMA_API_BASE}/events?series_id=${seriesId}&active=true&closed=false&limit=500`;
       console.log(`[Market Types Discovery] Fetching: ${url}`);
       
       const response = await fetch(url);
@@ -957,8 +957,8 @@ export async function registerRoutes(
     try {
       const { seriesId, marketType } = req.params;
       
-      // Fetch more events (up to 30) to find a matching market
-      const url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=30&series_id=${seriesId}`;
+      // Fetch more events (up to 500) to find a matching market
+      const url = `${GAMMA_API_BASE}/events?active=true&closed=false&limit=500&series_id=${seriesId}`;
       console.log(`[Sample Data V2] Fetching for marketType ${marketType}: ${url}`);
       
       const response = await fetch(url);
