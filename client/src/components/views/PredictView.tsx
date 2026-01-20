@@ -918,8 +918,8 @@ function SimplifiedMarketRow({
   
   return (
     <div className="space-y-1.5" data-testid={`simplified-market-${market.id}`}>
-      <div className="text-sm text-zinc-300">{market.question}</div>
-      <div className="flex gap-2">
+      <div className="text-sm text-zinc-300 break-words">{market.question}</div>
+      <div className="flex flex-wrap gap-2">
         {market.outcomes.map((outcome, idx) => {
           // Use live price from WebSocket if available, fall back to market.bestAsk from Gamma API
           const staticPrice = (idx === 0 ? market.bestAsk : market.bestBid) ?? 0;
@@ -1232,7 +1232,7 @@ function EventCard({
   }
   
   return (
-    <Card className="p-4 space-y-4" data-testid={`event-card-${event.id}`}>
+    <Card className="p-4 space-y-4 overflow-hidden" data-testid={`event-card-${event.id}`}>
       {/* Position Indicator - Dashboard style */}
       {eventPositions.length > 0 && (
         <div className="bg-wild-trade/10 border border-wild-trade/30 rounded-md overflow-hidden" data-testid="position-indicator">
@@ -1267,9 +1267,9 @@ function EventCard({
       )}
       
       {/* Event Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 min-w-0">
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-base leading-tight">{event.title}</h3>
+          <h3 className="font-bold text-base leading-tight break-words">{event.title}</h3>
           {event.description && (
             <p className="text-sm text-zinc-400 mt-1 line-clamp-2">{event.description}</p>
           )}
@@ -1738,7 +1738,7 @@ export function PredictView({
         <PriceTicker events={displayEvents} />
         <SubTabs tabs={subTabs} activeTab={activeSubTab} onTabChange={setActiveSubTab} />
         
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3">
         {activeSubTab === "matchday" && (
           <div className="space-y-3">
             <LeagueFilters 
