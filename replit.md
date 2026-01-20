@@ -174,6 +174,17 @@ Key API Endpoints:
   - FOK orders: price=0 means size field contains stake amount directly
   - Limit orders: amount = price × size
   - Wallet endpoint returns calculated points instead of stored incremental value
+- Added pending position status for won bets (January 20, 2026)
+  - Positions with curPrice >= 0.99 but redeemable !== true are marked as "pending"
+  - Pending = user won but Polymarket hasn't enabled redemption yet
+  - Dashboard shows "PENDING" badge (amber) alongside "WON" (green) and "LOST" (red)
+  - Claimable positions require both curPrice >= 0.99 AND redeemable = true
+- Added $WILD Points Admin Management (January 20, 2026)
+  - New admin endpoint: GET /api/admin/wild-points lists all wallet records
+  - Shows total users, total WILD points, total orders
+  - Per-wallet table displays: address, stored points, calculated points, order count, delta
+  - Delta column shows difference between stored vs calculated for audit/debugging
+  - Replaced Sport Config tab with $WILD Points tab in admin navigation
 
 ## Geo-Blocking Behavior
 Polymarket enforces geo-restrictions at the API level for trading/orders. Blocked countries include:
