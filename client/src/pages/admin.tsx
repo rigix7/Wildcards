@@ -49,7 +49,7 @@ function extractSlugFromInput(input: string): string {
 
 export default function AdminPage() {
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState<"tags" | "matchday" | "futures" | "players" | "sportconfig">("tags");
+  const [activeSection, setActiveSection] = useState<"tags" | "matchday" | "futures" | "players" | "wild">("tags");
   const [sportsData, setSportsData] = useState<SportWithMarketTypes[]>([]);
   const [loadingLeagues, setLoadingLeagues] = useState(false);
   const [showPlayerForm, setShowPlayerForm] = useState(false);
@@ -532,11 +532,11 @@ export default function AdminPage() {
             Demo Players ({players.length})
           </Button>
           <Button
-            variant={activeSection === "sportconfig" ? "default" : "secondary"}
-            onClick={() => setActiveSection("sportconfig")}
-            data-testid="button-section-sportconfig"
+            variant={activeSection === "wild" ? "default" : "secondary"}
+            onClick={() => setActiveSection("wild")}
+            data-testid="button-section-wild"
           >
-            Sport Config
+            $WILD Points
           </Button>
         </div>
 
@@ -1145,10 +1145,126 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeSection === "sportconfig" && (
-          <SportConfigEditor sportsData={sportsData} toast={toast} />
+        {activeSection === "wild" && (
+          <WildPointsManager />
         )}
       </div>
+    </div>
+  );
+}
+
+interface WildWallet {
+  address: string;
+  storedWildPoints: number;
+  calculatedWildPoints: number;
+  orderCount: number;
+  createdAt: string;
+}
+
+function WildPointsManager() {
+  const { data: wallets = [], isLoading } = useQuery<WildWallet[]>({
+    queryKey: ["/api/admin/wild-points"],
+  });
+
+  const totalPoints = wallets.reduce((sum, w) => sum + w.calculatedWildPoints, 0);
+  const totalOrders = wallets.reduce((sum, w) => sum + w.orderCount, 0);
+
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold">$WILD Points Management</h2>
+        <div className="text-zinc-500">Loading wallets...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-bold">$WILD Points Management</h2>
+        <p className="text-sm text-zinc-500">
+          Track WILD points for all users. 1 USDC spent = 1 WILD point.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wider">Total Users</div>
+          <div className="text-2xl font-bold font-mono">{wallets.length}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wider">Total $WILD</div>
+          <div className="text-2xl font-bold font-mono text-wild-gold">{totalPoints.toLocaleString()}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wider">Total Orders</div>
+          <div className="text-2xl font-bold font-mono">{totalOrders}</div>
+        </Card>
+      </div>
+
+      {wallets.length === 0 ? (
+        <Card className="p-8 text-center text-zinc-500">
+          No users with wallet records yet.
+        </Card>
+      ) : (
+        <Card className="divide-y divide-zinc-800">
+          <div className="p-3 bg-zinc-900/50 grid grid-cols-12 gap-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            <div className="col-span-4">Wallet</div>
+            <div className="col-span-2 text-right">$WILD</div>
+            <div className="col-span-2 text-right">Orders</div>
+            <div className="col-span-2 text-right">Delta</div>
+            <div className="col-span-2 text-right">Joined</div>
+          </div>
+          {wallets.map((wallet, i) => {
+            const delta = wallet.calculatedWildPoints - wallet.storedWildPoints;
+            return (
+              <div 
+                key={wallet.address} 
+                className="p-3 grid grid-cols-12 gap-2 items-center"
+                data-testid={`wild-wallet-${i}`}
+              >
+                <div className="col-span-4 font-mono text-sm truncate" title={wallet.address}>
+                  {formatAddress(wallet.address)}
+                </div>
+                <div className="col-span-2 text-right font-mono font-bold text-wild-gold">
+                  {wallet.calculatedWildPoints.toLocaleString()}
+                </div>
+                <div className="col-span-2 text-right font-mono text-zinc-400">
+                  {wallet.orderCount}
+                </div>
+                <div className={`col-span-2 text-right font-mono text-xs ${
+                  delta === 0 ? "text-zinc-600" 
+                    : delta > 0 ? "text-wild-scout" 
+                    : "text-wild-brand"
+                }`}>
+                  {delta === 0 ? "-" : delta > 0 ? `+${delta}` : delta}
+                </div>
+                <div className="col-span-2 text-right text-xs text-zinc-500">
+                  {formatDate(wallet.createdAt)}
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      <p className="text-xs text-zinc-600">
+        Delta shows difference between calculated (from orders) and stored points. 
+        Non-zero delta may indicate missed point credits.
+      </p>
     </div>
   );
 }

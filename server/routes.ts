@@ -1144,6 +1144,20 @@ export async function registerRoutes(
   });
 
   // ============================================================
+  // $WILD POINTS MANAGEMENT
+  // ============================================================
+
+  app.get("/api/admin/wild-points", async (req, res) => {
+    try {
+      const wallets = await storage.getAllWalletsWithWildPoints();
+      res.json(wallets);
+    } catch (error) {
+      console.error("Error fetching wild points:", error);
+      res.status(500).json({ error: "Failed to fetch wild points" });
+    }
+  });
+
+  // ============================================================
   // POLYMARKET TAG MANAGEMENT
   // ============================================================
 
@@ -1604,6 +1618,9 @@ export async function registerRoutes(
         const redeemable = p.redeemable === true;
         
         // Determine status based on BOTH redeemable flag AND current price
+        // Status values: open, pending, claimable, lost, closed
+        // - pending: User won (price >= 0.99) but Polymarket hasn't enabled redemption yet
+        // - claimable: User won AND can claim now (redeemable=true)
         let status = "open";
         if (size === 0) {
           status = "closed"; // No position
@@ -1614,10 +1631,13 @@ export async function registerRoutes(
           // Market resolved BUT user's outcome lost → no claim available
           status = "lost";
         } else if (curPrice <= 0.01) {
-          // Edge case: market resolved to NO but redeemable not set
+          // Market resolved to NO but redeemable not set yet
           status = "lost";
+        } else if (curPrice >= 0.99 && !redeemable) {
+          // User won (price at 100¢) but redemption not yet enabled
+          status = "pending";
         } else if (curPrice >= 0.99) {
-          // Edge case: market resolved to YES but redeemable not set
+          // Fallback: high price means claimable
           status = "claimable";
         }
         // Otherwise: market is unresolved (price between 0.01-0.99)

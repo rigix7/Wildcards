@@ -157,8 +157,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
   const claimablePositions = positions.filter(p => p.status === "claimable");
+  const pendingPositions = positions.filter(p => p.status === "pending");
   const lostPositions = positions.filter(p => p.status === "lost");
-  const resolvedPositions = [...claimablePositions, ...lostPositions];
+  const resolvedPositions = [...claimablePositions, ...pendingPositions, ...lostPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
   
   // Determine default tab based on what has content
@@ -447,16 +448,20 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </div>
                 ) : (
                   resolvedPositions.map((pos, i) => {
-                    const isWin = pos.status === "claimable";
+                    const isClaimable = pos.status === "claimable";
+                    const isPending = pos.status === "pending";
+                    const isWin = isClaimable || isPending;
                     return (
                       <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`resolved-${i}`}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={cn(
                               "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
-                              isWin ? "bg-wild-scout/20 text-wild-scout" : "bg-wild-brand/20 text-wild-brand"
+                              isClaimable ? "bg-wild-scout/20 text-wild-scout" 
+                                : isPending ? "bg-wild-gold/20 text-wild-gold"
+                                : "bg-wild-brand/20 text-wild-brand"
                             )}>
-                              {isWin ? "WON" : "LOST"}
+                              {isClaimable ? "WON" : isPending ? "PENDING" : "LOST"}
                             </span>
                             <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
                           </div>

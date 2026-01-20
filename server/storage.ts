@@ -100,6 +100,13 @@ export interface IStorage {
   createPolymarketOrder(order: InsertPolymarketOrder): Promise<PolymarketOrder>;
   updatePolymarketOrder(id: number, updates: Partial<PolymarketOrder>): Promise<PolymarketOrder | undefined>;
   getCalculatedWildPoints(walletAddress: string): Promise<number>;
+  getAllWalletsWithWildPoints(): Promise<Array<{
+    address: string;
+    storedWildPoints: number;
+    calculatedWildPoints: number;
+    orderCount: number;
+    createdAt: string;
+  }>>;
   
   getPolymarketPositions(walletAddress: string): Promise<PolymarketPosition[]>;
   createPolymarketPosition(position: InsertPolymarketPosition): Promise<PolymarketPosition>;
@@ -762,6 +769,56 @@ export class DatabaseStorage implements IStorage {
       .where(eq(polymarketTags.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getAllWalletsWithWildPoints(): Promise<Array<{
+    address: string;
+    storedWildPoints: number;
+    calculatedWildPoints: number;
+    orderCount: number;
+    createdAt: string;
+  }>> {
+    const wallets = await db.select().from(walletRecords);
+    const filledStatuses = ["filled", "matched", "executed", "completed", "success"];
+    
+    const results = [];
+    for (const wallet of wallets) {
+      const orders = await db.select().from(polymarketOrders)
+        .where(eq(polymarketOrders.walletAddress, wallet.address.toLowerCase()));
+      
+      let calculatedPoints = 0;
+      let filledOrderCount = 0;
+      
+      for (const order of orders) {
+        const normalizedStatus = (order.status || "").toLowerCase().trim();
+        if (filledStatuses.includes(normalizedStatus)) {
+          filledOrderCount++;
+          const price = parseFloat(order.price || "0");
+          const size = parseFloat(order.size || "0");
+          
+          let orderAmount: number;
+          if (price === 0 || price < 0.001) {
+            orderAmount = size;
+          } else {
+            orderAmount = price * size;
+          }
+          calculatedPoints += Math.floor(orderAmount);
+        }
+      }
+      
+      results.push({
+        address: wallet.address,
+        storedWildPoints: wallet.wildPoints || 0,
+        calculatedWildPoints: calculatedPoints,
+        orderCount: filledOrderCount,
+        createdAt: wallet.createdAt,
+      });
+    }
+    
+    // Sort by calculated points descending
+    results.sort((a, b) => b.calculatedWildPoints - a.calculatedWildPoints);
+    
+    return results;
   }
 
   async clearAllPolymarketTags(): Promise<void> {
