@@ -185,6 +185,11 @@ Key API Endpoints:
   - Per-wallet table displays: address, stored points, calculated points, order count, delta
   - Delta column shows difference between stored vs calculated for audit/debugging
   - Replaced Sport Config tab with $WILD Points tab in admin navigation
+- Moved lost positions from Resolved to History tab (January 20, 2026)
+  - Resolved tab now only shows actionable positions (pending wins, claimable wins)
+  - History tab displays lost positions first with LOST badge, followed by activity
+  - History tab badge shows combined count of lost positions + activity items
+  - Cleaner UX: Resolved tab focuses on positions requiring action
 
 ## Geo-Blocking Behavior
 Polymarket enforces geo-restrictions at the API level for trading/orders. Blocked countries include:
