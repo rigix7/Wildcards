@@ -159,14 +159,17 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const claimablePositions = positions.filter(p => p.status === "claimable");
   const pendingPositions = positions.filter(p => p.status === "pending");
   const lostPositions = positions.filter(p => p.status === "lost");
-  const resolvedPositions = [...claimablePositions, ...pendingPositions, ...lostPositions];
+  // Resolved tab only shows actionable positions (pending wins and claimable wins)
+  const resolvedPositions = [...claimablePositions, ...pendingPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
+  // History tab count includes lost positions + activity
+  const historyCount = lostPositions.length + activity.length;
   
   // Determine default tab based on what has content
   const getDefaultTab = () => {
     if (resolvedPositions.length > 0) return "resolved";
     if (openPositions.length > 0) return "open";
-    if (activity.length > 0) return "history";
+    if (historyCount > 0) return "history";
     return "resolved"; // Default to resolved even if empty
   };
 
@@ -410,15 +413,15 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 data-testid="tab-history"
               >
                 History
-                {activity.length > 0 && (
+                {historyCount > 0 && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-zinc-700 text-zinc-300">
-                    {activity.length}
+                    {historyCount}
                   </span>
                 )}
               </TabsTrigger>
             </TabsList>
 
-            {/* Resolved Tab - Shows both won and lost positions */}
+            {/* Resolved Tab - Shows actionable positions (pending wins and claimable wins) */}
             <TabsContent value="resolved" className="mt-0">
               {claimablePositions.length > 0 && (
                 <div className="p-2 border-b border-zinc-800 bg-wild-scout/5 flex justify-between items-center gap-2">
@@ -518,21 +521,42 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
               </div>
             </TabsContent>
 
-            {/* History Tab - from Polymarket Activity API */}
+            {/* History Tab - Lost positions + Polymarket Activity API */}
             <TabsContent value="history" className="mt-0">
               <div className="divide-y divide-zinc-800/50">
-                {activityLoading ? (
+                {activityLoading && lostPositions.length === 0 ? (
                   <div className="p-4 text-center">
                     <RefreshCw className="w-6 h-6 text-zinc-600 mx-auto mb-2 animate-spin" />
                     <p className="text-xs text-zinc-500">Loading history...</p>
                   </div>
-                ) : activity.length === 0 ? (
+                ) : historyCount === 0 ? (
                   <div className="p-4 text-center">
                     <History className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
                     <p className="text-xs text-zinc-500">No history yet</p>
                   </div>
                 ) : (
-                  activity.slice(0, 20).map((act, i) => (
+                  <>
+                    {/* Lost positions first */}
+                    {lostPositions.map((pos, i) => (
+                      <div key={`lost-${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`history-lost-${i}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
+                              LOST
+                            </span>
+                            <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
+                          </div>
+                          <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="text-sm font-mono font-bold text-wild-brand">
+                            -${(pos.size * pos.avgPrice).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Activity from Polymarket API */}
+                    {activity.slice(0, 20).map((act, i) => (
                     <div 
                       key={`${act.transactionHash}-${i}`} 
                       className="p-3 flex justify-between items-center gap-2" 
@@ -572,7 +596,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         </div>
                       </div>
                     </div>
-                  ))
+                  ))}
+                  </>
                 )}
               </div>
             </TabsContent>
