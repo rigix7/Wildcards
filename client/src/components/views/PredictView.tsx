@@ -437,14 +437,15 @@ function parseSpreadFromQuestion(question: string): { team: string; line: number
 
 // Get spread line labels for each outcome based on the question
 // Returns array of display labels like ["Clippers -2.5", "Raptors +2.5"]
+// Uses abbreviations when available for compact display
 function getSpreadLabelsForOutcomes(
   outcomes: Array<{ label: string; abbrev?: string }>,
   question: string
-): { label: string; lineStr: string }[] {
+): { label: string; abbrev?: string; lineStr: string }[] {
   const parsed = parseSpreadFromQuestion(question);
   if (!parsed) {
     // Fallback: just return team names without lines
-    return outcomes.map(o => ({ label: o.label, lineStr: "" }));
+    return outcomes.map(o => ({ label: o.label, abbrev: o.abbrev, lineStr: "" }));
   }
   
   const { team: questionTeam, line } = parsed;
@@ -459,11 +460,11 @@ function getSpreadLabelsForOutcomes(
     if (isQuestionTeam) {
       // This team has the line stated in the question
       const lineStr = line >= 0 ? `+${line}` : `${line}`;
-      return { label: outcome.label, lineStr };
+      return { label: outcome.label, abbrev: outcome.abbrev, lineStr };
     } else {
       // Other team has the opposite line
       const oppositeLineStr = (-line) >= 0 ? `+${-line}` : `${-line}`;
-      return { label: outcome.label, lineStr: oppositeLineStr };
+      return { label: outcome.label, abbrev: outcome.abbrev, lineStr: oppositeLineStr };
     }
   });
 }
@@ -528,13 +529,15 @@ function SpreadMarketDisplay({
   // Get spread labels with signed lines from the question
   const spreadLabels = getSpreadLabelsForOutcomes(outcomes, market.question || "");
   
-  // Build display labels: "Team -2.5" or "Team +2.5"
+  // Build display labels: "ABBREV -2.5" or "Team -2.5" (prefer abbreviations for compact display)
+  const leftTeamName = spreadLabels[0].abbrev || spreadLabels[0].label;
+  const rightTeamName = spreadLabels[1].abbrev || spreadLabels[1].label;
   const leftDisplayLabel = spreadLabels[0].lineStr 
-    ? `${spreadLabels[0].label} ${spreadLabels[0].lineStr}` 
-    : spreadLabels[0].label;
+    ? `${leftTeamName} ${spreadLabels[0].lineStr}` 
+    : leftTeamName;
   const rightDisplayLabel = spreadLabels[1].lineStr 
-    ? `${spreadLabels[1].label} ${spreadLabels[1].lineStr}` 
-    : spreadLabels[1].label;
+    ? `${rightTeamName} ${spreadLabels[1].lineStr}` 
+    : rightTeamName;
   
   // Prices: use live prices from WebSocket if available, fall back to market.bestAsk from Gamma API
   const leftStaticPrice = market.bestAsk ?? 0.5;
