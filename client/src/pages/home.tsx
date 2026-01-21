@@ -452,6 +452,16 @@ export default function HomePage() {
       ? selectedBet.yesTokenId
       : selectedBet.noTokenId;
     
+    // Validate tokenId before attempting submission
+    console.log("[ConfirmBet] Direction:", direction);
+    console.log("[ConfirmBet] yesTokenId:", selectedBet.yesTokenId);
+    console.log("[ConfirmBet] noTokenId:", selectedBet.noTokenId);
+    console.log("[ConfirmBet] Selected tokenId:", tokenId);
+    
+    if (!tokenId) {
+      return { success: false, error: `No token ID for ${direction} direction - market data may be incomplete` };
+    }
+    
     const betOutcomeId = direction === "yes" 
       ? (selectedBet.yesTokenId || selectedBet.outcomeId)
       : (selectedBet.noTokenId || `${selectedBet.outcomeId}_NO`);

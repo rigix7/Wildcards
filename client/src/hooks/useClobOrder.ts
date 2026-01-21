@@ -113,10 +113,20 @@ export default function useClobOrder(
           throw new Error("Order submission failed");
         }
       } catch (err: unknown) {
+        // Log the full error for debugging
+        console.error("[Order] Full error object:", err);
+        console.error("[Order] Error type:", typeof err);
+        if (err && typeof err === 'object') {
+          console.error("[Order] Error keys:", Object.keys(err));
+          console.error("[Order] Error JSON:", JSON.stringify(err, null, 2));
+        }
+        
         let error: Error;
         if (err instanceof Error) {
           // Check for wallet/signer initialization errors
           const errMsg = err.message.toLowerCase();
+          console.error("[Order] Error message:", err.message);
+          
           if (
             errMsg.includes("first argument must be one of type string") ||
             errMsg.includes("received type undefined") ||
@@ -124,9 +134,19 @@ export default function useClobOrder(
             errMsg.includes("cannot read properties of undefined")
           ) {
             error = new Error("Wallet not ready. Please try logging out and back in, or activate your wallet again.");
+          } else if (errMsg.includes("forbidden") || errMsg.includes("403")) {
+            error = new Error("Trading blocked - Polymarket restricts access from certain regions");
+          } else if (errMsg.includes("unauthorized") || errMsg.includes("401")) {
+            error = new Error("Authentication failed - please reconnect your wallet");
           } else {
             error = err;
           }
+        } else if (err && typeof err === 'object') {
+          // Handle object-type errors (common from API responses)
+          const errObj = err as Record<string, unknown>;
+          const message = errObj.message || errObj.error || errObj.reason || JSON.stringify(err);
+          console.error("[Order] Extracted error message:", message);
+          error = new Error(String(message));
         } else {
           error = new Error("Failed to submit order");
         }
