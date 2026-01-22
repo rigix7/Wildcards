@@ -180,20 +180,34 @@ export default function useClobOrder(
           }
         }
 
-        if (response.orderID) {
+        console.log("[Order] Full response:", JSON.stringify(response, null, 2));
+        console.log("[Order] Response fields - success:", response.success, "errorMsg:", response.errorMsg, "orderID:", response.orderID, "status:", response.status);
+
+        // Check the success field first - this is the primary indicator from Polymarket
+        // For FOK orders, an orderID might exist even when the order wasn't filled
+        if (response.success === true && (!response.errorMsg || response.errorMsg === "")) {
           console.log("[Order] Success! Order ID:", response.orderID);
+          console.log("[Order] Status:", response.status, "takingAmount:", response.takingAmount, "makingAmount:", response.makingAmount);
           setOrderId(response.orderID);
           queryClient.invalidateQueries({ queryKey: ["active-orders"] });
           queryClient.invalidateQueries({ queryKey: ["polymarket-positions"] });
           return { success: true, orderId: response.orderID };
         } else if (response.errorMsg) {
           console.error("[Order] Order failed with errorMsg:", response.errorMsg);
+          console.error("[Order] Response status:", response.status);
           const categorized = categorizeError(response.errorMsg);
           setLastError(categorized);
           setError(new Error(response.errorMsg));
           return { success: false, error: categorized.userMessage, errorCategory: categorized };
+        } else if (response.success === false) {
+          console.error("[Order] Order failed - success=false, status:", response.status);
+          const err = new Error(response.status || "Order was not filled");
+          const categorized = categorizeError(err);
+          setLastError(categorized);
+          setError(err);
+          return { success: false, error: categorized.userMessage, errorCategory: categorized };
         } else {
-          console.error("[Order] Order failed - no orderId in response:", response);
+          console.error("[Order] Order failed - unexpected response:", response);
           const err = new Error("Order submission failed - no confirmation received");
           const categorized = categorizeError(err);
           setLastError(categorized);
