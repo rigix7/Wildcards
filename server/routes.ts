@@ -1731,9 +1731,6 @@ export async function registerRoutes(
         } else if (curPrice >= 0.99 && !redeemable) {
           // User won (price at 100¢) but redemption not yet enabled
           status = "pending";
-        } else if (curPrice >= 0.99) {
-          // Fallback: high price means claimable
-          status = "claimable";
         }
         // Otherwise: market is unresolved (price between 0.01-0.99)
         
