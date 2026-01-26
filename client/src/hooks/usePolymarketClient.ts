@@ -968,7 +968,16 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
         // 2. Automatically unwrapping WCOL → USDC
         // 3. Returning USDC to the caller
         // CRITICAL: amounts[] must be [exactYesBalance, exactNoBalance] - queried from CTF contract
-        const safeAddress = safeAddressRef.current;
+        
+        // Get Safe address - derive from EOA if not already cached
+        let safeAddress = safeAddressRef.current;
+        if (!safeAddress && eoaAddress) {
+          const config = await getContractConfig(CHAIN_ID);
+          const safeFactory = config.SafeContracts.SafeFactory;
+          safeAddress = deriveSafe(eoaAddress, safeFactory);
+          safeAddressRef.current = safeAddress;
+          console.log("[NegRisk] Derived Safe address for balance query:", safeAddress);
+        }
         if (negRiskIds.length > 0 && !safeAddress) {
           return { success: false, error: "Safe wallet address not available for balance query" };
         }
