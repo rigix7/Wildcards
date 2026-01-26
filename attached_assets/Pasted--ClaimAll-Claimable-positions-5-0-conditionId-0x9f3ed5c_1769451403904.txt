@@ -1,0 +1,68 @@
+[ClaimAll] Claimable positions: (5) [{…}, {…}, {…}, {…}, {…}]0: conditionId: "0x9f3ed5c3"negRisk: trueoutcome: "Yes"question: "Will Club Atlético de Madrid win on 2026"size: 8.4tokenId: "42539239753198323367"[[Prototype]]: Object1: conditionId: "0x3d2dfb26"negRisk: trueoutcome: "No"question: "Will Brighton & Hove Albion FC win on 20"size: 7.5757tokenId: "15730191210371992371"[[Prototype]]: Object2: conditionId: "0x49ddf726"negRisk: trueoutcome: "Yes"question: "Will FC Internazionale Milano win on 202"size: 6.3291tokenId: "87346582767305511121"[[Prototype]]: Object3: {question: 'Will Arsenal FC win on 2026-01-25?', conditionId: '0x0de95c4c', tokenId: '10666242777199780889', negRisk: true, outcome: 'No', …}4: {question: 'Will Pisa SC win on 2026-01-23?', conditionId: '0xae5dce31', tokenId: '68733180544487242216', negRisk: true, outcome: 'No', …}length: 5[[Prototype]]: Array(0)
+usePolymarketClient.ts:616 [PolymarketClient] RelayClient initialized
+usePolymarketClient.ts:934 [PolymarketClient] Batch redeeming positions from Safe wallet... {total: 5, ctfCount: 0, negRiskCount: 5}
+usePolymarketClient.ts:983 [NegRisk] Derived Safe address for balance query: 0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f
+usePolymarketClient.ts:1000 [NegRisk] Position: conditionId=0x9f3ed5c3...
+usePolymarketClient.ts:1001   Token ID: 42539239753198323367...
+usePolymarketClient.ts:1002   Outcome: Yes (from API)
+usePolymarketClient.ts:1003   Balance: 8400000 (8.4 USDC)
+usePolymarketClient.ts:1018 [NegRisk] Redeeming via NegRiskAdapter amounts=[8400000, 0]
+usePolymarketClient.ts:1000 [NegRisk] Position: conditionId=0x3d2dfb26...
+usePolymarketClient.ts:1001   Token ID: 15730191210371992371...
+usePolymarketClient.ts:1002   Outcome: No (from API)
+usePolymarketClient.ts:1003   Balance: 7575755 (7.575755 USDC)
+usePolymarketClient.ts:1018 [NegRisk] Redeeming via NegRiskAdapter amounts=[0, 7575755]
+usePolymarketClient.ts:1000 [NegRisk] Position: conditionId=0x49ddf726...
+usePolymarketClient.ts:1001   Token ID: 87346582767305511121...
+usePolymarketClient.ts:1002   Outcome: Yes (from API)
+usePolymarketClient.ts:1003   Balance: 6329109 (6.329109 USDC)
+usePolymarketClient.ts:1018 [NegRisk] Redeeming via NegRiskAdapter amounts=[6329109, 0]
+usePolymarketClient.ts:1000 [NegRisk] Position: conditionId=0x0de95c4c...
+usePolymarketClient.ts:1001   Token ID: 10666242777199780889...
+usePolymarketClient.ts:1002   Outcome: No (from API)
+usePolymarketClient.ts:1003   Balance: 5794870 (5.79487 USDC)
+usePolymarketClient.ts:1018 [NegRisk] Redeeming via NegRiskAdapter amounts=[0, 5794870]
+usePolymarketClient.ts:1000 [NegRisk] Position: conditionId=0xae5dce31...
+usePolymarketClient.ts:1001   Token ID: 68733180544487242216...
+usePolymarketClient.ts:1002   Outcome: No (from API)
+usePolymarketClient.ts:1003   Balance: 5393739 (5.393739 USDC)
+usePolymarketClient.ts:1018 [NegRisk] Redeeming via NegRiskAdapter amounts=[0, 5393739]
+usePolymarketClient.ts:1050 [PolymarketClient] Batch redeem error: ReferenceError: conditionIds is not defined
+    at usePolymarketClient.ts:1043:21
+    at async handleClaimAll (DashboardView.tsx:108:24)
+(anonymous) @ usePolymarketClient.ts:1050
+await in (anonymous)
+handleClaimAll @ DashboardView.tsx:108
+callCallback2 @ chunk-CX6EDVIC.js?v=18b6e877:10553
+invokeGuardedCallbackDev @ chunk-CX6EDVIC.js?v=18b6e877:10578
+invokeGuardedCallback @ chunk-CX6EDVIC.js?v=18b6e877:10612
+invokeGuardedCallbackAndCatchFirstError @ chunk-CX6EDVIC.js?v=18b6e877:10615
+executeDispatch @ chunk-CX6EDVIC.js?v=18b6e877:13919
+processDispatchQueueItemsInOrder @ chunk-CX6EDVIC.js?v=18b6e877:13939
+processDispatchQueue @ chunk-CX6EDVIC.js?v=18b6e877:13948
+dispatchEventsForPlugins @ chunk-CX6EDVIC.js?v=18b6e877:13956
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:14079
+batchedUpdates$1 @ chunk-CX6EDVIC.js?v=18b6e877:25839
+batchedUpdates @ chunk-CX6EDVIC.js?v=18b6e877:10458
+dispatchEventForPluginEventSystem @ chunk-CX6EDVIC.js?v=18b6e877:14078
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-CX6EDVIC.js?v=18b6e877:12357
+dispatchEvent @ chunk-CX6EDVIC.js?v=18b6e877:12351
+dispatchDiscreteEvent @ chunk-CX6EDVIC.js?v=18b6e877:12328
+DashboardView.tsx:110 Batch claim failed: conditionIds is not defined
+handleClaimAll @ DashboardView.tsx:110
+await in handleClaimAll
+callCallback2 @ chunk-CX6EDVIC.js?v=18b6e877:10553
+invokeGuardedCallbackDev @ chunk-CX6EDVIC.js?v=18b6e877:10578
+invokeGuardedCallback @ chunk-CX6EDVIC.js?v=18b6e877:10612
+invokeGuardedCallbackAndCatchFirstError @ chunk-CX6EDVIC.js?v=18b6e877:10615
+executeDispatch @ chunk-CX6EDVIC.js?v=18b6e877:13919
+processDispatchQueueItemsInOrder @ chunk-CX6EDVIC.js?v=18b6e877:13939
+processDispatchQueue @ chunk-CX6EDVIC.js?v=18b6e877:13948
+dispatchEventsForPlugins @ chunk-CX6EDVIC.js?v=18b6e877:13956
+(anonymous) @ chunk-CX6EDVIC.js?v=18b6e877:14079
+batchedUpdates$1 @ chunk-CX6EDVIC.js?v=18b6e877:25839
+batchedUpdates @ chunk-CX6EDVIC.js?v=18b6e877:10458
+dispatchEventForPluginEventSystem @ chunk-CX6EDVIC.js?v=18b6e877:14078
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-CX6EDVIC.js?v=18b6e877:12357
+dispatchEvent @ chunk-CX6EDVIC.js?v=18b6e877:12351
+dispatchDiscreteEvent @ chunk-CX6EDVIC.js?v=18b6e877:12328
