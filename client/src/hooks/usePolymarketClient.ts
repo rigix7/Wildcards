@@ -1040,7 +1040,7 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
         // Execute ALL transactions in one batch - requires only ONE signature!
         const response = await relayClient.execute(
           redeemTxs,
-          `Redeem ${conditionIds.length} winning positions`,
+          `Redeem ${positions.length} winning positions`,
         );
         const result = await response.wait();
 
