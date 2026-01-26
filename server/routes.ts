@@ -1871,8 +1871,8 @@ export async function registerRoutes(
           status,
           // negRisk flag for winner-take-all markets (soccer 3-way, elections)
           // This determines which contract to use for redemption (CTF vs NegRiskAdapter)
-          // Priority: 1) API flag, 2) fallback pattern detection from title/outcome
-          negRisk: p.negRisk === true || p.neg_risk === true || detectNegRiskFromPosition(p.title || "", p.outcome || "", p.title || p.question || ""),
+          // Priority: 1) API flag (negativeRisk is the actual field name), 2) fallback pattern detection
+          negRisk: p.negativeRisk === true || p.negRisk === true || p.neg_risk === true || detectNegRiskFromPosition(p.title || "", p.outcome || "", p.title || p.question || ""),
         };
       });
       
