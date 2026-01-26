@@ -888,21 +888,16 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
         }
 
         // Add NegRisk redeem transactions (winner-take-all markets like soccer 3-way moneylines)
-        // NegRisk markets use the NegRiskAdapter contract with WrappedCollateral (not USDC!)
-        // See: https://github.com/Polymarket/neg-risk-ctf-adapter
-        // The adapter has the same redeemPositions signature as CTF but uses WCOL collateral
-        // After redemption, WCOL is automatically unwrapped to USDC
+        // Per successful on-chain transactions, negRisk positions are ALSO redeemed through CTF with USDC
+        // The CTF contract handles both regular and negRisk positions the same way
         for (const conditionId of negRiskIds) {
-          console.log(`[NegRisk] Redeeming conditionId=${conditionId.slice(0, 10)}... via NegRiskAdapter with WrappedCollateral`);
+          console.log(`[NegRisk] Redeeming conditionId=${conditionId.slice(0, 10)}... via CTF with USDC (same as regular)`);
           
-          // NegRiskAdapter.redeemPositions uses same signature as CTF:
-          // redeemPositions(collateralToken, parentCollectionId, conditionId, indexSets)
-          // BUT uses WrappedCollateral (WCOL) instead of USDC as collateral!
           const redeemData = encodeFunctionData({
-            abi: NEG_RISK_ADAPTER_ABI,
+            abi: CTF_ABI,
             functionName: "redeemPositions",
             args: [
-              WRAPPED_COLLATERAL_ADDRESS,  // WrappedCollateral (WCOL), NOT USDC!
+              USDC_ADDRESS,
               parentCollectionId,
               conditionId as `0x${string}`,
               indexSets.map(BigInt),
@@ -910,7 +905,7 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
           });
 
           redeemTxs.push({
-            to: NEG_RISK_ADAPTER_ADDRESS,
+            to: CTF_ADDRESS,
             value: "0",
             data: redeemData,
           });
