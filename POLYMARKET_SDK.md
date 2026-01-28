@@ -2,6 +2,78 @@
 
 This SDK provides a battle-tested wrapper for Polymarket's CLOB (Central Limit Order Book) and Builder Relayer APIs. It has been debugged extensively and handles the complexity of gasless betting on Polygon.
 
+---
+
+## Installation & Setup
+
+### Step 1: Copy SDK Files
+
+Copy the entire `client/src/sdk/` folder to your new project. The folder contains:
+
+```
+sdk/
+├── index.ts           # Main exports
+├── PolymarketSDK.ts   # SDK class with all methods
+├── types.ts           # TypeScript interfaces
+├── constants.ts       # Contract addresses, chain config
+└── abis.ts            # Contract ABIs
+```
+
+### Step 2: Install Required Dependencies
+
+Run the following in your project:
+
+```bash
+npm install @polymarket/clob-client @polymarket/builder-relayer-client @polymarket/builder-signing-sdk viem ethers@^5.7.0
+```
+
+**Package breakdown:**
+- `@polymarket/clob-client` - CLOB order placement
+- `@polymarket/builder-relayer-client` - Gasless transaction relaying
+- `@polymarket/builder-signing-sdk` - Server-side signature generation
+- `viem` - Modern Ethereum client library
+- `ethers@^5.7.0` - Ethers v5 (required for ClobClient compatibility)
+
+### Step 3: Configure Import Paths
+
+Update the SDK imports to match your project structure. If your SDK folder is at `src/sdk/`:
+
+```typescript
+// In your code:
+import { PolymarketSDK, type SDKConfig, type WalletAdapter } from "./sdk";
+// or
+import { PolymarketSDK, type SDKConfig, type WalletAdapter } from "@/sdk"; // if you have @ alias
+```
+
+### Step 4: Set Environment Variables
+
+**Server-side secrets (never expose to client):**
+```bash
+POLYMARKET_BUILDER_API_KEY=your_builder_key
+POLYMARKET_BUILDER_SECRET=your_builder_secret
+POLYMARKET_BUILDER_PASSPHRASE=your_builder_passphrase
+```
+
+**Client-side (optional fee config):**
+```bash
+VITE_INTEGRATOR_FEE_ADDRESS=0xYourFeeWallet
+VITE_INTEGRATOR_FEE_BPS=50
+```
+
+### Step 5: Add Server Signing Endpoint
+
+Create a POST endpoint at `/api/polymarket/sign` (see "Server-Side Signing Endpoint" section below).
+
+### Step 6: Set Up Wallet Provider
+
+You need a wallet solution (Privy, RainbowKit, ConnectKit, etc.) that provides:
+- User's EOA address
+- Message signing capability
+- Ethers v5 Signer
+- Viem WalletClient
+
+---
+
 ## Quick Start
 
 ```typescript
@@ -52,17 +124,6 @@ const result = await sdk.placeOrder({
 3. **Builder Relayer**: Signs transactions server-side and submits them via Polymarket's relayer for gasless execution.
 
 4. **FOK Orders**: We use Fill-or-Kill orders for instant execution - either the order fills completely or is rejected.
-
-### File Structure
-
-```
-client/src/sdk/
-├── index.ts           # Main exports
-├── PolymarketSDK.ts   # SDK class with all methods
-├── types.ts           # TypeScript interfaces
-├── constants.ts       # Contract addresses, chain config
-└── abis.ts            # Contract ABIs
-```
 
 ## Core Methods
 
@@ -325,6 +386,68 @@ Before going live:
 2. Check Safe deployment works
 3. Test redemption with a resolved market
 4. Verify fee collection (if enabled)
+
+## Troubleshooting
+
+### Module Resolution Errors
+
+If you see errors like "Cannot find module '@polymarket/...'":
+
+```bash
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install @polymarket/clob-client @polymarket/builder-relayer-client @polymarket/builder-signing-sdk viem ethers@^5.7.0
+npm install
+```
+
+### TypeScript Errors in SDK Files
+
+The SDK uses viem's `readContract`. If you see type errors about missing `authorizationList` or `account`:
+
+1. Check your viem version: `npm list viem`
+2. The SDK casts `publicClient` as `any` to handle version differences
+3. If issues persist, ensure viem >= 2.0.0
+
+### Ethers v5 vs v6 Conflicts
+
+The Polymarket CLOB client requires ethers v5. If you're using ethers v6 elsewhere:
+
+```bash
+# Install both versions with aliases
+npm install ethers@^5.7.0 --save-exact
+npm install ethers6@npm:ethers@^6 --save
+```
+
+Then in your code:
+```typescript
+// For Polymarket SDK - use ethers v5
+import { ethers } from "ethers";
+
+// For other parts of your app - use ethers v6
+import { ethers as ethers6 } from "ethers6";
+```
+
+### "Safe not deployed" Error
+
+First-time users must deploy their Safe wallet:
+
+```typescript
+await sdk.deploySafe();
+await sdk.approveUSDC(); // Also required once
+```
+
+### "No liquidity" or Empty Order Book
+
+This can mean:
+1. The market has low/no liquidity
+2. You're geo-blocked (Polymarket restricts certain countries)
+3. The tokenId is incorrect
+
+### Builder Credentials Invalid
+
+1. Verify your credentials at https://polymarket.com/profile/settings (Builder API section)
+2. Ensure the server endpoint is accessible from the client
+3. Check that timestamps are within acceptable range (server clock sync)
 
 ## Support
 
