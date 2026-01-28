@@ -30,6 +30,7 @@ function deriveSafe(address: string, safeFactory: string): string {
 }
 import { polygon } from "viem/chains";
 import { useWallet } from "@/providers/WalletContext";
+import useFeeCollection from "@/hooks/useFeeCollection";
 
 interface ApiKeyCreds {
   key: string;
@@ -236,6 +237,8 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
   const credsRef = useRef<ApiKeyCreds | null>(null);
   const addressRef = useRef<string | null>(null);
   const safeAddressRef = useRef<string | null>(null);
+  
+  const { collectFee, isFeeCollectionEnabled } = useFeeCollection();
 
   const initializeClient = useCallback(async (): Promise<ClobClient | null> => {
     if (clientRef.current && credsRef.current) {
@@ -453,6 +456,20 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
           };
         }
 
+        // Collect integrator fee after successful order (if enabled)
+        // Fee is collected as a separate USDC transfer, does not affect the bet
+        if (isFeeCollectionEnabled && relayClientRef.current) {
+          try {
+            const feeResult = await collectFee(relayClientRef.current, amount);
+            if (feeResult.success && feeResult.feeAmount > 0n) {
+              console.log("[PolymarketClient] Fee collected:", feeResult.feeAmount.toString());
+            }
+          } catch (feeErr) {
+            // Fee collection failure should not fail the order
+            console.warn("[PolymarketClient] Fee collection failed (order still succeeded):", feeErr);
+          }
+        }
+
         return {
           success: true,
           orderID: orderID,
@@ -492,7 +509,7 @@ export function usePolymarketClient(props?: PolymarketClientProps) {
         setIsSubmitting(false);
       }
     },
-    [initializeClient],
+    [initializeClient, isFeeCollectionEnabled, collectFee],
   );
 
   const getOpenOrders = useCallback(async (): Promise<unknown[]> => {

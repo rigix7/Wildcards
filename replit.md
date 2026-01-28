@@ -39,6 +39,7 @@ The user prefers a dark-themed interface with neon accents.
 - **Team Abbreviation Parsing**: Team and player abbreviations are consistently derived from Polymarket event slugs for display across the application.
 - **Wild Points System**: $WILD points are calculated from Polymarket Activity API data, with an admin panel for auditing and management.
 - **Position Status**: Enhanced position statuses in the Dashboard, distinguishing between "WON", "LOST", and "PENDING" (won but not yet redeemable) based on Polymarket Data API.
+- **Integrator Fee System**: Supports optional fee collection on successful orders via the Polymarket Builder Program. Fees are collected as a separate USDC transfer after order fills (not deducted upfront). Configured via environment variables `VITE_INTEGRATOR_FEE_ADDRESS` (wallet to receive fees) and `VITE_INTEGRATOR_FEE_BPS` (fee in basis points, e.g., 50 = 0.5%). Currently set to 0% (disabled).
 
 ## External Dependencies
 - **Polymarket**: Core platform for betting markets, including its CLOB API and Data API.
