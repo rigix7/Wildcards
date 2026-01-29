@@ -114,15 +114,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   };
   
   const handleGetWithdrawQuote = async () => {
-    if (!withdrawAmount || !withdrawTo || withdrawChain === "polygon") return;
+    if (!withdrawAmount || !withdrawTo || !withdrawToken || withdrawChain === "polygon") return;
     
     setIsGettingQuote(true);
     try {
+      const amountInMicros = (parseFloat(withdrawAmount) * 1e6).toString();
       const result = await getQuote({
         type: "withdraw",
         toChainId: withdrawChain,
         toToken: withdrawToken,
-        amount: withdrawAmount,
+        amount: amountInMicros,
         destinationAddress: withdrawTo,
       });
       if (result) {
@@ -940,7 +941,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                       variant="outline"
                       className="w-full text-xs border-zinc-700"
                       onClick={handleGetWithdrawQuote}
-                      disabled={isGettingQuote}
+                      disabled={isGettingQuote || !withdrawToken}
                       data-testid="button-get-quote"
                     >
                       {isGettingQuote ? (
