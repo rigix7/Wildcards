@@ -185,11 +185,6 @@ export function BetSlip({
   // Query the order book for the selected outcome's token
   const currentTokenId = betDirection === "yes" ? yesTokenId : noTokenId;
   
-  // Debug logging for token selection
-  console.log("[BetSlip] betDirection:", betDirection);
-  console.log("[BetSlip] yesTokenId:", yesTokenId?.slice(0, 20), "noTokenId:", noTokenId?.slice(0, 20));
-  console.log("[BetSlip] currentTokenId:", currentTokenId?.slice(0, 20));
-  
   // Fetch order book for the selected outcome's token
   // Only fetch if tokenId changed since last fetch (prevents infinite loops)
   useEffect(() => {
@@ -208,7 +203,6 @@ export function BetSlip({
       setBookError(null);
       
       try {
-        console.log("[BetSlip] Fetching order book for direction:", betDirection, "token:", currentTokenId?.slice(0, 20) + "...");
         const book = await getOrderBook(currentTokenId);
         setOrderBook(book);
         setLastFetchTime(Date.now());
