@@ -675,6 +675,223 @@ This can mean:
 2. Ensure the server endpoint is accessible from the client
 3. Check that timestamps are within acceptable range (server clock sync)
 
+---
+
+## Bridge API - Multi-Chain Deposits & Withdrawals
+
+Polymarket provides a Bridge API for cross-chain deposits and withdrawals. Users can deposit from Ethereum, Solana, Arbitrum, Base, or Bitcoin and withdraw to any supported chain.
+
+### Base URL
+
+```
+https://bridge.polymarket.com
+```
+
+### Endpoints
+
+#### GET /supported-assets
+Returns all supported chains and tokens.
+
+```typescript
+interface SupportedAsset {
+  chainId: string;         // e.g., "1" for Ethereum, "sol" for Solana
+  chainName: string;       // e.g., "Ethereum", "Solana"
+  token: {
+    name: string;
+    symbol: string;
+    address: string;
+    decimals: number;
+  };
+  minCheckoutUsd: number;  // Minimum withdrawal amount
+}
+```
+
+#### POST /quote
+Get a quote for deposit or withdrawal.
+
+```typescript
+// Request
+{
+  type: "deposit" | "withdraw",
+  fromChainId?: string,
+  toChainId?: string,
+  fromToken?: string,
+  toToken?: string,
+  amount: string,
+  destinationAddress: string
+}
+
+// Response
+{
+  estimatedOutput: string,
+  fee: string,
+  exchangeRate: string,
+  estimatedTime: string
+}
+```
+
+#### POST /deposit
+Create a deposit address for cross-chain deposits.
+
+```typescript
+// Request
+{
+  chainId: string,
+  tokenAddress: string,
+  destinationAddress: string  // User's Polymarket wallet
+}
+
+// Response
+{
+  depositAddress: string,   // Address to send funds to
+  chainId: string,
+  expiresAt?: string
+}
+```
+
+#### POST /withdraw
+Initiate a cross-chain withdrawal.
+
+```typescript
+// Request
+{
+  destinationChainId: string,
+  destinationTokenAddress: string,
+  destinationAddress: string,  // User's external wallet
+  amount: string               // In USDC micros (6 decimals)
+}
+
+// Response
+{
+  withdrawalId: string,
+  status: string
+}
+```
+
+#### GET /status/:address
+Check the status of pending transactions.
+
+```typescript
+// Response
+{
+  status: "pending" | "processing" | "completed" | "failed",
+  txHash?: string,
+  amount?: string,
+  timestamp?: string
+}
+```
+
+### React Hook Implementation
+
+```typescript
+// client/src/hooks/useBridgeApi.ts
+import { useState, useEffect, useCallback } from "react";
+
+export function useBridgeApi() {
+  const [supportedAssets, setSupportedAssets] = useState<SupportedAsset[]>([]);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(false);
+  
+  const fetchSupportedAssets = useCallback(async () => {
+    const response = await fetch("/api/bridge/supported-assets");
+    const data = await response.json();
+    setSupportedAssets(data.supportedAssets || []);
+    return data.supportedAssets;
+  }, []);
+  
+  const getQuote = useCallback(async (request) => {
+    const response = await fetch("/api/bridge/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    return response.json();
+  }, []);
+  
+  const createDeposit = useCallback(async (request) => {
+    const response = await fetch("/api/bridge/deposit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    return response.json();
+  }, []);
+  
+  const createWithdrawal = useCallback(async (request) => {
+    const response = await fetch("/api/bridge/withdraw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+    return response.json();
+  }, []);
+  
+  return {
+    supportedAssets,
+    isLoadingAssets,
+    fetchSupportedAssets,
+    getQuote,
+    createDeposit,
+    createWithdrawal,
+  };
+}
+```
+
+### Server Proxy Setup
+
+Add these proxy endpoints to avoid CORS issues:
+
+```typescript
+// server/routes.ts
+const BRIDGE_API_BASE = "https://bridge.polymarket.com";
+
+app.get("/api/bridge/supported-assets", async (req, res) => {
+  const response = await fetch(`${BRIDGE_API_BASE}/supported-assets`);
+  const data = await response.json();
+  res.json(data);
+});
+
+app.post("/api/bridge/quote", async (req, res) => {
+  const response = await fetch(`${BRIDGE_API_BASE}/quote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req.body),
+  });
+  const data = await response.json();
+  res.json(data);
+});
+
+// ... similar for /deposit, /withdraw, /status/:address
+```
+
+### Usage Example
+
+```typescript
+// Deposit from Ethereum
+const { createDeposit, getQuote, supportedAssets } = useBridgeApi();
+
+// Get deposit address
+const depositInfo = await createDeposit({
+  chainId: "1",  // Ethereum
+  tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+  destinationAddress: userWalletAddress,
+});
+
+console.log("Send funds to:", depositInfo.depositAddress);
+
+// Withdraw to Arbitrum
+const quote = await getQuote({
+  type: "withdraw",
+  toChainId: "42161",  // Arbitrum
+  toToken: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC on Arbitrum
+  amount: "100000000", // 100 USDC in micros
+  destinationAddress: externalWallet,
+});
+
+console.log("Fee:", quote.fee, "Output:", quote.estimatedOutput);
+```
+
+---
+
 ## Support
 
 This SDK was battle-tested through extensive debugging. If you encounter issues:
