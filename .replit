@@ -44,5 +44,5 @@ integrations = ["javascript_mem_db:1.0.0", "javascript_database:1.0.0"]
 [userenv]
 
 [userenv.shared]
-VITE_INTEGRATOR_FEE_ADDRESS = ""
-VITE_INTEGRATOR_FEE_BPS = "0"
+VITE_INTEGRATOR_FEE_ADDRESS = "0x8d9d4DD0d64C608088D44F4488CE9e374b631A9B"
+VITE_INTEGRATOR_FEE_BPS = "10"
