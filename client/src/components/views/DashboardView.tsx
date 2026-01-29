@@ -34,8 +34,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   
   const [depositChain, setDepositChain] = useState<string>("polygon");
   const [depositToken, setDepositToken] = useState<string>("");
-  const [bridgeDepositAddress, setBridgeDepositAddress] = useState<string | null>(null);
-  const [isCreatingDeposit, setIsCreatingDeposit] = useState(false);
+  const [bridgeDepositAddresses, setBridgeDepositAddresses] = useState<{ evm: string; svm: string; btc: string } | null>(null);
+  const [isLoadingDepositAddresses, setIsLoadingDepositAddresses] = useState(false);
   
   const [withdrawChain, setWithdrawChain] = useState<string>("polygon");
   const [withdrawToken, setWithdrawToken] = useState<string>("");
@@ -63,13 +63,31 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     return supportedAssets.filter(a => a.chainId === chainId);
   };
   
+  const fetchBridgeDepositAddresses = async () => {
+    if (!safeAddress || bridgeDepositAddresses) return;
+    
+    setIsLoadingDepositAddresses(true);
+    try {
+      const result = await createDeposit({ address: safeAddress });
+      if (result?.address) {
+        setBridgeDepositAddresses(result.address);
+        console.log("[Bridge] Deposit addresses loaded:", result.address);
+      }
+    } finally {
+      setIsLoadingDepositAddresses(false);
+    }
+  };
+  
   const handleDepositChainChange = async (chain: string) => {
     setDepositChain(chain);
-    setBridgeDepositAddress(null);
     setDepositToken("");
     
     if (chain === "polygon") {
       return;
+    }
+    
+    if (!bridgeDepositAddresses && safeAddress) {
+      fetchBridgeDepositAddresses();
     }
     
     const tokens = getTokensForChain(chain);
@@ -79,22 +97,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   };
   
-  const handleCreateBridgeDeposit = async () => {
-    if (!safeAddress || depositChain === "polygon" || !depositToken) return;
+  const getBridgeDepositAddress = (): string | null => {
+    if (!bridgeDepositAddresses) return null;
     
-    setIsCreatingDeposit(true);
-    try {
-      const result = await createDeposit({
-        chainId: depositChain,
-        tokenAddress: depositToken,
-        destinationAddress: safeAddress,
-      });
-      if (result?.depositAddress) {
-        setBridgeDepositAddress(result.depositAddress);
-      }
-    } finally {
-      setIsCreatingDeposit(false);
+    if (depositChain === "solana" || depositChain.toLowerCase().includes("solana")) {
+      return bridgeDepositAddresses.svm;
     }
+    if (depositChain === "bitcoin" || depositChain.toLowerCase().includes("btc")) {
+      return bridgeDepositAddresses.btc;
+    }
+    return bridgeDepositAddresses.evm;
   };
   
   const handleWithdrawChainChange = async (chain: string) => {
@@ -516,13 +528,18 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                       Send USDC.e only. Other tokens will be lost.
                     </p>
                   </>
-                ) : bridgeDepositAddress ? (
+                ) : isLoadingDepositAddresses ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-wild-trade" />
+                    <span className="text-xs text-zinc-400 ml-2">Loading deposit address...</span>
+                  </div>
+                ) : getBridgeDepositAddress() ? (
                   <>
                     <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
                       <div className="flex flex-col flex-1 min-w-0">
                         <span className="text-[10px] text-zinc-500 mb-0.5">Bridge Deposit Address</span>
                         <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-bridge-deposit-address">
-                          {bridgeDepositAddress}
+                          {getBridgeDepositAddress()}
                         </span>
                       </div>
                       <Button
@@ -530,9 +547,12 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         variant="ghost"
                         className="shrink-0 w-7 h-7"
                         onClick={() => {
-                          navigator.clipboard.writeText(bridgeDepositAddress);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
+                          const addr = getBridgeDepositAddress();
+                          if (addr) {
+                            navigator.clipboard.writeText(addr);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
                         }}
                         data-testid="button-copy-bridge-address"
                       >
@@ -545,23 +565,14 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     </div>
                     <div className="bg-wild-scout/10 border border-wild-scout/30 rounded p-2">
                       <p className="text-[10px] text-wild-scout">
-                        Funds will be automatically bridged to USDC.e on Polygon.
+                        Funds will be automatically bridged to USDC.e on Polygon and credited to your Prediction Wallet.
                       </p>
                     </div>
                   </>
                 ) : (
-                  <Button
-                    size="sm"
-                    className="w-full bg-wild-trade border-wild-trade text-white"
-                    onClick={handleCreateBridgeDeposit}
-                    disabled={isCreatingDeposit || !depositToken}
-                    data-testid="button-get-bridge-address"
-                  >
-                    {isCreatingDeposit ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    ) : null}
-                    Get Deposit Address
-                  </Button>
+                  <div className="text-center py-3">
+                    <p className="text-xs text-zinc-400">Select a chain to get deposit address</p>
+                  </div>
                 )}
                 
                 <Button

@@ -1,8 +1,16 @@
 import { X, Copy, ExternalLink, Wallet, Check, Shield, Loader2, ChevronLeft, HelpCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Wallet as WalletType } from "@shared/schema";
 import { DepositInstructions } from "./DepositInstructions";
+import { useBridgeApi } from "@/hooks/useBridgeApi";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function SafeAddressDisplay({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
@@ -79,6 +87,54 @@ export function WalletDrawer({
   isRefreshingBalance,
 }: WalletDrawerProps) {
   const [showDepositInstructions, setShowDepositInstructions] = useState(false);
+  const [depositChain, setDepositChain] = useState<string>("polygon");
+  const [bridgeDepositAddresses, setBridgeDepositAddresses] = useState<{ evm: string; svm: string; btc: string } | null>(null);
+  const [isLoadingDepositAddresses, setIsLoadingDepositAddresses] = useState(false);
+  const [depositAddressCopied, setDepositAddressCopied] = useState(false);
+
+  const { createDeposit, getChainOptions } = useBridgeApi();
+  const chainOptions = getChainOptions();
+
+  const fetchBridgeDepositAddresses = async () => {
+    if (!safeAddress || bridgeDepositAddresses) return;
+    
+    setIsLoadingDepositAddresses(true);
+    try {
+      const result = await createDeposit({ address: safeAddress });
+      if (result?.address) {
+        setBridgeDepositAddresses(result.address);
+        console.log("[WalletDrawer] Deposit addresses loaded:", result.address);
+      }
+    } finally {
+      setIsLoadingDepositAddresses(false);
+    }
+  };
+
+  const handleDepositChainChange = (chain: string) => {
+    setDepositChain(chain);
+    if (chain !== "polygon" && !bridgeDepositAddresses && safeAddress) {
+      fetchBridgeDepositAddresses();
+    }
+  };
+
+  const getBridgeDepositAddress = (): string | null => {
+    if (!bridgeDepositAddresses) return null;
+    
+    if (depositChain === "solana" || depositChain.toLowerCase().includes("solana")) {
+      return bridgeDepositAddresses.svm;
+    }
+    if (depositChain === "bitcoin" || depositChain.toLowerCase().includes("btc")) {
+      return bridgeDepositAddresses.btc;
+    }
+    return bridgeDepositAddresses.evm;
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDepositChain("polygon");
+      setBridgeDepositAddresses(null);
+    }
+  }, [isOpen]);
 
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -210,19 +266,78 @@ export function WalletDrawer({
                       )}
                     </div>
                     {isSafeDeployed && safeAddress ? (
-                      <>
-                        <SafeAddressDisplay address={safeAddress} />
+                      <div className="space-y-2 mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-zinc-500 whitespace-nowrap">Deposit from:</span>
+                          <Select value={depositChain} onValueChange={handleDepositChainChange}>
+                            <SelectTrigger className="h-7 text-[11px] bg-zinc-900 border-zinc-700 flex-1" data-testid="select-drawer-deposit-chain">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-700">
+                              <SelectItem value="polygon" className="text-[11px]">Polygon (Native)</SelectItem>
+                              {chainOptions.map((chain) => (
+                                <SelectItem key={chain.chainId} value={chain.chainId} className="text-[11px]">
+                                  {chain.chainName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {depositChain === "polygon" ? (
+                          <SafeAddressDisplay address={safeAddress} />
+                        ) : isLoadingDepositAddresses ? (
+                          <div className="flex items-center justify-center py-3">
+                            <Loader2 className="w-4 h-4 animate-spin text-wild-trade" />
+                            <span className="text-[10px] text-zinc-400 ml-2">Loading...</span>
+                          </div>
+                        ) : getBridgeDepositAddress() ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between bg-zinc-900 rounded p-2">
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span className="text-[10px] text-zinc-500 mb-0.5">Bridge Deposit Address</span>
+                                <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-drawer-bridge-address">
+                                  {getBridgeDepositAddress()}
+                                </span>
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="w-7 h-7 shrink-0"
+                                onClick={() => {
+                                  const addr = getBridgeDepositAddress();
+                                  if (addr) {
+                                    navigator.clipboard.writeText(addr);
+                                    setDepositAddressCopied(true);
+                                    setTimeout(() => setDepositAddressCopied(false), 2000);
+                                  }
+                                }}
+                                data-testid="button-copy-drawer-bridge-address"
+                              >
+                                {depositAddressCopied ? (
+                                  <Check className="w-3 h-3 text-wild-scout" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-zinc-400" />
+                                )}
+                              </Button>
+                            </div>
+                            <p className="text-[10px] text-wild-scout">
+                              Funds bridged automatically to Polygon.
+                            </p>
+                          </div>
+                        ) : null}
+                        
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full mt-2 text-xs border-zinc-700"
+                          className="w-full text-xs border-zinc-700"
                           onClick={() => setShowDepositInstructions(true)}
                           data-testid="button-how-to-deposit"
                         >
                           <HelpCircle className="w-3 h-3 mr-1" />
                           How to Deposit
                         </Button>
-                      </>
+                      </div>
                     ) : (
                       <Button
                         size="sm"

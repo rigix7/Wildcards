@@ -34,15 +34,18 @@ export interface QuoteResponse {
 }
 
 export interface DepositRequest {
-  chainId: string;
-  tokenAddress: string;
-  destinationAddress: string;
+  address: string;
+}
+
+export interface DepositAddresses {
+  evm: string;
+  svm: string;
+  btc: string;
 }
 
 export interface DepositResponse {
-  depositAddress: string;
-  chainId: string;
-  expiresAt?: string;
+  address: DepositAddresses;
+  note?: string;
 }
 
 export interface WithdrawRequest {
