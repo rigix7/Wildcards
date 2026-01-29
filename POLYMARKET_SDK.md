@@ -238,25 +238,251 @@ app.post("/api/polymarket/sign", async (req, res) => {
 });
 ```
 
-## Fee Collection
+## Integrator Fee Collection
 
-The SDK supports collecting integrator fees on successful BUY orders:
+The SDK supports collecting integrator fees on successful BUY orders. This is part of Polymarket's Builder Program and allows you to monetize your integration.
+
+### Configuration
+
+Set these environment variables (client-side, prefixed with `VITE_`):
+
+```bash
+# Your wallet address to receive fees
+VITE_INTEGRATOR_FEE_ADDRESS=0xYourFeeWallet
+
+# Fee in basis points (100 bps = 1%)
+VITE_INTEGRATOR_FEE_BPS=50
+```
+
+**Important**: Since these are Vite environment variables, you must **fully rebuild** your app (not just restart) when changing them.
+
+### How Fee Collection Works
+
+1. User places a BUY order for $100
+2. Order fills successfully on Polymarket
+3. Your app transfers the fee (e.g., $0.50 for 50 bps) from user's Safe to your fee wallet
+4. Fee failure does NOT break the order - user's bet still succeeds
+
+**Note**: Fees only apply to BUY orders because the `amount` parameter directly represents USDC spent. SELL orders would require fill price data for accurate calculation.
+
+### Implementation Pattern
+
+Fee collection happens **after** a successful order, not during it. Here's the recommended hook-based implementation:
+
+#### Step 1: Create the Fee Collection Hook
 
 ```typescript
-const sdk = new PolymarketSDK({
-  // ... other config
-  feeAddress: "0xYourFeeWallet",
-  feeBps: 50, // 50 basis points = 0.5%
+// hooks/useFeeCollection.ts
+import { useState, useCallback } from "react";
+import { RelayClient } from "@polymarket/builder-relayer-client";
+import { encodeFunctionData } from "viem";
+
+const USDC_E_CONTRACT_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
+const USDC_E_DECIMALS = 6;
+
+// Get from environment
+const INTEGRATOR_FEE_ADDRESS = import.meta.env.VITE_INTEGRATOR_FEE_ADDRESS || "";
+const INTEGRATOR_FEE_BPS = parseInt(import.meta.env.VITE_INTEGRATOR_FEE_BPS || "0", 10);
+
+const ERC20_TRANSFER_ABI = [
+  {
+    name: "transfer",
+    type: "function",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+] as const;
+
+export type FeeCollectionResult = {
+  success: boolean;
+  feeAmount: bigint;
+  txHash?: string;
+};
+
+export default function useFeeCollection() {
+  const [isCollectingFee, setIsCollectingFee] = useState(false);
+  const [feeError, setFeeError] = useState<Error | null>(null);
+
+  const isFeeCollectionEnabled = !!INTEGRATOR_FEE_ADDRESS && INTEGRATOR_FEE_BPS > 0;
+
+  const calculateFeeAmount = useCallback(
+    (orderValueUsdc: number): bigint => {
+      if (!isFeeCollectionEnabled || orderValueUsdc <= 0) {
+        return BigInt(0);
+      }
+      const feeDecimal = orderValueUsdc * (INTEGRATOR_FEE_BPS / 10000);
+      const feeAmount = BigInt(Math.floor(feeDecimal * Math.pow(10, USDC_E_DECIMALS)));
+      return feeAmount;
+    },
+    [isFeeCollectionEnabled]
+  );
+
+  const collectFee = useCallback(
+    async (
+      relayClient: RelayClient,
+      orderValueUsdc: number
+    ): Promise<FeeCollectionResult> => {
+      if (!isFeeCollectionEnabled || !INTEGRATOR_FEE_ADDRESS) {
+        return { success: true, feeAmount: BigInt(0) };
+      }
+
+      const feeAmount = calculateFeeAmount(orderValueUsdc);
+      if (feeAmount <= BigInt(0)) {
+        return { success: true, feeAmount: BigInt(0) };
+      }
+
+      setIsCollectingFee(true);
+      setFeeError(null);
+
+      try {
+        // Build USDC transfer transaction
+        const transferData = encodeFunctionData({
+          abi: ERC20_TRANSFER_ABI,
+          functionName: "transfer",
+          args: [INTEGRATOR_FEE_ADDRESS as `0x${string}`, feeAmount],
+        });
+
+        const feeTransferTx = {
+          to: USDC_E_CONTRACT_ADDRESS,
+          value: "0",
+          data: transferData,
+        };
+
+        // Execute via RelayClient (gasless)
+        const response = await relayClient.execute(
+          [feeTransferTx],
+          `Collect integrator fee: ${(Number(feeAmount) / Math.pow(10, USDC_E_DECIMALS)).toFixed(2)} USDC`
+        );
+        const result = await response.wait();
+
+        return {
+          success: true,
+          feeAmount,
+          txHash: result?.transactionHash,
+        };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to collect fee");
+        setFeeError(error);
+        console.error("[FeeCollection] Error:", error);
+        return { success: false, feeAmount };
+      } finally {
+        setIsCollectingFee(false);
+      }
+    },
+    [isFeeCollectionEnabled, calculateFeeAmount]
+  );
+
+  return {
+    collectFee,
+    calculateFeeAmount,
+    isCollectingFee,
+    feeError,
+    isFeeCollectionEnabled,
+    feeBps: INTEGRATOR_FEE_BPS,
+  };
+}
+```
+
+#### Step 2: Collect Fee After Successful Order
+
+```typescript
+// In your betting component
+import useFeeCollection from "@/hooks/useFeeCollection";
+
+function BetSlip() {
+  const { collectFee, isFeeCollectionEnabled } = useFeeCollection();
+  const { relayClient } = useTradingSession(); // Your RelayClient
+
+  const placeBet = async (tokenId: string, amount: number) => {
+    // 1. Place the order first
+    const orderResult = await submitOrder({
+      tokenId,
+      side: "BUY",
+      size: amount,
+      negRisk: market.negRisk,
+      isMarketOrder: true,
+    });
+
+    if (!orderResult.success) {
+      throw new Error(orderResult.error || "Order failed");
+    }
+
+    // 2. Collect fee AFTER successful order
+    if (isFeeCollectionEnabled && relayClient) {
+      try {
+        const feeResult = await collectFee(relayClient, amount);
+        if (feeResult.success && feeResult.txHash) {
+          console.log(`Fee collected: ${feeResult.txHash}`);
+        }
+      } catch (err) {
+        // Log but don't fail - user's bet already succeeded
+        console.warn("Fee collection failed:", err);
+      }
+    }
+
+    return orderResult;
+  };
+}
+```
+
+### Key Design Decisions
+
+1. **Fee after order, not before**: The bet is the primary action. Fee collection is secondary and should never block or fail the user's bet.
+
+2. **Silent failure**: If fee collection fails (network issue, insufficient balance, etc.), the user's bet still succeeds. Log the error for debugging but don't surface it to users.
+
+3. **Use RelayClient**: Fee collection uses the same gasless `relayClient.execute()` pattern as betting. The user pays no gas for the fee transfer.
+
+4. **BUY orders only**: Only collect fees on BUY orders where `amount` directly represents USDC spent. SELL orders don't have a straightforward USDC value.
+
+### Fee Calculation
+
+```typescript
+// Example: 50 bps (0.5%) on a $100 bet
+const feeBps = 50;
+const orderValue = 100; // USDC
+
+const feePercent = feeBps / 10000; // 0.005
+const feeUSD = orderValue * feePercent; // $0.50
+
+// Convert to USDC token units (6 decimals)
+const feeAmount = BigInt(Math.floor(feeUSD * 1_000_000)); // 500000n
+```
+
+### Debugging Fee Collection
+
+The hook logs to console with `[FeeCollection]` prefix:
+
+```typescript
+console.log("[FeeCollection] collectFee called with:", {
+  orderValueUsdc,
+  isFeeCollectionEnabled,
+  feeAddress: INTEGRATOR_FEE_ADDRESS,
+  feeBps: INTEGRATOR_FEE_BPS,
 });
 ```
 
-**How it works**:
-1. User places BUY order for $100
-2. Order fills on Polymarket
-3. SDK transfers $0.50 USDC from user's Safe to your fee wallet
-4. Fee failure doesn't break the order
+Check these logs to verify:
+- Fee collection is enabled (address + bps both set)
+- Fee amount is calculated correctly
+- Transaction is being submitted
+- Transaction hash is returned on success
 
-**Note**: Fees only apply to BUY orders because the amount parameter directly represents USDC spent. SELL orders would require fill price data for accurate calculation.
+### Common Issues
+
+**Fee not being collected:**
+1. Check `VITE_INTEGRATOR_FEE_ADDRESS` is set and valid
+2. Check `VITE_INTEGRATOR_FEE_BPS` is > 0
+3. Verify you rebuilt the app after changing env vars
+4. Confirm `relayClient` is available when `collectFee` is called
+
+**Fee collection failing:**
+1. User's Safe may have insufficient USDC balance after bet
+2. RelayClient not properly initialized
+3. Network issues with Builder Relayer
 
 ## Design Principles
 
