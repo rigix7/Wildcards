@@ -304,6 +304,39 @@ export default function HomePage() {
           orderMinSize: data.orderMinSize,
         });
         
+        // ATOMIC FEE COLLECTION: Collect fee BEFORE placing order
+        // This ensures users can't reject the fee after their bet is placed
+        const feeBaseAmount = data.originalStake || data.amount;
+        
+        // Track if fee was actually collected (not skipped or disabled)
+        let feeWasCollected = false;
+        
+        if (isFeeCollectionEnabled && relayClient) {
+          console.log("[FeeCollection] Collecting fee BEFORE order on stake $" + feeBaseAmount);
+          try {
+            const feeResult = await collectFee(relayClient, feeBaseAmount);
+            if (!feeResult.success) {
+              console.error("[FeeCollection] Fee collection failed - aborting order");
+              return { success: false, error: "Fee collection failed. Please try again." };
+            }
+            if (feeResult.skipped) {
+              console.log("[FeeCollection] Fee was skipped (disabled or zero amount)");
+              // Fee was skipped, not actually collected
+              feeWasCollected = false;
+            } else {
+              console.log("[FeeCollection] Fee collected:", feeResult.feeAmount.toString(), "tx:", feeResult.txHash);
+              // Fee was actually transferred
+              feeWasCollected = true;
+            }
+          } catch (feeErr) {
+            console.error("[FeeCollection] Fee collection error - aborting order:", feeErr);
+            return { success: false, error: "Fee collection failed. Please try again." };
+          }
+        } else {
+          console.log("[FeeCollection] Skipped (not enabled or no relay client)");
+        }
+        
+        // Now submit the order after fee is collected (or skipped)
         // Use FOK (Fill-or-Kill) market order via official useClobOrder hook
         // negRisk is true for winner-take-all markets like soccer 3-way moneylines
         const result = await submitOrder({
@@ -314,27 +347,13 @@ export default function HomePage() {
           isMarketOrder: true, // Use FOK market order
         });
         
-        // Collect integrator fee after successful order (if enabled)
-        // Fee is calculated on originalStake (user's entered amount), not the reduced bet amount
-        if (result.success && isFeeCollectionEnabled && relayClient) {
-          const feeBaseAmount = data.originalStake || data.amount;
-          console.log("[FeeCollection] Order successful, attempting fee collection on original stake $" + feeBaseAmount);
-          try {
-            const feeResult = await collectFee(relayClient, feeBaseAmount);
-            if (feeResult.success && feeResult.feeAmount > 0n) {
-              console.log("[FeeCollection] Fee collected:", feeResult.feeAmount.toString(), "tx:", feeResult.txHash);
-            } else if (!feeResult.success) {
-              console.warn("[FeeCollection] Fee collection failed (order still succeeded)");
-            }
-          } catch (feeErr) {
-            console.warn("[FeeCollection] Fee collection error (order still succeeded):", feeErr);
-          }
-        } else {
-          console.log("[FeeCollection] Skipped:", { 
-            orderSuccess: result.success, 
-            feeEnabled: isFeeCollectionEnabled, 
-            hasRelayClient: !!relayClient 
-          });
+        // If order failed but fee was collected, add note about potential refund
+        if (!result.success && feeWasCollected) {
+          console.warn("[Bet] Order failed after fee was collected. User may need support for refund.");
+          return {
+            ...result,
+            error: (result.error || "Order failed") + " (Fee was collected - contact support if needed)"
+          };
         }
         
         return result;

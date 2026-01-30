@@ -19,6 +19,7 @@ export type FeeCollectionResult = {
   success: boolean;
   feeAmount: bigint;
   txHash?: string;
+  skipped?: boolean; // Fee was skipped (disabled or zero amount)
 };
 
 interface FeeConfig {
@@ -91,12 +92,12 @@ export default function useFeeCollection() {
       
       if (!feeConfig.enabled) {
         console.log("[FeeCollection] Skipped - fee collection not enabled");
-        return { success: true, feeAmount: BigInt(0) };
+        return { success: true, feeAmount: BigInt(0), skipped: true };
       }
 
       if (!feeConfig.feeAddress) {
         console.log("[FeeCollection] Skipped - no fee address configured");
-        return { success: true, feeAmount: BigInt(0) };
+        return { success: true, feeAmount: BigInt(0), skipped: true };
       }
 
       const feeAmount = calculateFeeAmount(orderValueUsdc);
@@ -104,7 +105,7 @@ export default function useFeeCollection() {
 
       if (feeAmount <= BigInt(0)) {
         console.log("[FeeCollection] Skipped - fee amount is zero or negative");
-        return { success: true, feeAmount: BigInt(0) };
+        return { success: true, feeAmount: BigInt(0), skipped: true };
       }
 
       setIsCollectingFee(true);

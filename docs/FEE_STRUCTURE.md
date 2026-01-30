@@ -78,13 +78,22 @@ The `useFeeCollection` hook handles:
 2. Calculating fee amounts
 3. Transferring fees to the integrator wallet via the Polymarket Builder Relayer
 
-### Order Submission Flow
+### Order Submission Flow (Atomic Pre-Collection)
+
+**Important**: Fees are collected BEFORE the order is placed, not after. This prevents users from rejecting the fee transaction after their bet is already placed.
 
 1. User enters stake amount in BetSlip
 2. BetSlip calculates effective bet amount and fee
-3. On confirm, the order is placed with the reduced bet amount
-4. Fee is transferred to the integrator wallet via relay transaction
-5. User sees success confirmation
+3. User clicks "Place Bet"
+4. **Fee is collected first** via relay transaction
+5. If fee collection fails/rejected, the order is NOT placed
+6. If fee collection succeeds, the order is submitted to Polymarket
+7. User sees success/failure confirmation
+
+This "pre-collection" approach ensures:
+- Users cannot game the system by rejecting fees after their bet is placed
+- If the order fails after fee collection, the fee still covers platform operational costs
+- Single user interaction (fee tx prompt) before order submission
 
 ## Code Changes Required for Sister Product
 
