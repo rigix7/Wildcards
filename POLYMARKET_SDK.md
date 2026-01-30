@@ -240,7 +240,7 @@ app.post("/api/polymarket/sign", async (req, res) => {
 
 ## Integrator Fee Collection
 
-The SDK supports collecting integrator fees on successful BUY orders. This is part of Polymarket's Builder Program and allows you to monetize your integration.
+The SDK supports collecting integrator fees on BUY orders. This is part of Polymarket's Builder Program and allows you to monetize your integration.
 
 ### Configuration
 
@@ -256,18 +256,23 @@ VITE_INTEGRATOR_FEE_BPS=50
 
 **Important**: Since these are Vite environment variables, you must **fully rebuild** your app (not just restart) when changing them.
 
-### How Fee Collection Works
+### How Fee Collection Works (Pre-Collection)
 
-1. User places a BUY order for $100
-2. Order fills successfully on Polymarket
-3. Your app transfers the fee (e.g., $0.50 for 50 bps) from user's Safe to your fee wallet
-4. Fee failure does NOT break the order - user's bet still succeeds
+**IMPORTANT**: As of v2.0, we use a **pre-collection** approach where fees are collected BEFORE the order is submitted:
+
+1. User clicks "Place Bet" for $100
+2. **Fee is collected FIRST** (e.g., $0.50 for 50 bps) from user's Safe to your fee wallet
+3. If user rejects fee, order is NOT placed
+4. If fee succeeds, order is submitted to Polymarket
+5. If order fails after fee collection, user loses fee (edge case)
+
+**Why Pre-Collection?** The previous post-collection approach allowed users to reject the fee transaction after their bet was already placed, gaming the system.
 
 **Note**: Fees only apply to BUY orders because the `amount` parameter directly represents USDC spent. SELL orders would require fill price data for accurate calculation.
 
 ### Implementation Pattern
 
-Fee collection happens **after** a successful order, not during it. Here's the recommended hook-based implementation:
+Fee collection happens **BEFORE** order submission. Here's the recommended hook-based implementation:
 
 #### Step 1: Create the Fee Collection Hook
 
@@ -300,6 +305,7 @@ export type FeeCollectionResult = {
   success: boolean;
   feeAmount: bigint;
   txHash?: string;
+  skipped?: boolean; // True when fee was disabled or zero (not actually transferred)
 };
 
 export default function useFeeCollection() {
@@ -325,13 +331,14 @@ export default function useFeeCollection() {
       relayClient: RelayClient,
       orderValueUsdc: number
     ): Promise<FeeCollectionResult> => {
+      // Return skipped: true when fee collection is disabled
       if (!isFeeCollectionEnabled || !INTEGRATOR_FEE_ADDRESS) {
-        return { success: true, feeAmount: BigInt(0) };
+        return { success: true, feeAmount: BigInt(0), skipped: true };
       }
 
       const feeAmount = calculateFeeAmount(orderValueUsdc);
       if (feeAmount <= BigInt(0)) {
-        return { success: true, feeAmount: BigInt(0) };
+        return { success: true, feeAmount: BigInt(0), skipped: true };
       }
 
       setIsCollectingFee(true);
@@ -362,6 +369,7 @@ export default function useFeeCollection() {
           success: true,
           feeAmount,
           txHash: result?.transactionHash,
+          skipped: false, // Fee was actually transferred
         };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to collect fee");
@@ -386,7 +394,7 @@ export default function useFeeCollection() {
 }
 ```
 
-#### Step 2: Collect Fee After Successful Order
+#### Step 2: Collect Fee BEFORE Order (Pre-Collection Pattern)
 
 ```typescript
 // In your betting component
@@ -397,7 +405,26 @@ function BetSlip() {
   const { relayClient } = useTradingSession(); // Your RelayClient
 
   const placeBet = async (tokenId: string, amount: number) => {
-    // 1. Place the order first
+    let feeWasCollected = false;
+
+    // 1. Collect fee FIRST (pre-collection)
+    if (isFeeCollectionEnabled && relayClient) {
+      const feeResult = await collectFee(relayClient, amount);
+      
+      if (!feeResult.success) {
+        // User rejected fee or transfer failed - abort
+        return { success: false, error: "Fee collection failed. Please try again." };
+      }
+      
+      if (feeResult.skipped) {
+        feeWasCollected = false; // Fee was disabled or zero
+      } else {
+        feeWasCollected = true; // Fee was actually transferred
+        console.log(`Fee collected: ${feeResult.txHash}`);
+      }
+    }
+
+    // 2. Submit order AFTER fee is collected
     const orderResult = await submitOrder({
       tokenId,
       side: "BUY",
@@ -406,21 +433,13 @@ function BetSlip() {
       isMarketOrder: true,
     });
 
-    if (!orderResult.success) {
-      throw new Error(orderResult.error || "Order failed");
-    }
-
-    // 2. Collect fee AFTER successful order
-    if (isFeeCollectionEnabled && relayClient) {
-      try {
-        const feeResult = await collectFee(relayClient, amount);
-        if (feeResult.success && feeResult.txHash) {
-          console.log(`Fee collected: ${feeResult.txHash}`);
-        }
-      } catch (err) {
-        // Log but don't fail - user's bet already succeeded
-        console.warn("Fee collection failed:", err);
-      }
+    // 3. Handle edge case: order fails after fee was collected
+    if (!orderResult.success && feeWasCollected) {
+      return {
+        ...orderResult,
+        error: (orderResult.error || "Order failed") + 
+          " (Fee was collected - contact support if needed)"
+      };
     }
 
     return orderResult;
@@ -430,13 +449,27 @@ function BetSlip() {
 
 ### Key Design Decisions
 
-1. **Fee after order, not before**: The bet is the primary action. Fee collection is secondary and should never block or fail the user's bet.
+1. **Fee BEFORE order (pre-collection)**: Fee is collected first, preventing users from gaming the system by rejecting fees after their bet is placed.
 
-2. **Silent failure**: If fee collection fails (network issue, insufficient balance, etc.), the user's bet still succeeds. Log the error for debugging but don't surface it to users.
+2. **Fee rejection blocks order**: If user rejects the fee transaction, the order is NOT placed.
 
-3. **Use RelayClient**: Fee collection uses the same gasless `relayClient.execute()` pattern as betting. The user pays no gas for the fee transfer.
+3. **Track `feeWasCollected`**: Distinguish between fee being disabled/skipped vs actually transferred, to show appropriate error messages.
 
-4. **BUY orders only**: Only collect fees on BUY orders where `amount` directly represents USDC spent. SELL orders don't have a straightforward USDC value.
+4. **Use RelayClient**: Fee collection uses the same gasless `relayClient.execute()` pattern as betting. The user pays no gas for the fee transfer.
+
+5. **BUY orders only**: Only collect fees on BUY orders where `amount` directly represents USDC spent.
+
+### Edge Case: Order Fails After Fee Collection
+
+If the order fails after fee collection, the user has paid the fee but their bet didn't go through. At typical fee rates (e.g., 0.1%), this is minimal ($0.10 on a $100 bet). The error message directs users to contact support if needed.
+
+**Note**: True atomicity is impossible - Polymarket orders are off-chain signed messages, while fee transfers are on-chain Safe transactions. These cannot be batched into a single atomic operation.
+
+### Fee Transfer vs Fee Deduction
+
+This SDK uses a **separate transfer** approach - the fee is transferred as a distinct USDC transaction from the user's Safe to your fee wallet. The full bet amount is still placed as the order.
+
+An alternative approach (used in some implementations like BetSlip UI) is to **deduct the fee from the stake** - reducing the effective bet amount by the fee percentage and showing adjusted odds to users. See `docs/FEE_STRUCTURE.md` for that pattern if you prefer to bake fees into the displayed odds.
 
 ### Fee Calculation
 
