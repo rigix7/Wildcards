@@ -72,6 +72,18 @@ export const walletRecords = pgTable("wallet_records", {
   updatedAt: text("updated_at").notNull(),
 });
 
+// Bridge transactions - stores bridge addresses for tracking deposit/withdraw status
+export const bridgeTransactions = pgTable("bridge_transactions", {
+  id: serial("id").primaryKey(),
+  userAddress: varchar("user_address", { length: 42 }).notNull(), // User's Safe wallet address
+  bridgeAddress: varchar("bridge_address", { length: 64 }).notNull(), // Bridge-generated address (evm/svm/btc)
+  type: text("type").notNull(), // "deposit" or "withdraw"
+  chainId: text("chain_id").notNull(), // Source chain for deposits, destination chain for withdrawals
+  tokenAddress: text("token_address"), // Token address
+  chainName: text("chain_name"), // Human-readable chain name
+  createdAt: text("created_at").notNull(),
+});
+
 export const adminSettings = pgTable("admin_settings", {
   id: serial("id").primaryKey(),
   demoMode: boolean("demo_mode").notNull().default(false),
@@ -185,6 +197,10 @@ export type Trade = typeof trades.$inferSelect;
 
 export type WalletRecord = typeof walletRecords.$inferSelect;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+
+export const insertBridgeTransactionSchema = createInsertSchema(bridgeTransactions).omit({ id: true, createdAt: true });
+export type InsertBridgeTransaction = z.infer<typeof insertBridgeTransactionSchema>;
+export type BridgeTransaction = typeof bridgeTransactions.$inferSelect;
 
 export const insertFuturesCategorySchema = createInsertSchema(futuresCategories).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertFuturesCategory = z.infer<typeof insertFuturesCategorySchema>;

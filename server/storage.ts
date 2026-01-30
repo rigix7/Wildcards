@@ -15,6 +15,7 @@ import {
   polymarketPositions,
   polymarketOrders,
   polymarketTags,
+  bridgeTransactions,
   type Market,
   type InsertMarket,
   type Player,
@@ -40,6 +41,8 @@ import {
   type InsertPolymarketOrder,
   type PolymarketTagRecord,
   type InsertPolymarketTag,
+  type BridgeTransaction,
+  type InsertBridgeTransaction,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -119,6 +122,9 @@ export interface IStorage {
   setTagEnabled(id: string, enabled: boolean): Promise<PolymarketTagRecord | undefined>;
   clearAllPolymarketTags(): Promise<void>;
   updateFuturesTags(id: string, tags: Array<{ id: string; label: string; slug: string }>): Promise<Futures | undefined>;
+
+  getBridgeTransactions(userAddress: string): Promise<BridgeTransaction[]>;
+  createBridgeTransaction(tx: InsertBridgeTransaction): Promise<BridgeTransaction>;
 
   seedInitialData(): Promise<void>;
 }
@@ -834,6 +840,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(futures.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  async getBridgeTransactions(userAddress: string): Promise<BridgeTransaction[]> {
+    const normalizedAddress = userAddress.toLowerCase();
+    return await db.select().from(bridgeTransactions)
+      .where(eq(bridgeTransactions.userAddress, normalizedAddress));
+  }
+
+  async createBridgeTransaction(tx: InsertBridgeTransaction): Promise<BridgeTransaction> {
+    const [newTx] = await db.insert(bridgeTransactions).values({
+      ...tx,
+      userAddress: tx.userAddress.toLowerCase(),
+      createdAt: new Date().toISOString(),
+    }).returning();
+    return newTx;
   }
 }
 
