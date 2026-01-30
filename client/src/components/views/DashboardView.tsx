@@ -140,7 +140,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         toChainId: withdrawChain,
         toToken: withdrawToken,
         fromAmountBaseUnit: amountInBaseUnits,
-        destinationAddress: withdrawTo,
+        recipientAddress: withdrawTo,  // Bridge API requires recipientAddress
       });
       if (result) {
         setWithdrawQuote({ fee: result.fee, output: result.estimatedOutput });

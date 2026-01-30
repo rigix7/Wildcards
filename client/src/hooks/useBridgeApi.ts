@@ -23,7 +23,7 @@ export interface QuoteRequest {
   fromTokenAddress?: string;
   toToken?: string;
   fromAmountBaseUnit: string;  // Amount in base units (smallest denomination)
-  destinationAddress: string;
+  recipientAddress: string;  // Bridge API requires this field name
 }
 
 export interface QuoteResponse {
