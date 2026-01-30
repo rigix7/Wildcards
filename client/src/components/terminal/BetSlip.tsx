@@ -8,6 +8,28 @@ import useFeeCollection from "@/hooks/useFeeCollection";
 
 type SubmissionStatus = "idle" | "pending" | "success" | "error";
 
+// Format USDC amounts with appropriate precision
+// For amounts < $0.01, show up to 4 decimals to display small fees accurately
+// For larger amounts, show standard 2 decimals
+function formatUSDC(amount: number, options?: { minDecimals?: number; maxDecimals?: number }): string {
+  const { minDecimals = 2, maxDecimals = 4 } = options || {};
+  
+  // For very small amounts (fees), show more precision
+  if (amount > 0 && amount < 0.01) {
+    return amount.toFixed(maxDecimals).replace(/\.?0+$/, '') || '0.00';
+  }
+  
+  // For amounts that would round to different values, show more precision
+  const rounded2 = Math.round(amount * 100) / 100;
+  const diff = Math.abs(amount - rounded2);
+  if (diff >= 0.005) {
+    // Amount differs significantly from 2-decimal display, show more precision
+    return amount.toFixed(maxDecimals).replace(/0+$/, '').replace(/\.$/, '');
+  }
+  
+  return amount.toFixed(minDecimals);
+}
+
 // Simulate filling an order through multiple price levels
 // Returns fill simulation with total available depth across all levels
 interface FillSimulation {
@@ -666,10 +688,16 @@ export function BetSlip({
               </span>
             </div>
             {shouldApplyFee && feeAmount > 0 && (
-              <div className="flex justify-between text-xs">
-                <span className="text-zinc-500">Platform Fee ({(feeBps / 100).toFixed(2)}%)</span>
-                <span className="font-mono text-zinc-500">-${feeAmount.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="flex justify-between text-xs">
+                  <span className="text-zinc-500">Platform Fee ({(feeBps / 100).toFixed(2)}%)</span>
+                  <span className="font-mono text-zinc-500">-${formatUSDC(feeAmount)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-zinc-500">Your Bet Amount</span>
+                  <span className="font-mono text-zinc-400">${formatUSDC(effectiveBetAmount)}</span>
+                </div>
+              </>
             )}
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">WILD Points Earned</span>
