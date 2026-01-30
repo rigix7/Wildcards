@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchPositions, fetchActivity, type PolymarketPosition, type PolymarketActivity } from "@/lib/polymarketOrder";
 import { usePolymarketClient } from "@/hooks/usePolymarketClient";
-import { useBridgeApi, type SupportedAsset } from "@/hooks/useBridgeApi";
+import { useBridgeApi, getAddressTypeForChain, type SupportedAsset } from "@/hooks/useBridgeApi";
 import { DepositInstructions } from "@/components/terminal/DepositInstructions";
 import type { Wallet as WalletType, Bet, Trade } from "@shared/schema";
 
@@ -100,13 +100,14 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const getBridgeDepositAddress = (): string | null => {
     if (!bridgeDepositAddresses) return null;
     
-    if (depositChain === "solana" || depositChain.toLowerCase().includes("solana")) {
-      return bridgeDepositAddresses.svm;
+    // Use the proper address type based on chain mapping from Bridge API
+    const addressType = getAddressTypeForChain(depositChain);
+    if (!addressType) {
+      // Chain not supported - don't show an address
+      return null;
     }
-    if (depositChain === "bitcoin" || depositChain.toLowerCase().includes("btc")) {
-      return bridgeDepositAddresses.btc;
-    }
-    return bridgeDepositAddresses.evm;
+    
+    return bridgeDepositAddresses[addressType];
   };
   
   const handleWithdrawChainChange = async (chain: string) => {

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import type { Wallet as WalletType } from "@shared/schema";
 import { DepositInstructions } from "./DepositInstructions";
-import { useBridgeApi } from "@/hooks/useBridgeApi";
+import { useBridgeApi, getAddressTypeForChain } from "@/hooks/useBridgeApi";
 import {
   Select,
   SelectContent,
@@ -120,13 +120,14 @@ export function WalletDrawer({
   const getBridgeDepositAddress = (): string | null => {
     if (!bridgeDepositAddresses) return null;
     
-    if (depositChain === "solana" || depositChain.toLowerCase().includes("solana")) {
-      return bridgeDepositAddresses.svm;
+    // Use the proper address type based on chain mapping from Bridge API
+    const addressType = getAddressTypeForChain(depositChain);
+    if (!addressType) {
+      // Chain not supported - don't show an address
+      return null;
     }
-    if (depositChain === "bitcoin" || depositChain.toLowerCase().includes("btc")) {
-      return bridgeDepositAddresses.btc;
-    }
-    return bridgeDepositAddresses.evm;
+    
+    return bridgeDepositAddresses[addressType];
   };
 
   useEffect(() => {

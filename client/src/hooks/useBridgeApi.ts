@@ -67,6 +67,52 @@ export interface TransactionStatus {
   timestamp?: string;
 }
 
+// Map chainId to the address type returned by Bridge API deposit endpoint
+// The API returns: { evm: "0x...", svm: "...", btc: "..." }
+// Only chains that map to these types are supported for deposits
+type AddressType = "evm" | "svm" | "btc";
+
+const CHAIN_ADDRESS_TYPE_MAP: Record<string, AddressType> = {
+  // EVM-compatible chains use evm address (0x format)
+  "ethereum": "evm",
+  "eth": "evm",
+  "arbitrum": "evm",
+  "arb": "evm",
+  "base": "evm",
+  "polygon": "evm",
+  "optimism": "evm",
+  "op": "evm",
+  "avalanche": "evm",
+  "avax": "evm",
+  "bnb": "evm",
+  "bsc": "evm",
+  // Solana uses svm address (base58 format)
+  "solana": "svm",
+  "sol": "svm",
+  // Bitcoin uses btc address (bech32/legacy format)
+  "bitcoin": "btc",
+  "btc": "btc",
+};
+
+// Get the address type for a chain. Returns null if chain is not supported.
+export function getAddressTypeForChain(chainId: string): AddressType | null {
+  const normalizedChainId = chainId.toLowerCase().trim();
+  
+  // Direct match
+  if (CHAIN_ADDRESS_TYPE_MAP[normalizedChainId]) {
+    return CHAIN_ADDRESS_TYPE_MAP[normalizedChainId];
+  }
+  
+  // Partial match for variations like "ethereum-mainnet", "arbitrum-one", etc.
+  for (const [key, addressType] of Object.entries(CHAIN_ADDRESS_TYPE_MAP)) {
+    if (normalizedChainId.includes(key)) {
+      return addressType;
+    }
+  }
+  
+  return null;
+}
+
 export function useBridgeApi() {
   const [supportedAssets, setSupportedAssets] = useState<SupportedAsset[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
@@ -173,14 +219,23 @@ export function useBridgeApi() {
     }
   }, []);
 
+  // Get chain options, filtering out chains that don't have valid address support
   const getChainOptions = useCallback(() => {
-    const chainMap = new Map<string, { chainId: string; chainName: string; tokens: SupportedAsset[] }>();
+    const chainMap = new Map<string, { chainId: string; chainName: string; addressType: AddressType; tokens: SupportedAsset[] }>();
     
     for (const asset of supportedAssets) {
+      // Only include chains that have a valid address type mapping
+      const addressType = getAddressTypeForChain(asset.chainId);
+      if (!addressType) {
+        // Skip chains we can't map to an address type (e.g., Tron)
+        continue;
+      }
+      
       if (!chainMap.has(asset.chainId)) {
         chainMap.set(asset.chainId, {
           chainId: asset.chainId,
           chainName: asset.chainName,
+          addressType,
           tokens: [],
         });
       }
@@ -200,5 +255,6 @@ export function useBridgeApi() {
     createWithdrawal,
     getTransactionStatus,
     getChainOptions,
+    getAddressTypeForChain,
   };
 }
