@@ -258,21 +258,37 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         if (!safeAddress) {
           throw new Error("Safe wallet address not available");
         }
-        // Create withdrawal addresses - user will send USDC.e to these addresses
-        const result = await createWithdrawal({
+        
+        // Step 1: Get the bridge deposit address for this withdrawal
+        const bridgeResult = await createWithdrawal({
           address: safeAddress,          // Source Polymarket wallet on Polygon
           toChainId: chain,              // Destination chain
           toTokenAddress: tokenAddress,  // Destination token
           recipientAddr: toAddress,      // Where to receive funds
         });
-        if (!result) {
-          throw new Error("Bridge withdrawal failed");
+        
+        if (!bridgeResult || !bridgeResult.address?.evm) {
+          throw new Error("Failed to get bridge deposit address");
         }
-        // Return the withdrawal addresses for user to send funds to
+        
+        const bridgeDepositAddress = bridgeResult.address.evm;
+        console.log("[Bridge] Got deposit address:", bridgeDepositAddress);
+        console.log("[Bridge] Sending", amount, "USDC.e to bridge...");
+        
+        // Step 2: Automatically send USDC.e from Safe wallet to the bridge address
+        const transferResult = await withdrawUSDC(amount, bridgeDepositAddress);
+        
+        if (!transferResult.success) {
+          throw new Error(transferResult.error || "Failed to send funds to bridge");
+        }
+        
+        console.log("[Bridge] Transfer to bridge successful:", transferResult.txHash);
+        
+        // Return success - the bridge will now process and send to destination
         return { 
           success: true, 
-          withdrawalAddresses: result.address,
-          note: result.note,
+          txHash: transferResult.txHash,
+          bridgeNote: `Funds sent to bridge. The bridge will deliver ${tokenAddress === "native" ? "native tokens" : "tokens"} to ${toAddress} on the destination chain.`,
         };
       }
     },
@@ -1032,34 +1048,31 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 )}
               </Button>
               {withdrawMutation.isSuccess && (
-                <div className="space-y-2">
-                  {withdrawMutation.data?.withdrawalAddresses ? (
-                    <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-                      <p className="text-xs text-wild-scout font-medium mb-2">
-                        Send USDC.e to this address to complete your withdrawal:
-                      </p>
-                      <div className="flex items-center gap-2 p-2 bg-zinc-900 rounded border border-zinc-700">
-                        <code className="text-xs text-zinc-300 flex-1 overflow-hidden text-ellipsis">
-                          {withdrawMutation.data.withdrawalAddresses.evm}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            navigator.clipboard.writeText(withdrawMutation.data?.withdrawalAddresses?.evm || "");
-                          }}
-                          data-testid="button-copy-withdrawal-address"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      {withdrawMutation.data.note && (
-                        <p className="text-xs text-zinc-400 mt-2">{withdrawMutation.data.note}</p>
-                      )}
+                <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
+                    <p className="text-xs text-wild-scout font-medium">
+                      {withdrawChain === "polygon" ? "Withdrawal successful!" : "Bridge transfer initiated!"}
+                    </p>
+                  </div>
+                  {withdrawMutation.data?.txHash && (
+                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <span>Tx:</span>
+                      <a 
+                        href={`https://polygonscan.com/tx/${withdrawMutation.data.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-wild-trade hover:underline flex items-center gap-1"
+                      >
+                        {withdrawMutation.data.txHash.slice(0, 10)}...{withdrawMutation.data.txHash.slice(-8)}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
-                  ) : (
-                    <p className="text-xs text-wild-scout text-center">Withdrawal submitted!</p>
+                  )}
+                  {withdrawChain !== "polygon" && (
+                    <p className="text-xs text-zinc-400 mt-2">
+                      Your funds are being bridged. They will arrive at your destination address shortly.
+                    </p>
                   )}
                 </div>
               )}
