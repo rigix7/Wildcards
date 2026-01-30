@@ -3,7 +3,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/terminal/Header";
 import { BottomNav, TabType } from "@/components/terminal/BottomNav";
 import { WalletDrawer } from "@/components/terminal/WalletDrawer";
-import { BetSlip } from "@/components/terminal/BetSlip";
 import { MultiBetSlip, type BetSelection } from "@/components/terminal/MultiBetSlip";
 import { useBetQueue } from "@/hooks/useBetQueue";
 import { useTerminalToast } from "@/components/terminal/Toast";
@@ -49,25 +48,6 @@ export default function HomePage() {
   const isInitializing = currentStep !== "idle" && currentStep !== "complete";
   const [activeTab, setActiveTab] = useState<TabType>("predict");
   const [isWalletOpen, setIsWalletOpen] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<{ 
-    marketId: string; 
-    outcomeId: string; 
-    odds: number; 
-    marketTitle: string; 
-    outcomeLabel: string; 
-    marketType?: string;
-    direction?: "yes" | "no";
-    yesTokenId?: string;
-    noTokenId?: string;
-    outcomeLabels?: [string, string];
-    yesPrice?: number;
-    noPrice?: number;
-    orderMinSize?: number;
-    question?: string;
-    isSoccer3Way?: boolean;
-    negRisk?: boolean;
-  } | undefined>();
-  const [showBetSlip, setShowBetSlip] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
   const [liveMarketsLoading, setLiveMarketsLoading] = useState(false);
   const [displayEvents, setDisplayEvents] = useState<DisplayEvent[]>([]);
@@ -298,6 +278,7 @@ export default function HomePage() {
       outcomeLabel?: string;
       orderMinSize?: number;
       originalStake?: number; // User's entered stake (before fee deduction) for fee calculation
+      negRisk?: boolean; // Whether this is a negRisk market
     }) => {
       const walletAddr = safeAddress || address || "";
       
@@ -315,7 +296,7 @@ export default function HomePage() {
           tokenId: data.tokenId,
           side: "BUY",
           size: data.amount, // USDC amount to spend
-          negRisk: selectedBet?.negRisk ?? false,
+          negRisk: data.negRisk ?? false,
           isMarketOrder: true, // Use FOK market order
         });
         
@@ -411,29 +392,28 @@ export default function HomePage() {
       return;
     }
 
+    // Find outcome labels from displayEvents
+    let foundOutcomeLabels: [string, string] | undefined;
+    for (const event of displayEvents) {
+      for (const group of event.marketGroups) {
+        const market = group.markets.find(m => m.id === marketId);
+        if (market && market.outcomes.length >= 2) {
+          foundOutcomeLabels = [market.outcomes[0].label, market.outcomes[1].label];
+          break;
+        }
+      }
+      if (foundOutcomeLabels) break;
+    }
+
     // If title/label provided (from new event-based UI), use them directly
     if (marketTitle && outcomeLabel) {
-      // Find the market from displayEvents to get outcome labels
-      let foundOutcomeLabels: [string, string] | undefined;
-      for (const event of displayEvents) {
-        for (const group of event.marketGroups) {
-          const market = group.markets.find(m => m.id === marketId);
-          if (market && market.outcomes.length >= 2) {
-            foundOutcomeLabels = [market.outcomes[0].label, market.outcomes[1].label];
-            break;
-          }
-        }
-        if (foundOutcomeLabels) break;
-      }
-      
-      setSelectedBet({
+      betQueue.addSelection({
         marketId,
         outcomeId,
         odds,
         marketTitle,
         outcomeLabel,
-        marketType,
-        direction,
+        direction: direction || "yes",
         yesTokenId,
         noTokenId,
         outcomeLabels: foundOutcomeLabels,
@@ -444,7 +424,6 @@ export default function HomePage() {
         isSoccer3Way,
         negRisk,
       });
-      setShowBetSlip(true);
       return;
     }
 
@@ -459,14 +438,13 @@ export default function HomePage() {
       o.id === outcomeId || o.marketId === outcomeId
     );
     
-    setSelectedBet({
+    betQueue.addSelection({
       marketId,
       outcomeId,
       odds,
       marketTitle: market?.title || "Unknown Market",
       outcomeLabel: outcome?.label || "Unknown",
-      marketType,
-      direction,
+      direction: direction || "yes",
       yesTokenId,
       noTokenId,
       yesPrice,
@@ -476,72 +454,8 @@ export default function HomePage() {
       isSoccer3Way,
       negRisk,
     });
-    setShowBetSlip(true);
   };
 
-  const handleConfirmBet = async (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number, originalStake?: number): Promise<{ success: boolean; error?: string; orderId?: string }> => {
-    if (!selectedBet) {
-      return { success: false, error: "No bet selected" };
-    }
-    
-    const tokenId = direction === "yes" 
-      ? selectedBet.yesTokenId
-      : selectedBet.noTokenId;
-    
-    // Detailed debug logging for comparing working vs non-working bets
-    console.log("=== BET SUBMISSION DEBUG ===");
-    console.log("[ConfirmBet] Market Type:", selectedBet.marketType);
-    console.log("[ConfirmBet] Is Soccer 3-Way:", selectedBet.isSoccer3Way);
-    console.log("[ConfirmBet] NegRisk:", selectedBet.negRisk);
-    console.log("[ConfirmBet] Market Title:", selectedBet.marketTitle);
-    console.log("[ConfirmBet] Outcome Label:", selectedBet.outcomeLabel);
-    console.log("[ConfirmBet] Direction:", direction);
-    console.log("[ConfirmBet] yesTokenId:", selectedBet.yesTokenId);
-    console.log("[ConfirmBet] noTokenId:", selectedBet.noTokenId);
-    console.log("[ConfirmBet] Selected tokenId:", tokenId);
-    console.log("[ConfirmBet] Stake (effective):", stake, "Original Stake:", originalStake, "Execution Price:", executionPrice);
-    console.log("============================");
-    
-    if (!tokenId) {
-      return { success: false, error: `No token ID for ${direction} direction - market data may be incomplete` };
-    }
-    
-    const betOutcomeId = direction === "yes" 
-      ? (selectedBet.yesTokenId || selectedBet.outcomeId)
-      : (selectedBet.noTokenId || `${selectedBet.outcomeId}_NO`);
-    
-    const price = executionPrice;
-    
-    try {
-      const result = await placeBetMutation.mutateAsync({
-        marketId: selectedBet.marketId,
-        outcomeId: betOutcomeId,
-        amount: stake,
-        odds: effectiveOdds,
-        tokenId,
-        price,
-        marketTitle: selectedBet.marketTitle,
-        outcomeLabel: selectedBet.outcomeLabel,
-        orderMinSize: selectedBet.orderMinSize,
-        originalStake: originalStake || stake, // For fee calculation based on user's entered amount
-      });
-      
-      const orderResult = result as { 
-        success: boolean;
-        orderId?: string; 
-        error?: string;
-      };
-      
-      if (orderResult?.success) {
-        return { success: true, orderId: orderResult?.orderId };
-      } else {
-        return { success: false, error: orderResult?.error || "Order not filled - not enough liquidity" };
-      }
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : "Failed to place bet" };
-    }
-  };
-  
   const handleBetSuccess = () => {
     const walletAddr = safeAddress || address;
     if (walletAddr && !walletAddr.startsWith("0xDemo")) {
@@ -665,11 +579,6 @@ export default function HomePage() {
     }
   }, [clobClient]);
 
-  const handleCancelBet = () => {
-    setSelectedBet(undefined);
-    setShowBetSlip(false);
-  };
-
   const handleFundPlayer = (playerId: string, amount: number) => {
     fundPlayerMutation.mutate({ playerId, amount });
   };
@@ -708,7 +617,11 @@ export default function HomePage() {
               isLoading={marketsLoading}
               futuresLoading={futuresLoading}
               onPlaceBet={handlePlaceBet}
-              selectedBet={selectedBet}
+              selectedBet={betQueue.selections.length > 0 ? {
+                marketId: betQueue.selections[betQueue.selections.length - 1].marketId,
+                outcomeId: betQueue.selections[betQueue.selections.length - 1].outcomeId,
+                direction: betQueue.selections[betQueue.selections.length - 1].direction,
+              } : undefined}
               adminSettings={adminSettings}
               userPositions={userPositions}
               livePrices={livePrices}
@@ -761,30 +674,6 @@ export default function HomePage() {
         onRefreshBalance={() => fetchBalance(true)}
         isRefreshingBalance={isRefreshingBalance}
       />
-
-      {showBetSlip && selectedBet && (
-        <BetSlip
-          marketTitle={selectedBet.marketTitle}
-          outcomeLabel={selectedBet.outcomeLabel}
-          odds={selectedBet.odds}
-          maxBalance={usdcBalance}
-          onConfirm={handleConfirmBet}
-          onCancel={handleCancelBet}
-          isPending={placeBetMutation.isPending}
-          marketType={selectedBet.marketType}
-          outcomeLabels={selectedBet.outcomeLabels}
-          initialDirection={selectedBet.direction || "yes"}
-          yesPrice={selectedBet.yesPrice}
-          noPrice={selectedBet.noPrice}
-          orderMinSize={selectedBet.orderMinSize}
-          yesTokenId={selectedBet.yesTokenId}
-          noTokenId={selectedBet.noTokenId}
-          onSuccess={handleBetSuccess}
-          question={selectedBet.question}
-          isSoccer3Way={selectedBet.isSoccer3Way}
-          getOrderBook={clobClient ? getOrderBook : undefined}
-        />
-      )}
 
       {(betQueue.isOpen || betQueue.isMinimized) && (
         <MultiBetSlip
