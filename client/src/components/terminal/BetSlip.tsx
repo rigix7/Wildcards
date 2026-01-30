@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OrderBookData } from "@/hooks/usePolymarketClient";
 import { categorizeError, type CategorizedError } from "@/lib/polymarketErrors";
+import useFeeCollection from "@/hooks/useFeeCollection";
 
 type SubmissionStatus = "idle" | "pending" | "success" | "error";
 
@@ -173,6 +174,9 @@ export function BetSlip({
   // Retry counter to trigger re-fetch when user clicks refresh
   const [retryCounter, setRetryCounter] = useState(0);
   
+  // Fee collection config
+  const { feeBps, isFeeCollectionEnabled, configLoaded: feeConfigLoaded } = useFeeCollection();
+  
   // Allow manual retry by resetting the ref AND triggering a re-render
   const retryOrderBook = useCallback(() => {
     lastFetchedTokenRef.current = null;
@@ -180,6 +184,12 @@ export function BetSlip({
   }, []);
   
   const stakeNum = parseFloat(stake) || 0;
+  
+  // Calculate effective bet amount after fee deduction
+  // Fee is taken from the stake, so user's actual bet is reduced
+  const feeMultiplier = isFeeCollectionEnabled ? (1 - feeBps / 10000) : 1;
+  const effectiveBetAmount = stakeNum * feeMultiplier;
+  const feeAmount = stakeNum - effectiveBetAmount;
   
   // For match-winner markets, each outcome has its own token
   // Query the order book for the selected outcome's token
@@ -249,9 +259,12 @@ export function BetSlip({
   };
   
   const executionPrice = getExecutionPrice();
-  const effectiveOdds = executionPrice > 0 ? 1 / executionPrice : 2;
+  const marketOdds = executionPrice > 0 ? 1 / executionPrice : 2;
   
-  const potentialWin = stakeNum * effectiveOdds;
+  // Potential win is based on effective bet amount (after fee deduction)
+  const potentialWin = effectiveBetAmount * marketOdds;
+  // Display adjusted odds that show true return relative to user's stake
+  const displayedOdds = stakeNum > 0 ? potentialWin / stakeNum : marketOdds;
   const wildPoints = Math.floor(stakeNum);
   const insufficientBalance = stakeNum > maxBalance;
   
@@ -316,7 +329,8 @@ export function BetSlip({
     setConfirmedStake(stakeNum);
     
     try {
-      const result = await onConfirm(stakeNum, betDirection, effectiveOdds, executionPrice);
+      // Pass the effective bet amount (after fee deduction) to the order
+      const result = await onConfirm(effectiveBetAmount, betDirection, displayedOdds, executionPrice);
       
       if (result.success) {
         setSubmissionStatus("success");
@@ -557,7 +571,7 @@ export function BetSlip({
             </div>
             <div className="text-right">
               <p className="text-xs text-zinc-500">Odds</p>
-              <p className="text-2xl font-black font-mono text-wild-gold">{effectiveOdds.toFixed(2)}</p>
+              <p className="text-2xl font-black font-mono text-wild-gold">{displayedOdds.toFixed(2)}</p>
               {orderBook && (
                 <p className="text-[10px] text-zinc-500">
                   @ ${executionPrice.toFixed(2)}
@@ -595,6 +609,12 @@ export function BetSlip({
                 ${potentialWin.toFixed(2)}
               </span>
             </div>
+            {isFeeCollectionEnabled && feeAmount > 0 && (
+              <div className="flex justify-between text-xs">
+                <span className="text-zinc-500">Platform Fee ({(feeBps / 100).toFixed(2)}%)</span>
+                <span className="font-mono text-zinc-500">-${feeAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-zinc-400">WILD Points Earned</span>
               <span className="font-mono text-wild-gold">+{wildPoints} WILD</span>
