@@ -65,23 +65,36 @@ export interface DepositResponse {
   note?: string;
 }
 
+// POST /withdraw request - creates withdrawal addresses for bridging FROM Polymarket
 export interface WithdrawRequest {
-  destinationChainId: string;
-  destinationTokenAddress: string;
-  destinationAddress: string;
-  amount: string;
+  address: string;           // Source Polymarket wallet address on Polygon (Safe address)
+  toChainId: string;         // Destination chain ID
+  toTokenAddress: string;    // Destination token contract address
+  recipientAddr: string;     // Destination wallet address (note: "Addr" not "Address")
 }
 
+// POST /withdraw response - returns addresses where user sends USDC.e to initiate withdrawal
+// Same structure as DepositResponse
 export interface WithdrawResponse {
-  withdrawalId: string;
-  status: string;
+  address: DepositAddresses;  // { evm, svm, btc } - send USDC.e here to withdraw
+  note?: string;
 }
 
-export interface TransactionStatus {
-  status: "pending" | "processing" | "completed" | "failed";
+// Single transaction in status response
+export interface Transaction {
+  fromChainId: string;
+  fromTokenAddress: string;
+  fromAmountBaseUnit: string;
+  toChainId: string;
+  toTokenAddress: string;
+  status: "DEPOSIT_DETECTED" | "PROCESSING" | "COMPLETED";
   txHash?: string;
-  amount?: string;
-  timestamp?: string;
+  createdTimeMs?: number;
+}
+
+// GET /status/{address} response
+export interface TransactionStatusResponse {
+  transactions: Transaction[];
 }
 
 // Map chainId to the address type returned by Bridge API deposit endpoint
@@ -226,14 +239,14 @@ export function useBridgeApi() {
     }
   }, []);
 
-  const getTransactionStatus = useCallback(async (address: string): Promise<TransactionStatus | null> => {
+  const getTransactionStatus = useCallback(async (address: string): Promise<TransactionStatusResponse | null> => {
     try {
       const response = await fetch(`/api/bridge/status/${address}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to get status");
       }
-      const data: TransactionStatus = await response.json();
+      const data: TransactionStatusResponse = await response.json();
       return data;
     } catch (error) {
       console.error("[BridgeApi] Error getting status:", error);

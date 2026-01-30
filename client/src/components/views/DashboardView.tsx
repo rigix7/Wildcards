@@ -255,16 +255,25 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         if (!tokenAddress) {
           throw new Error("Please select a token to receive");
         }
+        if (!safeAddress) {
+          throw new Error("Safe wallet address not available");
+        }
+        // Create withdrawal addresses - user will send USDC.e to these addresses
         const result = await createWithdrawal({
-          destinationChainId: chain,
-          destinationTokenAddress: tokenAddress,
-          destinationAddress: toAddress,
-          amount: (amount * 1e6).toString(),
+          address: safeAddress,          // Source Polymarket wallet on Polygon
+          toChainId: chain,              // Destination chain
+          toTokenAddress: tokenAddress,  // Destination token
+          recipientAddr: toAddress,      // Where to receive funds
         });
         if (!result) {
           throw new Error("Bridge withdrawal failed");
         }
-        return { success: true, withdrawalId: result.withdrawalId };
+        // Return the withdrawal addresses for user to send funds to
+        return { 
+          success: true, 
+          withdrawalAddresses: result.address,
+          note: result.note,
+        };
       }
     },
   });
@@ -1023,7 +1032,36 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 )}
               </Button>
               {withdrawMutation.isSuccess && (
-                <p className="text-xs text-wild-scout text-center">Withdrawal submitted!</p>
+                <div className="space-y-2">
+                  {withdrawMutation.data?.withdrawalAddresses ? (
+                    <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                      <p className="text-xs text-wild-scout font-medium mb-2">
+                        Send USDC.e to this address to complete your withdrawal:
+                      </p>
+                      <div className="flex items-center gap-2 p-2 bg-zinc-900 rounded border border-zinc-700">
+                        <code className="text-xs text-zinc-300 flex-1 overflow-hidden text-ellipsis">
+                          {withdrawMutation.data.withdrawalAddresses.evm}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(withdrawMutation.data?.withdrawalAddresses?.evm || "");
+                          }}
+                          data-testid="button-copy-withdrawal-address"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      {withdrawMutation.data.note && (
+                        <p className="text-xs text-zinc-400 mt-2">{withdrawMutation.data.note}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-wild-scout text-center">Withdrawal submitted!</p>
+                  )}
+                </div>
               )}
               {withdrawMutation.isError && (
                 <p className="text-xs text-wild-brand text-center">

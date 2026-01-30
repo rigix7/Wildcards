@@ -40,6 +40,13 @@ export interface TransactionResult {
   txHash?: string;
   proxyAddress?: string;
   error?: string;
+  // Bridge withdrawal fields (when using createWithdrawal)
+  withdrawalAddresses?: {
+    evm: string;
+    svm: string;
+    btc: string;
+  };
+  note?: string;
 }
 
 export interface Position {
