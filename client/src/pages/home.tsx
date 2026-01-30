@@ -4,6 +4,8 @@ import { Header } from "@/components/terminal/Header";
 import { BottomNav, TabType } from "@/components/terminal/BottomNav";
 import { WalletDrawer } from "@/components/terminal/WalletDrawer";
 import { BetSlip } from "@/components/terminal/BetSlip";
+import { MultiBetSlip, type BetSelection } from "@/components/terminal/MultiBetSlip";
+import { useBetQueue } from "@/hooks/useBetQueue";
 import { useTerminalToast } from "@/components/terminal/Toast";
 import { PredictView } from "@/components/views/PredictView";
 import { ScoutView } from "@/components/views/ScoutView";
@@ -73,6 +75,9 @@ export default function HomePage() {
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [userPositions, setUserPositions] = useState<PolymarketPosition[]>([]);
   const { showToast, ToastContainer } = useTerminalToast();
+  
+  // Multi-bet queue management
+  const betQueue = useBetQueue();
   
   // Live prices from WebSocket
   const livePrices = useLivePrices();
@@ -551,6 +556,68 @@ export default function HomePage() {
     }
     fetchBalance();
   };
+  
+  // Handler for multi-bet confirmation
+  const handleConfirmMultiBets = async (bets: Array<{
+    selection: BetSelection;
+    effectiveAmount: number;
+    executionPrice: number;
+    originalStake: number;
+  }>): Promise<{ success: boolean; error?: string; results?: Array<{ success: boolean; orderId?: string }> }> => {
+    const results: Array<{ success: boolean; orderId?: string }> = [];
+    let allSuccess = true;
+    
+    // For now, submit bets sequentially (can be batched with postOrders later)
+    for (const bet of bets) {
+      const tokenId = bet.selection.direction === "yes" 
+        ? bet.selection.yesTokenId 
+        : bet.selection.noTokenId;
+      
+      if (!tokenId) {
+        results.push({ success: false });
+        allSuccess = false;
+        continue;
+      }
+      
+      try {
+        // Submit order directly using the selection's negRisk flag
+        const result = await submitOrder({
+          tokenId,
+          side: "BUY",
+          size: bet.effectiveAmount,
+          negRisk: bet.selection.negRisk ?? false,
+          isMarketOrder: true,
+        });
+        
+        // Collect fee after successful order
+        if (result.success && isFeeCollectionEnabled && relayClient) {
+          try {
+            const feeResult = await collectFee(relayClient, bet.originalStake);
+            if (feeResult.success && feeResult.feeAmount > 0n) {
+              console.log("[MultiBet FeeCollection] Fee collected:", feeResult.feeAmount.toString());
+            }
+          } catch (feeErr) {
+            console.warn("[MultiBet FeeCollection] Fee collection failed:", feeErr);
+          }
+        }
+        
+        results.push({ success: result?.success ?? false, orderId: result?.orderId });
+        if (!result?.success) allSuccess = false;
+      } catch {
+        results.push({ success: false });
+        allSuccess = false;
+      }
+    }
+    
+    // Don't clear immediately - let success UI show first
+    return { success: allSuccess, results };
+  };
+  
+  // Handler for multi-bet success - called when user clicks Done
+  const handleMultiBetSuccess = () => {
+    handleBetSuccess();
+    // Queue will be cleared when user closes the slip via onClose
+  };
 
   // Memoized getOrderBook function to prevent infinite re-renders in BetSlip
   // This must be stable across renders to avoid triggering BetSlip's useEffect repeatedly
@@ -716,6 +783,23 @@ export default function HomePage() {
           question={selectedBet.question}
           isSoccer3Way={selectedBet.isSoccer3Way}
           getOrderBook={clobClient ? getOrderBook : undefined}
+        />
+      )}
+
+      {(betQueue.isOpen || betQueue.isMinimized) && (
+        <MultiBetSlip
+          selections={betQueue.selections}
+          maxBalance={usdcBalance}
+          onConfirm={handleConfirmMultiBets}
+          onRemoveSelection={betQueue.removeSelection}
+          onUpdateSelection={betQueue.updateSelection}
+          onClose={betQueue.close}
+          onMinimize={betQueue.toggleMinimize}
+          onClearAll={betQueue.clearAll}
+          isMinimized={betQueue.isMinimized}
+          isPending={placeBetMutation.isPending}
+          getOrderBook={clobClient ? getOrderBook : undefined}
+          onSuccess={handleMultiBetSuccess}
         />
       )}
 
