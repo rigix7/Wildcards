@@ -254,6 +254,22 @@ export function useBridgeApi() {
     }
   }, []);
 
+  // Get aggregated bridge history for a user (queries all their stored bridge addresses)
+  const getBridgeHistory = useCallback(async (userAddress: string): Promise<TransactionStatusResponse | null> => {
+    try {
+      const response = await fetch(`/api/bridge/history/${userAddress}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to get bridge history");
+      }
+      const data: TransactionStatusResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error("[BridgeApi] Error getting bridge history:", error);
+      return null;
+    }
+  }, []);
+
   // Get chain options, filtering out chains that don't have valid address support
   const getChainOptions = useCallback(() => {
     const chainMap = new Map<string, { chainId: string; chainName: string; addressType: AddressType; tokens: SupportedAsset[] }>();
@@ -289,6 +305,7 @@ export function useBridgeApi() {
     createDeposit,
     createWithdrawal,
     getTransactionStatus,
+    getBridgeHistory,
     getChainOptions,
     getAddressTypeForChain,
   };

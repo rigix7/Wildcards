@@ -58,7 +58,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     createDeposit,
     createWithdrawal,
     getQuote,
-    getTransactionStatus,
+    getBridgeHistory,
   } = useBridgeApi();
   
   const chainOptions = getChainOptions();
@@ -171,7 +171,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   useEffect(() => {
     if (safeAddress) {
       setBridgeTransactionsLoading(true);
-      getTransactionStatus(safeAddress)
+      getBridgeHistory(safeAddress)
         .then(status => {
           if (status?.transactions) {
             setBridgeTransactions(status.transactions);
@@ -179,7 +179,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         })
         .finally(() => setBridgeTransactionsLoading(false));
     }
-  }, [safeAddress, getTransactionStatus]);
+  }, [safeAddress, getBridgeHistory]);
 
   const refreshPositions = async () => {
     if (walletAddress) {
@@ -199,7 +199,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     
     if (safeAddress) {
       setBridgeTransactionsLoading(true);
-      const status = await getTransactionStatus(safeAddress);
+      const status = await getBridgeHistory(safeAddress);
       if (status?.transactions) {
         setBridgeTransactions(status.transactions);
       }

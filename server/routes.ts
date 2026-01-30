@@ -121,9 +121,11 @@ export async function registerRoutes(
     }
   });
 
-  // Create deposit address
+  // Create deposit address and save to database for tracking
   app.post("/api/bridge/deposit", async (req, res) => {
     try {
+      const { address: userAddress, fromChainId, fromTokenAddress, chainName } = req.body;
+      
       const response = await fetch(`${BRIDGE_API_BASE}/deposit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,6 +138,50 @@ export async function registerRoutes(
       }
       const data = await response.json();
       console.log("[Bridge API] Deposit address created:", data);
+      
+      // Save bridge addresses to database for status tracking
+      if (userAddress && data.address) {
+        try {
+          // Save EVM address if present
+          if (data.address.evm) {
+            await storage.createBridgeTransaction({
+              userAddress,
+              bridgeAddress: data.address.evm,
+              type: "deposit",
+              chainId: fromChainId || "unknown",
+              tokenAddress: fromTokenAddress || null,
+              chainName: chainName || null,
+            });
+          }
+          // Save SVM address if present
+          if (data.address.svm) {
+            await storage.createBridgeTransaction({
+              userAddress,
+              bridgeAddress: data.address.svm,
+              type: "deposit",
+              chainId: fromChainId || "unknown",
+              tokenAddress: fromTokenAddress || null,
+              chainName: chainName || null,
+            });
+          }
+          // Save BTC address if present
+          if (data.address.btc) {
+            await storage.createBridgeTransaction({
+              userAddress,
+              bridgeAddress: data.address.btc,
+              type: "deposit",
+              chainId: fromChainId || "unknown",
+              tokenAddress: fromTokenAddress || null,
+              chainName: chainName || null,
+            });
+          }
+          console.log("[Bridge API] Saved deposit bridge addresses for tracking");
+        } catch (dbError) {
+          console.error("[Bridge API] Failed to save deposit to database:", dbError);
+          // Don't fail the request, just log the error
+        }
+      }
+      
       res.json(data);
     } catch (error) {
       console.error("[Bridge API] Error creating deposit:", error);
@@ -143,9 +189,11 @@ export async function registerRoutes(
     }
   });
 
-  // Create withdrawal
+  // Create withdrawal and save to database for tracking
   app.post("/api/bridge/withdraw", async (req, res) => {
     try {
+      const { address: userAddress, toChainId, toTokenAddress, chainName } = req.body;
+      
       const response = await fetch(`${BRIDGE_API_BASE}/withdraw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,6 +206,25 @@ export async function registerRoutes(
       }
       const data = await response.json();
       console.log("[Bridge API] Withdrawal created:", data);
+      
+      // Save bridge address to database for status tracking
+      if (userAddress && data.address?.evm) {
+        try {
+          await storage.createBridgeTransaction({
+            userAddress,
+            bridgeAddress: data.address.evm,
+            type: "withdraw",
+            chainId: toChainId || "unknown",
+            tokenAddress: toTokenAddress || null,
+            chainName: chainName || null,
+          });
+          console.log("[Bridge API] Saved withdraw bridge address for tracking");
+        } catch (dbError) {
+          console.error("[Bridge API] Failed to save withdrawal to database:", dbError);
+          // Don't fail the request, just log the error
+        }
+      }
+      
       res.json(data);
     } catch (error) {
       console.error("[Bridge API] Error creating withdrawal:", error);
@@ -165,7 +232,7 @@ export async function registerRoutes(
     }
   });
 
-  // Get transaction status
+  // Get transaction status for a specific bridge address
   app.get("/api/bridge/status/:address", async (req, res) => {
     try {
       const response = await fetch(`${BRIDGE_API_BASE}/status/${req.params.address}`);
@@ -179,6 +246,72 @@ export async function registerRoutes(
     } catch (error) {
       console.error("[Bridge API] Error getting status:", error);
       res.status(500).json({ error: "Failed to get status" });
+    }
+  });
+
+  // Get aggregated bridge history for a user (queries all their stored bridge addresses)
+  app.get("/api/bridge/history/:userAddress", async (req, res) => {
+    try {
+      const userAddress = req.params.userAddress;
+      
+      // Get all bridge addresses we've stored for this user
+      const storedBridges = await storage.getBridgeTransactions(userAddress);
+      console.log(`[Bridge API] Found ${storedBridges.length} stored bridge addresses for ${userAddress}`);
+      
+      if (storedBridges.length === 0) {
+        return res.json({ transactions: [] });
+      }
+      
+      // Query status for each unique bridge address
+      const uniqueBridgeAddresses = [...new Set(storedBridges.map(b => b.bridgeAddress))];
+      const allTransactions: Array<{
+        fromChainId: string;
+        fromTokenAddress: string;
+        fromAmountBaseUnit: string;
+        toChainId: string;
+        toTokenAddress: string;
+        status: string;
+        txHash?: string;
+        createdTimeMs?: number;
+        bridgeType?: string;
+        chainName?: string;
+      }> = [];
+      
+      for (const bridgeAddr of uniqueBridgeAddresses) {
+        try {
+          const response = await fetch(`${BRIDGE_API_BASE}/status/${bridgeAddr}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.transactions && data.transactions.length > 0) {
+              // Find the stored bridge info to get type/chainName
+              const storedInfo = storedBridges.find(b => b.bridgeAddress === bridgeAddr);
+              for (const tx of data.transactions) {
+                allTransactions.push({
+                  ...tx,
+                  bridgeType: storedInfo?.type,
+                  chainName: storedInfo?.chainName,
+                });
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`[Bridge API] Failed to get status for ${bridgeAddr}:`, err);
+          // Continue with other addresses
+        }
+      }
+      
+      // Sort by timestamp descending (most recent first)
+      allTransactions.sort((a, b) => {
+        const timeA = a.createdTimeMs || 0;
+        const timeB = b.createdTimeMs || 0;
+        return timeB - timeA;
+      });
+      
+      console.log(`[Bridge API] Found ${allTransactions.length} total transactions for ${userAddress}`);
+      res.json({ transactions: allTransactions });
+    } catch (error) {
+      console.error("[Bridge API] Error getting bridge history:", error);
+      res.status(500).json({ error: "Failed to get bridge history" });
     }
   });
 
