@@ -270,11 +270,17 @@ export function BetSlip({
   const PRICE_BUFFER = 0.03;
   
   const getExecutionPrice = (): number => {
-    // Always use bestAsk from order book when available (no fallbacks)
-    if (orderBook && orderBook.bestAsk > 0) {
+    // For match-winner markets, each outcome has its own order book
+    // Use bestAsk directly from the selected outcome's order book
+    if (orderBook && orderBook.bestAsk > 0 && orderBook.bestAsk < 0.99) {
       return Math.min(orderBook.bestAsk + PRICE_BUFFER, 0.99);
     }
-    // Only when no order book: use passed odds as initial estimate
+    // Fallback to passed-in prices for the selected direction
+    const fallbackPrice = betDirection === "yes" ? yesPrice : noPrice;
+    if (fallbackPrice && fallbackPrice > 0) {
+      return Math.min(fallbackPrice + PRICE_BUFFER, 0.99);
+    }
+    // Last resort: calculate from odds
     return odds > 0 ? Math.min(1 / odds + PRICE_BUFFER, 0.99) : 0.5;
   };
   
@@ -324,37 +330,6 @@ export function BetSlip({
     !fillSimulation.canFill || 
     fillSimulation.wouldSlip
   );
-  
-  // Check for price volatility - compare passed odds with live order book bestAsk
-  // If difference exceeds 20%, show a volatility warning
-  // Uses relative difference: |bestAsk - passedPrice| / passedPrice
-  const VOLATILITY_THRESHOLD = 0.20; // 20% difference
-  const volatilityInfo = useMemo(() => {
-    if (!orderBook || !orderBook.bestAsk || orderBook.bestAsk <= 0) {
-      return { hasVolatility: false, passedPrice: 0, livePrice: 0, percentDiff: 0 };
-    }
-    
-    // Convert passed odds to price (odds = 1/price, so price = 1/odds)
-    // If odds is invalid/zero, cannot calculate volatility
-    if (odds <= 0) {
-      return { hasVolatility: false, passedPrice: 0, livePrice: orderBook.bestAsk, percentDiff: 0 };
-    }
-    
-    const passedPrice = 1 / odds;
-    // Use raw bestAsk (same price used by getExecutionPrice, without buffer)
-    const livePrice = orderBook.bestAsk;
-    
-    // Calculate percentage difference relative to passed price
-    // This measures how much the live price deviates from what was displayed
-    const percentDiff = Math.abs(livePrice - passedPrice) / passedPrice;
-    
-    return {
-      hasVolatility: percentDiff > VOLATILITY_THRESHOLD,
-      passedPrice,
-      livePrice,
-      percentDiff
-    };
-  }, [odds, orderBook]);
   
   // Check if odds are stale (more than 30 seconds old)
   // Use state to trigger re-renders for stale check
@@ -617,25 +592,6 @@ export function BetSlip({
                 ) : (
                   <p>Large order may experience price impact</p>
                 )}
-              </div>
-            </div>
-          )}
-
-          {volatilityInfo.hasVolatility && !isLoadingBook && (
-            <div 
-              className="rounded-lg p-3 space-y-1 bg-rose-500/10 border border-rose-500/30"
-              data-testid="warning-volatility"
-            >
-              <div className="flex items-center gap-2 text-rose-400 text-sm font-medium">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Price Volatility Detected</span>
-              </div>
-              <div className="text-xs text-rose-400/80">
-                <p data-testid="text-volatility-message">
-                  Market is volatile. Display price ({(volatilityInfo.passedPrice * 100).toFixed(0)}¢) differs from 
-                  live order book ({(volatilityInfo.livePrice * 100).toFixed(0)}¢) by {(volatilityInfo.percentDiff * 100).toFixed(0)}%.
-                  Your order will use the current best available price.
-                </p>
               </div>
             </div>
           )}
