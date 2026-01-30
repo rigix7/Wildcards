@@ -39,7 +39,8 @@ The user prefers a dark-themed interface with neon accents.
 - **Team Abbreviation Parsing**: Team and player abbreviations are consistently derived from Polymarket event slugs for display across the application.
 - **Wild Points System**: $WILD points are calculated from Polymarket Activity API data, with an admin panel for auditing and management.
 - **Position Status**: Enhanced position statuses in the Dashboard, distinguishing between "WON", "LOST", and "PENDING" (won but not yet redeemable) based on Polymarket Data API.
-- **Integrator Fee System**: Supports optional fee collection on successful orders via the Polymarket Builder Program. Fees are collected as a separate USDC transfer after order fills (not deducted upfront). Configured via environment variables `VITE_INTEGRATOR_FEE_ADDRESS` (wallet to receive fees) and `VITE_INTEGRATOR_FEE_BPS` (fee in basis points, e.g., 50 = 0.5%). Currently set to 0% (disabled).
+- **Integrator Fee System**: Supports optional fee collection via the Polymarket Builder Program using a pre-collection approach. Fees are collected BEFORE the order is submitted (not after), preventing users from rejecting the fee transaction after their bet is placed. If the order fails after fee collection, the fee is still collected. Configured via environment variables `VITE_INTEGRATOR_FEE_ADDRESS` (wallet to receive fees) and `VITE_INTEGRATOR_FEE_BPS` (fee in basis points, e.g., 50 = 0.5%). Currently set to 10 bps (0.1%).
+- **Odds Refresh System**: BetSlip includes a refresh button for manual odds refresh, stale indicator when odds are >30 seconds old, and auto-refresh of stale odds before bet placement.
 
 ## External Dependencies
 - **Polymarket**: Core platform for betting markets, including its CLOB API and Data API.
