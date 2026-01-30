@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchPositions, fetchActivity, type PolymarketPosition, type PolymarketActivity } from "@/lib/polymarketOrder";
 import { usePolymarketClient } from "@/hooks/usePolymarketClient";
-import { useBridgeApi, getAddressTypeForChain, type SupportedAsset } from "@/hooks/useBridgeApi";
+import { useBridgeApi, getAddressTypeForChain, type SupportedAsset, type Transaction as BridgeTransaction } from "@/hooks/useBridgeApi";
 import { DepositInstructions } from "@/components/terminal/DepositInstructions";
 import type { Wallet as WalletType, Bet, Trade } from "@shared/schema";
 
@@ -42,6 +42,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const [withdrawQuote, setWithdrawQuote] = useState<{ fee: string; output: string } | null>(null);
   const [isGettingQuote, setIsGettingQuote] = useState(false);
   
+  const [bridgeTransactions, setBridgeTransactions] = useState<BridgeTransaction[]>([]);
+  const [bridgeTransactionsLoading, setBridgeTransactionsLoading] = useState(false);
+  
   const { 
     withdrawUSDC, 
     redeemPositions,
@@ -55,6 +58,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     createDeposit,
     createWithdrawal,
     getQuote,
+    getTransactionStatus,
   } = useBridgeApi();
   
   const chainOptions = getChainOptions();
@@ -164,6 +168,19 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   }, [walletAddress]);
 
+  useEffect(() => {
+    if (safeAddress) {
+      setBridgeTransactionsLoading(true);
+      getTransactionStatus(safeAddress)
+        .then(status => {
+          if (status?.transactions) {
+            setBridgeTransactions(status.transactions);
+          }
+        })
+        .finally(() => setBridgeTransactionsLoading(false));
+    }
+  }, [safeAddress, getTransactionStatus]);
+
   const refreshPositions = async () => {
     if (walletAddress) {
       setPositionsLoading(true);
@@ -178,6 +195,15 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       setActivity(act);
       setPositionsLoading(false);
       setActivityLoading(false);
+    }
+    
+    if (safeAddress) {
+      setBridgeTransactionsLoading(true);
+      const status = await getTransactionStatus(safeAddress);
+      if (status?.transactions) {
+        setBridgeTransactions(status.transactions);
+      }
+      setBridgeTransactionsLoading(false);
     }
   };
 
@@ -707,6 +733,18 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger 
+                value="bridge" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-gold data-[state=active]:bg-transparent data-[state=active]:text-wild-gold px-3 py-2 text-xs"
+                data-testid="tab-bridge"
+              >
+                Bridge
+                {bridgeTransactions.length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-gold/20 text-wild-gold">
+                    {bridgeTransactions.length}
+                  </span>
+                )}
+              </TabsTrigger>
             </TabsList>
 
             {/* Resolved Tab - Shows actionable positions (pending wins and claimable wins) */}
@@ -886,6 +924,92 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     </div>
                   ))}
                   </>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Bridge Tab - Shows bridge deposit/withdrawal history */}
+            <TabsContent value="bridge" className="mt-0">
+              <div className="divide-y divide-zinc-800/50">
+                {bridgeTransactionsLoading ? (
+                  <div className="p-4 text-center">
+                    <RefreshCw className="w-6 h-6 text-zinc-600 mx-auto mb-2 animate-spin" />
+                    <p className="text-xs text-zinc-500">Loading bridge history...</p>
+                  </div>
+                ) : bridgeTransactions.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <ArrowUpFromLine className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-xs text-zinc-500">No bridge transactions yet</p>
+                    <p className="text-[10px] text-zinc-600 mt-1">Deposit or withdraw via bridge to see history</p>
+                  </div>
+                ) : (
+                  bridgeTransactions.map((tx, i) => {
+                    const isDeposit = tx.toChainId === "137";
+                    const fromChainName = chainOptions.find(c => c.chainId === tx.fromChainId)?.chainName || tx.fromChainId;
+                    const toChainName = chainOptions.find(c => c.chainId === tx.toChainId)?.chainName || (tx.toChainId === "137" ? "Polygon" : tx.toChainId);
+                    const amount = parseFloat(tx.fromAmountBaseUnit) / 1e6;
+                    const statusColor = tx.status === "COMPLETED" ? "text-wild-scout" : tx.status === "PROCESSING" ? "text-wild-gold" : "text-wild-trade";
+                    const statusBg = tx.status === "COMPLETED" ? "bg-wild-scout/20" : tx.status === "PROCESSING" ? "bg-wild-gold/20" : "bg-wild-trade/20";
+                    
+                    return (
+                      <div 
+                        key={`${tx.txHash || i}-${tx.createdTimeMs}`} 
+                        className="p-3 hover:bg-zinc-800/30 transition-colors"
+                        data-testid={`bridge-tx-${i}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
+                                statusBg, statusColor
+                              )}>
+                                {tx.status.replace("_", " ")}
+                              </span>
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
+                                isDeposit ? "bg-wild-scout/20 text-wild-scout" : "bg-wild-gold/20 text-wild-gold"
+                              )}>
+                                {isDeposit ? "DEPOSIT" : "WITHDRAW"}
+                              </span>
+                            </div>
+                            <div className="text-xs text-white">
+                              {fromChainName} → {toChainName}
+                            </div>
+                            {tx.txHash && (
+                              <a 
+                                href={`https://polygonscan.com/tx/${tx.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-wild-trade hover:underline flex items-center gap-1 mt-1"
+                              >
+                                {tx.txHash.slice(0, 10)}...{tx.txHash.slice(-6)}
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className={cn(
+                              "text-sm font-mono font-bold",
+                              isDeposit ? "text-wild-scout" : "text-wild-gold"
+                            )}>
+                              {isDeposit ? "+" : "-"}${amount.toFixed(2)}
+                            </div>
+                            {tx.createdTimeMs && (
+                              <div className="text-[10px] text-zinc-500">
+                                {new Date(tx.createdTimeMs).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </TabsContent>
