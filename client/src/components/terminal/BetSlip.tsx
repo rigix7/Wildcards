@@ -270,17 +270,11 @@ export function BetSlip({
   const PRICE_BUFFER = 0.03;
   
   const getExecutionPrice = (): number => {
-    // For match-winner markets, each outcome has its own order book
-    // Use bestAsk directly from the selected outcome's order book
-    if (orderBook && orderBook.bestAsk > 0 && orderBook.bestAsk < 0.99) {
+    // Always use bestAsk from order book when available (no fallbacks)
+    if (orderBook && orderBook.bestAsk > 0) {
       return Math.min(orderBook.bestAsk + PRICE_BUFFER, 0.99);
     }
-    // Fallback to passed-in prices for the selected direction
-    const fallbackPrice = betDirection === "yes" ? yesPrice : noPrice;
-    if (fallbackPrice && fallbackPrice > 0) {
-      return Math.min(fallbackPrice + PRICE_BUFFER, 0.99);
-    }
-    // Last resort: calculate from odds
+    // Only when no order book: use passed odds as initial estimate
     return odds > 0 ? Math.min(1 / odds + PRICE_BUFFER, 0.99) : 0.5;
   };
   
@@ -347,6 +341,7 @@ export function BetSlip({
     }
     
     const passedPrice = 1 / odds;
+    // Use raw bestAsk (same price used by getExecutionPrice, without buffer)
     const livePrice = orderBook.bestAsk;
     
     // Calculate percentage difference relative to passed price
