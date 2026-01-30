@@ -1,5 +1,6 @@
 import { AlertTriangle, Copy, Check, ExternalLink, Info, Clock, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 
 interface DepositInstructionsProps {
@@ -7,9 +8,8 @@ interface DepositInstructionsProps {
   onClose?: () => void;
 }
 
-export function DepositInstructions({ safeAddress, onClose }: DepositInstructionsProps) {
+export function DepositInstructions({ safeAddress }: DepositInstructionsProps) {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"polygon" | "bridge">("polygon");
 
   const copyAddress = async () => {
     await navigator.clipboard.writeText(safeAddress);
@@ -19,33 +19,17 @@ export function DepositInstructions({ safeAddress, onClose }: DepositInstruction
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 p-1 bg-zinc-950 rounded-lg">
-        <button
-          className={`flex-1 text-xs py-1.5 px-2 rounded transition-colors ${
-            activeTab === "polygon" 
-              ? "bg-wild-trade text-white font-medium" 
-              : "text-zinc-400 hover:text-zinc-300"
-          }`}
-          onClick={() => setActiveTab("polygon")}
-          data-testid="tab-polygon-deposit"
-        >
-          Polygon Direct
-        </button>
-        <button
-          className={`flex-1 text-xs py-1.5 px-2 rounded transition-colors ${
-            activeTab === "bridge" 
-              ? "bg-wild-trade text-white font-medium" 
-              : "text-zinc-400 hover:text-zinc-300"
-          }`}
-          onClick={() => setActiveTab("bridge")}
-          data-testid="tab-bridge-deposit"
-        >
-          Bridge (Multi-Chain)
-        </button>
-      </div>
+      <Tabs defaultValue="polygon" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-zinc-950">
+          <TabsTrigger value="polygon" data-testid="tab-polygon-deposit">
+            Polygon Direct
+          </TabsTrigger>
+          <TabsTrigger value="bridge" data-testid="tab-bridge-deposit">
+            Bridge (Multi-Chain)
+          </TabsTrigger>
+        </TabsList>
 
-      {activeTab === "polygon" ? (
-        <>
+        <TabsContent value="polygon" className="space-y-4 mt-4">
           <div className="bg-zinc-900 rounded-lg p-3 space-y-3">
             <div>
               <p className="text-[10px] text-zinc-500 mb-1">Your Deposit Address (Polygon)</p>
@@ -131,9 +115,9 @@ export function DepositInstructions({ safeAddress, onClose }: DepositInstruction
               </div>
             </div>
           </div>
-        </>
-      ) : (
-        <>
+        </TabsContent>
+
+        <TabsContent value="bridge" className="space-y-4 mt-4">
           <div className="bg-zinc-900 rounded-lg p-3 space-y-3">
             <div className="flex items-start gap-2">
               <Zap className="w-4 h-4 text-wild-trade flex-shrink-0 mt-0.5" />
@@ -235,8 +219,8 @@ export function DepositInstructions({ safeAddress, onClose }: DepositInstruction
               </div>
             </div>
           </div>
-        </>
-      )}
+        </TabsContent>
+      </Tabs>
 
       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
         <div className="flex items-start gap-2">
