@@ -120,7 +120,7 @@ interface BetSlipProps {
   outcomeLabel: string;
   odds: number;
   maxBalance: number;
-  onConfirm: (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number) => Promise<{ success: boolean; error?: string; orderId?: string }>;
+  onConfirm: (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number, originalStake?: number) => Promise<{ success: boolean; error?: string; orderId?: string }>;
   onCancel: () => void;
   isPending: boolean;
   marketType?: string;
@@ -174,8 +174,11 @@ export function BetSlip({
   // Retry counter to trigger re-fetch when user clicks refresh
   const [retryCounter, setRetryCounter] = useState(0);
   
-  // Fee collection config
+  // Fee collection config - wait for it to load before calculating adjusted odds
   const { feeBps, isFeeCollectionEnabled, configLoaded: feeConfigLoaded } = useFeeCollection();
+  
+  // Only apply fee deduction once config is loaded and enabled
+  const shouldApplyFee = feeConfigLoaded && isFeeCollectionEnabled;
   
   // Allow manual retry by resetting the ref AND triggering a re-render
   const retryOrderBook = useCallback(() => {
@@ -187,7 +190,8 @@ export function BetSlip({
   
   // Calculate effective bet amount after fee deduction
   // Fee is taken from the stake, so user's actual bet is reduced
-  const feeMultiplier = isFeeCollectionEnabled ? (1 - feeBps / 10000) : 1;
+  // Only apply once config is loaded to avoid showing wrong odds initially
+  const feeMultiplier = shouldApplyFee ? (1 - feeBps / 10000) : 1;
   const effectiveBetAmount = stakeNum * feeMultiplier;
   const feeAmount = stakeNum - effectiveBetAmount;
   
@@ -330,7 +334,8 @@ export function BetSlip({
     
     try {
       // Pass the effective bet amount (after fee deduction) to the order
-      const result = await onConfirm(effectiveBetAmount, betDirection, displayedOdds, executionPrice);
+      // Also pass original stake for fee calculation
+      const result = await onConfirm(effectiveBetAmount, betDirection, displayedOdds, executionPrice, stakeNum);
       
       if (result.success) {
         setSubmissionStatus("success");
@@ -609,7 +614,7 @@ export function BetSlip({
                 ${potentialWin.toFixed(2)}
               </span>
             </div>
-            {isFeeCollectionEnabled && feeAmount > 0 && (
+            {shouldApplyFee && feeAmount > 0 && (
               <div className="flex justify-between text-xs">
                 <span className="text-zinc-500">Platform Fee ({(feeBps / 100).toFixed(2)}%)</span>
                 <span className="font-mono text-zinc-500">-${feeAmount.toFixed(2)}</span>

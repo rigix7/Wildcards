@@ -292,6 +292,7 @@ export default function HomePage() {
       marketTitle?: string;
       outcomeLabel?: string;
       orderMinSize?: number;
+      originalStake?: number; // User's entered stake (before fee deduction) for fee calculation
     }) => {
       const walletAddr = safeAddress || address || "";
       
@@ -314,11 +315,12 @@ export default function HomePage() {
         });
         
         // Collect integrator fee after successful order (if enabled)
-        // Fee is collected as a separate USDC transfer, does not affect the bet
+        // Fee is calculated on originalStake (user's entered amount), not the reduced bet amount
         if (result.success && isFeeCollectionEnabled && relayClient) {
-          console.log("[FeeCollection] Order successful, attempting fee collection for $" + data.amount);
+          const feeBaseAmount = data.originalStake || data.amount;
+          console.log("[FeeCollection] Order successful, attempting fee collection on original stake $" + feeBaseAmount);
           try {
-            const feeResult = await collectFee(relayClient, data.amount);
+            const feeResult = await collectFee(relayClient, feeBaseAmount);
             if (feeResult.success && feeResult.feeAmount > 0n) {
               console.log("[FeeCollection] Fee collected:", feeResult.feeAmount.toString(), "tx:", feeResult.txHash);
             } else if (!feeResult.success) {
@@ -472,7 +474,7 @@ export default function HomePage() {
     setShowBetSlip(true);
   };
 
-  const handleConfirmBet = async (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number): Promise<{ success: boolean; error?: string; orderId?: string }> => {
+  const handleConfirmBet = async (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number, originalStake?: number): Promise<{ success: boolean; error?: string; orderId?: string }> => {
     if (!selectedBet) {
       return { success: false, error: "No bet selected" };
     }
@@ -492,7 +494,7 @@ export default function HomePage() {
     console.log("[ConfirmBet] yesTokenId:", selectedBet.yesTokenId);
     console.log("[ConfirmBet] noTokenId:", selectedBet.noTokenId);
     console.log("[ConfirmBet] Selected tokenId:", tokenId);
-    console.log("[ConfirmBet] Stake:", stake, "Execution Price:", executionPrice);
+    console.log("[ConfirmBet] Stake (effective):", stake, "Original Stake:", originalStake, "Execution Price:", executionPrice);
     console.log("============================");
     
     if (!tokenId) {
@@ -516,6 +518,7 @@ export default function HomePage() {
         marketTitle: selectedBet.marketTitle,
         outcomeLabel: selectedBet.outcomeLabel,
         orderMinSize: selectedBet.orderMinSize,
+        originalStake: originalStake || stake, // For fee calculation based on user's entered amount
       });
       
       const orderResult = result as { 
