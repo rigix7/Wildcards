@@ -358,6 +358,28 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const pendingWinPositions = pendingPositions;
   const openActivePositions = openPositions;
   
+  // Count wins from REDEEM events that are NOT already counted in claimable positions
+  // REDEEM events = already claimed wins (no longer show as positions)
+  // Use conditionId for deduplication since positions may share conditionIds across outcomes
+  // We count REDEEM events that represent markets we no longer have claimable positions for
+  const currentPositionConditionIds = new Set([
+    ...claimablePositions.map(p => p.conditionId).filter(Boolean),
+    ...pendingPositions.map(p => p.conditionId).filter(Boolean),
+  ]);
+  
+  // Count unique REDEEM events by conditionId (one per resolved market)
+  // A REDEEM represents a claimed win for a specific market condition
+  const redeemedConditionIds = new Set<string>();
+  const claimedWinsCount = activity.filter(act => {
+    if (act.type !== "REDEEM") return false;
+    // Skip if we already have this market as claimable/pending
+    if (currentPositionConditionIds.has(act.conditionId)) return false;
+    // Dedupe by conditionId
+    if (redeemedConditionIds.has(act.conditionId)) return false;
+    redeemedConditionIds.add(act.conditionId);
+    return true;
+  }).length;
+  
   // Unrealized P&L from open positions (most accurate data source)
   const unrealizedPnL = openActivePositions.reduce((acc, pos) => {
     if (pos.unrealizedPnl !== undefined) {
@@ -384,13 +406,48 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   // Total P&L = realized gains/losses + unrealized from open positions
   const totalPnL = claimableProfit - lostAmount + unrealizedPnL;
   
-  // Won/Total ratio: only count fully resolved (won vs lost, exclude pending)
-  const totalResolvedPositions = wonPositions.length + lostPositions.length;
+  // Won/Total ratio: include both current claimable positions AND already claimed wins from activity
+  // Total resolved = claimable wins + claimed wins (from REDEEM activity) + lost positions
+  const totalWonCount = wonPositions.length + claimedWinsCount;
+  const totalResolvedPositions = totalWonCount + lostPositions.length;
   // Resolved tab only shows actionable positions (pending wins and claimable wins)
   const resolvedPositions = [...claimablePositions, ...pendingPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
+  
+  // Create a combined and sorted history array
+  // Activity items have timestamps - try to match lost positions to activity by conditionId
+  type HistoryItem = 
+    | { type: "lost"; position: typeof lostPositions[0]; timestamp: number }
+    | { type: "activity"; activity: typeof activity[0]; timestamp: number };
+  
+  // Build a map of conditionId -> latest activity timestamp for lost position matching
+  const conditionTimestamps = new Map<string, number>();
+  for (const act of activity) {
+    if (act.conditionId) {
+      const existing = conditionTimestamps.get(act.conditionId);
+      if (!existing || act.timestamp > existing) {
+        conditionTimestamps.set(act.conditionId, act.timestamp);
+      }
+    }
+  }
+  
+  const historyItems: HistoryItem[] = [
+    // Lost positions - try to get timestamp from matching activity, fallback to very old date
+    ...lostPositions.map(pos => ({
+      type: "lost" as const,
+      position: pos,
+      timestamp: pos.conditionId ? (conditionTimestamps.get(pos.conditionId) || 0) : 0,
+    })),
+    // Activity items have timestamps directly
+    ...activity.map(act => ({
+      type: "activity" as const,
+      activity: act,
+      timestamp: act.timestamp,
+    })),
+  ].sort((a, b) => b.timestamp - a.timestamp); // Sort newest first
+  
   // History tab count includes lost positions + activity
-  const historyCount = lostPositions.length + activity.length;
+  const historyCount = historyItems.length;
   
   // Determine default tab based on what has content
   const getDefaultTab = () => {
@@ -469,7 +526,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             </div>
             <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Won / Total</div>
             <div className="text-xl font-black font-mono text-white" data-testid="text-win-ratio">
-              {wonPositions.length} / {totalResolvedPositions}
+              {totalWonCount} / {totalResolvedPositions}
             </div>
           </div>
 
@@ -876,7 +933,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
               </div>
             </TabsContent>
 
-            {/* History Tab - Lost positions + Polymarket Activity API */}
+            {/* History Tab - Sorted chronologically with newest first */}
             <TabsContent value="history" className="mt-0">
               <div className="divide-y divide-zinc-800/50">
                 {activityLoading && lostPositions.length === 0 ? (
@@ -891,71 +948,76 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </div>
                 ) : (
                   <>
-                    {/* Lost positions first */}
-                    {lostPositions.map((pos, i) => (
-                      <div key={`lost-${pos.tokenId}-${i}`} className="p-3" data-testid={`history-lost-${i}`}>
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-2">
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
-                                LOST
-                              </span>
-                              <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+                    {historyItems.map((item, i) => {
+                      if (item.type === "lost") {
+                        const pos = item.position;
+                        return (
+                          <div key={`lost-${pos.tokenId}-${i}`} className="p-3" data-testid={`history-lost-${i}`}>
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-2">
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
+                                    LOST
+                                  </span>
+                                  <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+                                </div>
+                                <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
+                              </div>
+                              <div className="text-right shrink-0 ml-2">
+                                <div className="text-sm font-mono font-bold text-wild-brand">
+                                  -${(pos.size * pos.avgPrice).toFixed(2)}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
                           </div>
-                          <div className="text-right shrink-0 ml-2">
-                            <div className="text-sm font-mono font-bold text-wild-brand">
-                              -${(pos.size * pos.avgPrice).toFixed(2)}
+                        );
+                      } else {
+                        const act = item.activity;
+                        return (
+                          <div 
+                            key={`${act.transactionHash}-${i}`} 
+                            className="p-3" 
+                            data-testid={`activity-${i}`}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start gap-2">
+                                  <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                                    act.type === "REDEEM" 
+                                      ? "bg-wild-scout/20 text-wild-scout"
+                                      : act.side === "SELL"
+                                      ? "bg-wild-gold/20 text-wild-gold"
+                                      : "bg-wild-trade/20 text-wild-trade"
+                                  )}>
+                                    {act.type === "REDEEM" ? "CLAIMED" : act.side === "SELL" ? "SOLD" : "BOUGHT"}
+                                  </span>
+                                  <div className="text-xs text-white leading-tight">{act.title}</div>
+                                </div>
+                                <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">
+                                  {act.outcome} {act.price ? `@ ${(act.price).toFixed(2)}` : ""}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 ml-2">
+                                <div className={cn(
+                                  "text-sm font-mono font-bold",
+                                  act.type === "REDEEM" 
+                                    ? "text-wild-scout" 
+                                    : act.side === "SELL" 
+                                    ? "text-wild-gold" 
+                                    : "text-white"
+                                )}>
+                                  {act.type === "REDEEM" ? "+" : act.side === "SELL" ? "+" : "-"}${act.usdcSize.toFixed(2)}
+                                </div>
+                                <div className="text-[10px] text-zinc-500">
+                                  {formatActivityTime(act.timestamp)}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                    {/* Activity from Polymarket API */}
-                    {activity.slice(0, 20).map((act, i) => (
-                    <div 
-                      key={`${act.transactionHash}-${i}`} 
-                      className="p-3" 
-                      data-testid={`activity-${i}`}
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-2">
-                            <span className={cn(
-                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
-                              act.type === "REDEEM" 
-                                ? "bg-wild-scout/20 text-wild-scout"
-                                : act.side === "SELL"
-                                ? "bg-wild-gold/20 text-wild-gold"
-                                : "bg-wild-trade/20 text-wild-trade"
-                            )}>
-                              {act.type === "REDEEM" ? "CLAIMED" : act.side === "SELL" ? "SOLD" : "BOUGHT"}
-                            </span>
-                            <div className="text-xs text-white leading-tight">{act.title}</div>
-                          </div>
-                          <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">
-                            {act.outcome} {act.price ? `@ ${(act.price).toFixed(2)}` : ""}
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <div className={cn(
-                            "text-sm font-mono font-bold",
-                            act.type === "REDEEM" 
-                              ? "text-wild-scout" 
-                              : act.side === "SELL" 
-                              ? "text-wild-gold" 
-                              : "text-white"
-                          )}>
-                            {act.type === "REDEEM" ? "+" : act.side === "SELL" ? "+" : "-"}${act.usdcSize.toFixed(2)}
-                          </div>
-                          <div className="text-[10px] text-zinc-500">
-                            {formatActivityTime(act.timestamp)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                        );
+                      }
+                    })}
                   </>
                 )}
               </div>
