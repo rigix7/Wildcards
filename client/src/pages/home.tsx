@@ -785,6 +785,8 @@ export default function HomePage() {
               walletAddress={safeAddress || address}
               safeAddress={safeAddress}
               isSafeDeployed={isSafeDeployed}
+              submitOrder={submitOrder}
+              clobClient={clobClient}
             />
           )}
         </main>

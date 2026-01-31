@@ -321,28 +321,30 @@ function LeagueFilters({
   if (leagues.length === 0) return null;
   
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 px-1">
-      <Button
-        size="sm"
-        variant={selectedLeagues.size === 0 ? "default" : "outline"}
-        onClick={() => onToggle("ALL")}
-        className="shrink-0 text-xs h-7"
-        data-testid="filter-all"
-      >
-        All
-      </Button>
-      {leagues.map((league) => (
+    <div className="sticky top-0 z-10 bg-zinc-950 pb-2 pt-1 -mx-3 px-3">
+      <div className="flex gap-2 overflow-x-auto pb-1 px-1">
         <Button
-          key={league}
           size="sm"
-          variant={selectedLeagues.has(league) ? "default" : "outline"}
-          onClick={() => onToggle(league)}
+          variant={selectedLeagues.size === 0 ? "default" : "outline"}
+          onClick={() => onToggle("ALL")}
           className="shrink-0 text-xs h-7"
-          data-testid={`filter-${league.toLowerCase()}`}
+          data-testid="filter-all"
         >
-          {league}
+          All
         </Button>
-      ))}
+        {leagues.map((league) => (
+          <Button
+            key={league}
+            size="sm"
+            variant={selectedLeagues.has(league) ? "default" : "outline"}
+            onClick={() => onToggle(league)}
+            className="shrink-0 text-xs h-7"
+            data-testid={`filter-${league.toLowerCase()}`}
+          >
+            {league}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

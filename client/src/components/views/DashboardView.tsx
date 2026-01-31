@@ -23,9 +23,17 @@ interface DashboardViewProps {
   walletAddress?: string;
   safeAddress?: string | null;
   isSafeDeployed?: boolean;
+  submitOrder?: (params: {
+    tokenId: string;
+    side: "BUY" | "SELL";
+    size: number;
+    negRisk?: boolean;
+    isMarketOrder?: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
+  clobClient?: any;
 }
 
-export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, safeAddress, isSafeDeployed }: DashboardViewProps) {
+export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, safeAddress, isSafeDeployed, submitOrder, clobClient }: DashboardViewProps) {
   const [positions, setPositions] = useState<PolymarketPosition[]>([]);
   const [activity, setActivity] = useState<PolymarketActivity[]>([]);
   const [positionsLoading, setPositionsLoading] = useState(false);
@@ -54,14 +62,13 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const [sellAmount, setSellAmount] = useState("");
   const [sellError, setSellError] = useState<string | null>(null);
   const [sellSuccess, setSellSuccess] = useState(false);
+  const [isSelling, setIsSelling] = useState(false);
   
   const { 
     withdrawUSDC, 
     redeemPositions,
     batchRedeemPositions,
-    placeOrder,
     getOrderBook,
-    isSubmitting: isSelling,
   } = usePolymarketClient();
   
   // Best bid state for sell modal
@@ -389,9 +396,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   };
 
-  // Handler to execute sell
+  // Handler to execute sell - uses submitOrder with size parameter (shares, not USDC)
   const handleExecuteSell = async () => {
-    if (!sellPosition || !sellAmount) return;
+    if (!sellPosition || !sellAmount || !submitOrder) return;
     
     const shareAmount = parseFloat(sellAmount);
     if (isNaN(shareAmount) || shareAmount <= 0) {
@@ -405,13 +412,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
     setSellError(null);
     setSellSuccess(false);
+    setIsSelling(true);
 
     try {
-      const result = await placeOrder({
+      // Use submitOrder with size (number of shares) instead of amount (USDC value)
+      const result = await submitOrder({
         tokenId: sellPosition.tokenId,
         side: "SELL",
-        amount: shareAmount,
+        size: shareAmount,
         negRisk: sellPosition.negRisk,
+        isMarketOrder: true,
       });
 
       if (result.success) {
@@ -431,6 +441,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       }
     } catch (err) {
       setSellError(err instanceof Error ? err.message : "Sell failed");
+    } finally {
+      setIsSelling(false);
     }
   };
 
