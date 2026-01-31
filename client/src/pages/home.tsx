@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Loader2, CheckCircle2 } from "lucide-react";
+import { DollarSign, Loader2, CheckCircle2, X, AlertTriangle } from "lucide-react";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures, PolymarketTagRecord, FuturesCategory } from "@shared/schema";
 
 export default function HomePage() {
@@ -87,6 +87,8 @@ export default function HomePage() {
   const [sellError, setSellError] = useState<string | null>(null);
   const [sellSuccess, setSellSuccess] = useState(false);
   const [isSelling, setIsSelling] = useState(false);
+  const [sellBestBid, setSellBestBid] = useState<number | null>(null);
+  const [isLoadingSellBid, setIsLoadingSellBid] = useState(false);
   
   // Live prices from WebSocket
   const livePrices = useLivePrices();
@@ -508,13 +510,31 @@ export default function HomePage() {
   };
 
   // Handler to open sell modal from PredictView
-  const handleOpenSellModal = useCallback((position: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean }) => {
+  const handleOpenSellModal = useCallback(async (position: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean }) => {
     setSellPosition(position);
     setSellAmount(position.size.toString());
     setSellError(null);
     setSellSuccess(false);
+    setSellBestBid(null);
     setSellModalOpen(true);
-  }, []);
+    
+    // Fetch best bid price
+    if (clobClient && position.tokenId) {
+      setIsLoadingSellBid(true);
+      try {
+        const book = await clobClient.getOrderBook(position.tokenId);
+        if (book && book.bids && book.bids.length > 0) {
+          // Sort bids descending and get best (highest) bid
+          const sortedBids = [...book.bids].sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+          setSellBestBid(parseFloat(sortedBids[0].price));
+        }
+      } catch (err) {
+        console.warn("[Home] Failed to fetch order book for sell:", err);
+      } finally {
+        setIsLoadingSellBid(false);
+      }
+    }
+  }, [clobClient]);
 
   // Handler to execute sell
   const handleExecuteSell = useCallback(async () => {
@@ -813,35 +833,38 @@ export default function HomePage() {
 
       <ToastContainer />
 
-      {/* Sell Position Modal (for PredictView) */}
-      <Dialog open={sellModalOpen} onOpenChange={setSellModalOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-wild-gold" />
-              Sell Position
-            </DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Sell shares from your position
-            </DialogDescription>
-          </DialogHeader>
-          
-          {sellPosition && (
-            <div className="space-y-4">
-              {/* Position Info */}
-              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
-                <div className="text-sm text-white">{sellPosition.marketQuestion || "Market Position"}</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400">{sellPosition.outcomeLabel || "Yes"}</span>
-                  <span className="text-xs text-wild-trade">@{sellPosition.avgPrice.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-zinc-500">
+      {/* Sell Position Panel - BetSlip Style (for PredictView) */}
+      {sellModalOpen && sellPosition && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] bg-zinc-900 border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3 text-wild-gold" />
+                  Sell Position
+                </p>
+                <h3 className="font-bold text-white text-lg">
+                  {sellPosition.outcomeLabel || "Yes"}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">{sellPosition.marketQuestion || "Market Position"}</p>
+                <p className="text-xs text-zinc-500 mt-1">
                   You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
-                </div>
+                </p>
               </div>
+              <button
+                onClick={() => setSellModalOpen(false)}
+                className="text-zinc-400 hover:text-white p-1"
+                disabled={isSelling}
+                data-testid="button-close-predict-sell"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Cost Basis Section */}
-              <div className="bg-zinc-800/30 rounded-lg p-3 space-y-2">
+            <div className="space-y-4">
+              {/* Cost Basis & Best Bid Section */}
+              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-zinc-400">Amount spent</span>
                   <span className="text-sm font-mono text-white">
@@ -849,70 +872,117 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Breakeven price</span>
+                  <span className="text-xs text-zinc-400">Avg cost / Breakeven</span>
                   <span className="text-sm font-mono text-zinc-300">
                     ${sellPosition.avgPrice.toFixed(2)}
                   </span>
                 </div>
-              </div>
-
-              {/* Percentage Buttons */}
-              <div className="space-y-2">
-                <Label className="text-xs text-zinc-400">Quick select</Label>
-                <div className="flex gap-2">
-                  {[25, 50, 75, 100].map((pct) => (
-                    <Button
-                      key={pct}
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "flex-1 border-zinc-700 text-xs",
-                        sellAmount === (sellPosition.size * pct / 100).toFixed(2) && "border-wild-gold text-wild-gold"
-                      )}
-                      onClick={() => setSellAmount((sellPosition.size * pct / 100).toFixed(2))}
-                      data-testid={`button-predict-sell-${pct}pct`}
-                    >
-                      {pct}%
-                    </Button>
-                  ))}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-400">Best bid (sell now)</span>
+                  {isLoadingSellBid ? (
+                    <span className="text-sm font-mono text-zinc-500 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Loading...
+                    </span>
+                  ) : sellBestBid ? (
+                    <span className={cn("text-sm font-mono font-semibold",
+                      sellBestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-brand"
+                    )}>
+                      ${sellBestBid.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-mono text-zinc-500">—</span>
+                  )}
                 </div>
               </div>
 
-              {/* Amount Input */}
-              <div className="space-y-2">
-                <Label htmlFor="sell-amount" className="text-xs text-zinc-400">
-                  Shares to sell
-                </Label>
-                <Input
-                  id="sell-amount"
-                  type="number"
-                  value={sellAmount}
-                  onChange={(e) => setSellAmount(e.target.value)}
-                  className="bg-zinc-800 border-zinc-700 text-white text-center font-mono"
-                  placeholder="0.00"
-                  min={0}
-                  max={sellPosition.size}
-                  step={0.01}
-                  data-testid="input-predict-sell-amount"
-                />
+              {/* Shares Input with Best Bid Display */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-zinc-500 mb-1 block">Shares to sell</label>
+                  <Input
+                    type="number"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+                    min="0"
+                    max={sellPosition.size}
+                    step="0.01"
+                    disabled={isSelling}
+                    data-testid="input-predict-sell-amount"
+                  />
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-500">Best Bid</p>
+                  <p className={cn("text-2xl font-black font-mono",
+                    sellBestBid && sellBestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-gold"
+                  )}>
+                    {sellBestBid ? `$${sellBestBid.toFixed(2)}` : "—"}
+                  </p>
+                </div>
               </div>
 
-              {/* Estimated Return Section */}
+              {/* Percentage Quick Select Buttons */}
+              <div className="flex gap-2">
+                {[25, 50, 75].map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => setSellAmount((sellPosition.size * pct / 100).toFixed(2))}
+                    className={cn(
+                      "flex-1 py-2 text-sm font-mono rounded transition-colors",
+                      sellAmount === (sellPosition.size * pct / 100).toFixed(2)
+                        ? "bg-wild-gold/20 text-wild-gold border border-wild-gold/30"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                    )}
+                    disabled={isSelling}
+                    data-testid={`button-predict-sell-${pct}pct`}
+                  >
+                    {pct}%
+                  </button>
+                ))}
+                <button
+                  onClick={() => setSellAmount(sellPosition.size.toFixed(2))}
+                  className={cn(
+                    "flex-1 py-2 text-sm font-bold rounded transition-colors border",
+                    sellAmount === sellPosition.size.toFixed(2)
+                      ? "bg-wild-gold/30 text-wild-gold border-wild-gold/50"
+                      : "bg-wild-gold/20 hover:bg-wild-gold/30 text-wild-gold border-wild-gold/30"
+                  )}
+                  disabled={isSelling}
+                  data-testid="button-predict-sell-100pct"
+                >
+                  MAX
+                </button>
+              </div>
+
+              {/* Estimated Return Summary */}
               {sellAmount && parseFloat(sellAmount) > 0 && (
                 <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Selling cost</span>
-                    <span className="text-sm font-mono text-zinc-300">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Cost basis</span>
+                    <span className="font-mono text-zinc-300">
                       ${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Estimated return</span>
-                    <span className="text-sm font-mono text-wild-gold">
-                      ~${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Estimated return</span>
+                    <span className="font-mono font-bold text-wild-gold">
+                      ~${(parseFloat(sellAmount) * (sellBestBid || sellPosition.avgPrice)).toFixed(2)}
                     </span>
                   </div>
-                  <p className="text-[10px] text-zinc-500 mt-1">
+                  {sellBestBid && (
+                    <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
+                      <span className="text-zinc-400">Estimated P&L</span>
+                      <span className={cn("font-mono font-semibold",
+                        (sellBestBid - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
+                      )}>
+                        {(sellBestBid - sellPosition.avgPrice) >= 0 ? "+" : ""}
+                        ${((parseFloat(sellAmount) * sellBestBid) - (parseFloat(sellAmount) * sellPosition.avgPrice)).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-zinc-500">
                     Final value depends on market liquidity
                   </p>
                 </div>
@@ -920,50 +990,56 @@ export default function HomePage() {
 
               {/* Error Message */}
               {sellError && (
-                <div className="p-3 rounded-md bg-wild-brand/10 border border-wild-brand/30">
-                  <p className="text-xs text-wild-brand">{sellError}</p>
+                <div className="flex items-center gap-2 text-wild-brand text-sm bg-wild-brand/10 rounded p-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>{sellError}</span>
                 </div>
               )}
 
               {/* Success Message */}
               {sellSuccess && (
-                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
-                    <p className="text-xs text-wild-scout">Position sold successfully!</p>
-                  </div>
+                <div className="flex items-center gap-2 text-wild-scout text-sm bg-wild-scout/10 rounded p-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Position sold successfully!</span>
                 </div>
               )}
-            </div>
-          )}
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSellModalOpen(false)}
-              className="border-zinc-700"
-              data-testid="button-cancel-predict-sell"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExecuteSell}
-              disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
-              className="bg-wild-gold border-wild-gold text-zinc-950"
-              data-testid="button-confirm-predict-sell"
-            >
-              {isSelling ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Selling...
-                </>
-              ) : (
-                "Confirm Sell"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSellModalOpen(false)}
+                  className="flex-1 border-zinc-700"
+                  disabled={isSelling}
+                  data-testid="button-cancel-predict-sell"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleExecuteSell}
+                  disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
+                  size="lg"
+                  className="flex-1 bg-wild-gold text-zinc-950 font-bold text-lg"
+                  data-testid="button-confirm-predict-sell"
+                >
+                  {isSelling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Selling...
+                    </>
+                  ) : (
+                    `Sell · $${(parseFloat(sellAmount || "0") * (sellBestBid || sellPosition.avgPrice)).toFixed(2)}`
+                  )}
+                </Button>
+              </div>
+
+              <p className="text-[10px] text-zinc-600 text-center">
+                Orders submitted to Polymarket CLOB at best available price.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

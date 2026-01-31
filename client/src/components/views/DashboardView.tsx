@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp, Loader2, ExternalLink, DollarSign } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp, Loader2, ExternalLink, DollarSign, X, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,8 +60,13 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     redeemPositions,
     batchRedeemPositions,
     placeOrder,
+    getOrderBook,
     isSubmitting: isSelling,
   } = usePolymarketClient();
+  
+  // Best bid state for sell modal
+  const [bestBid, setBestBid] = useState<number | null>(null);
+  const [isLoadingBid, setIsLoadingBid] = useState(false);
   
   const { 
     supportedAssets, 
@@ -360,12 +365,28 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   };
 
   // Handler to open sell modal
-  const handleOpenSellModal = (position: PolymarketPosition) => {
+  const handleOpenSellModal = async (position: PolymarketPosition) => {
     setSellPosition(position);
     setSellAmount(position.size.toString()); // Default to full position
     setSellError(null);
     setSellSuccess(false);
+    setBestBid(null);
     setSellModalOpen(true);
+    
+    // Fetch best bid price from order book
+    if (getOrderBook && position.tokenId) {
+      setIsLoadingBid(true);
+      try {
+        const book = await getOrderBook(position.tokenId);
+        if (book && book.bestBid) {
+          setBestBid(book.bestBid);
+        }
+      } catch (err) {
+        console.warn("[DashboardView] Failed to fetch order book for sell:", err);
+      } finally {
+        setIsLoadingBid(false);
+      }
+    }
   };
 
   // Handler to execute sell
@@ -1354,35 +1375,38 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
       </div>
 
-      {/* Sell Position Modal */}
-      <Dialog open={sellModalOpen} onOpenChange={setSellModalOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-wild-gold" />
-              Sell Position
-            </DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Sell shares from your open position
-            </DialogDescription>
-          </DialogHeader>
-          
-          {sellPosition && (
-            <div className="space-y-4">
-              {/* Position Info */}
-              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
-                <div className="text-sm text-white">{sellPosition.marketQuestion || "Unknown Market"}</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400">{sellPosition.outcomeLabel || sellPosition.side}</span>
-                  <span className="text-xs text-wild-trade">@{sellPosition.avgPrice.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-zinc-500">
+      {/* Sell Position Panel - BetSlip Style */}
+      {sellModalOpen && sellPosition && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] bg-zinc-900 border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3 text-wild-gold" />
+                  Sell Position
+                </p>
+                <h3 className="font-bold text-white text-lg">
+                  {sellPosition.outcomeLabel || sellPosition.side}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">{sellPosition.marketQuestion || "Unknown Market"}</p>
+                <p className="text-xs text-zinc-500 mt-1">
                   You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
-                </div>
+                </p>
               </div>
+              <button
+                onClick={() => setSellModalOpen(false)}
+                className="text-zinc-400 hover:text-white p-1"
+                disabled={isSelling}
+                data-testid="button-close-sell"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Cost Basis Section */}
-              <div className="bg-zinc-800/30 rounded-lg p-3 space-y-2">
+            <div className="space-y-4">
+              {/* Cost Basis & Best Bid Section */}
+              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-zinc-400">Amount spent</span>
                   <span className="text-sm font-mono text-white">
@@ -1390,91 +1414,117 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Breakeven price</span>
+                  <span className="text-xs text-zinc-400">Avg cost / Breakeven</span>
                   <span className="text-sm font-mono text-zinc-300">
                     ${sellPosition.avgPrice.toFixed(2)}
                   </span>
                 </div>
-                {sellPosition.currentPrice && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Current price</span>
-                    <span className={cn("text-sm font-mono", 
-                      sellPosition.currentPrice >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-brand"
-                    )}>
-                      ${sellPosition.currentPrice.toFixed(2)}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-400">Best bid (sell now)</span>
+                  {isLoadingBid ? (
+                    <span className="text-sm font-mono text-zinc-500 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Loading...
                     </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Percentage Buttons */}
-              <div className="space-y-2">
-                <Label className="text-xs text-zinc-400">Quick select</Label>
-                <div className="flex gap-2">
-                  {[25, 50, 75, 100].map((pct) => (
-                    <Button
-                      key={pct}
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "flex-1 border-zinc-700 text-xs",
-                        sellAmount === (sellPosition.size * pct / 100).toFixed(2) && "border-wild-gold text-wild-gold"
-                      )}
-                      onClick={() => setSellAmount((sellPosition.size * pct / 100).toFixed(2))}
-                      data-testid={`button-sell-${pct}pct`}
-                    >
-                      {pct}%
-                    </Button>
-                  ))}
+                  ) : bestBid ? (
+                    <span className={cn("text-sm font-mono font-semibold",
+                      bestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-brand"
+                    )}>
+                      ${bestBid.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-mono text-zinc-500">—</span>
+                  )}
                 </div>
               </div>
 
-              {/* Amount Input */}
-              <div className="space-y-2">
-                <Label htmlFor="sell-amount" className="text-xs text-zinc-400">
-                  Shares to sell
-                </Label>
-                <Input
-                  id="sell-amount"
-                  type="number"
-                  value={sellAmount}
-                  onChange={(e) => setSellAmount(e.target.value)}
-                  className="bg-zinc-800 border-zinc-700 text-white text-center font-mono"
-                  placeholder="0.00"
-                  min={0}
-                  max={sellPosition.size}
-                  step={0.01}
-                  data-testid="input-sell-amount"
-                />
+              {/* Shares Input with Odds Display */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-zinc-500 mb-1 block">Shares to sell</label>
+                  <Input
+                    type="number"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+                    min="0"
+                    max={sellPosition.size}
+                    step="0.01"
+                    disabled={isSelling}
+                    data-testid="input-sell-amount"
+                  />
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-500">Best Bid</p>
+                  <p className={cn("text-2xl font-black font-mono",
+                    bestBid && bestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-gold"
+                  )}>
+                    {bestBid ? `$${bestBid.toFixed(2)}` : "—"}
+                  </p>
+                </div>
               </div>
 
-              {/* Estimated Return Section */}
+              {/* Percentage Quick Select Buttons */}
+              <div className="flex gap-2">
+                {[25, 50, 75].map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => setSellAmount((sellPosition.size * pct / 100).toFixed(2))}
+                    className={cn(
+                      "flex-1 py-2 text-sm font-mono rounded transition-colors",
+                      sellAmount === (sellPosition.size * pct / 100).toFixed(2)
+                        ? "bg-wild-gold/20 text-wild-gold border border-wild-gold/30"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                    )}
+                    disabled={isSelling}
+                    data-testid={`button-sell-${pct}pct`}
+                  >
+                    {pct}%
+                  </button>
+                ))}
+                <button
+                  onClick={() => setSellAmount(sellPosition.size.toFixed(2))}
+                  className={cn(
+                    "flex-1 py-2 text-sm font-bold rounded transition-colors border",
+                    sellAmount === sellPosition.size.toFixed(2)
+                      ? "bg-wild-gold/30 text-wild-gold border-wild-gold/50"
+                      : "bg-wild-gold/20 hover:bg-wild-gold/30 text-wild-gold border-wild-gold/30"
+                  )}
+                  disabled={isSelling}
+                  data-testid="button-sell-100pct"
+                >
+                  MAX
+                </button>
+              </div>
+
+              {/* Estimated Return Summary */}
               {sellAmount && parseFloat(sellAmount) > 0 && (
                 <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Selling cost</span>
-                    <span className="text-sm font-mono text-zinc-300">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Cost basis</span>
+                    <span className="font-mono text-zinc-300">
                       ${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Estimated return</span>
-                    <span className="text-sm font-mono text-wild-gold">
-                      ~${(parseFloat(sellAmount) * (sellPosition.currentPrice || sellPosition.avgPrice)).toFixed(2)}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-400">Estimated return</span>
+                    <span className="font-mono font-bold text-wild-gold">
+                      ~${(parseFloat(sellAmount) * (bestBid || sellPosition.avgPrice)).toFixed(2)}
                     </span>
                   </div>
-                  {sellPosition.currentPrice && (
-                    <div className="flex justify-between items-center border-t border-zinc-700 pt-2 mt-2">
-                      <span className="text-xs text-zinc-400">Estimated P&L</span>
-                      <span className={cn("text-sm font-mono font-semibold",
-                        (sellPosition.currentPrice - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
+                  {bestBid && (
+                    <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
+                      <span className="text-zinc-400">Estimated P&L</span>
+                      <span className={cn("font-mono font-semibold",
+                        (bestBid - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
                       )}>
-                        {(sellPosition.currentPrice - sellPosition.avgPrice) >= 0 ? "+" : ""}
-                        ${((parseFloat(sellAmount) * sellPosition.currentPrice) - (parseFloat(sellAmount) * sellPosition.avgPrice)).toFixed(2)}
+                        {(bestBid - sellPosition.avgPrice) >= 0 ? "+" : ""}
+                        ${((parseFloat(sellAmount) * bestBid) - (parseFloat(sellAmount) * sellPosition.avgPrice)).toFixed(2)}
                       </span>
                     </div>
                   )}
-                  <p className="text-[10px] text-zinc-500 mt-1">
+                  <p className="text-[10px] text-zinc-500">
                     Final value depends on market liquidity
                   </p>
                 </div>
@@ -1482,50 +1532,56 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
               {/* Error Message */}
               {sellError && (
-                <div className="p-3 rounded-md bg-wild-brand/10 border border-wild-brand/30">
-                  <p className="text-xs text-wild-brand">{sellError}</p>
+                <div className="flex items-center gap-2 text-wild-brand text-sm bg-wild-brand/10 rounded p-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>{sellError}</span>
                 </div>
               )}
 
               {/* Success Message */}
               {sellSuccess && (
-                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
-                    <p className="text-xs text-wild-scout">Position sold successfully!</p>
-                  </div>
+                <div className="flex items-center gap-2 text-wild-scout text-sm bg-wild-scout/10 rounded p-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Position sold successfully!</span>
                 </div>
               )}
-            </div>
-          )}
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSellModalOpen(false)}
-              className="border-zinc-700"
-              data-testid="button-cancel-sell"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExecuteSell}
-              disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
-              className="bg-wild-gold border-wild-gold text-zinc-950"
-              data-testid="button-confirm-sell"
-            >
-              {isSelling ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Selling...
-                </>
-              ) : (
-                "Confirm Sell"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSellModalOpen(false)}
+                  className="flex-1 border-zinc-700"
+                  disabled={isSelling}
+                  data-testid="button-cancel-sell"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleExecuteSell}
+                  disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
+                  size="lg"
+                  className="flex-1 bg-wild-gold text-zinc-950 font-bold text-lg"
+                  data-testid="button-confirm-sell"
+                >
+                  {isSelling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Selling...
+                    </>
+                  ) : (
+                    `Sell · $${(parseFloat(sellAmount || "0") * (bestBid || sellPosition.avgPrice)).toFixed(2)}`
+                  )}
+                </Button>
+              </div>
+
+              <p className="text-[10px] text-zinc-600 text-center">
+                Orders submitted to Polymarket CLOB at best available price.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
