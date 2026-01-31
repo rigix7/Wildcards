@@ -89,6 +89,30 @@ export default function useTradingSession() {
     initializeRelayClient,
   ]);
 
+  // Sync Safe address to server for WILD points tracking when session is restored
+  useEffect(() => {
+    if (tradingSession?.safeAddress && eoaAddress) {
+      fetch(`/api/wallet/${eoaAddress}/safe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          safeAddress: tradingSession.safeAddress, 
+          isSafeDeployed: tradingSession.isSafeDeployed ?? true
+        }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            console.warn("[TradingSession] Server returned non-OK syncing Safe:", res.status);
+          } else {
+            console.log("[TradingSession] Safe address synced to server");
+          }
+        })
+        .catch((err) => {
+          console.warn("[TradingSession] Failed to sync Safe address to server:", err);
+        });
+    }
+  }, [tradingSession?.safeAddress, tradingSession?.isSafeDeployed, eoaAddress]);
+
   // The core function that orchestrates the trading session initialization
   const initializeTradingSession = useCallback(async () => {
     if (!eoaAddress) throw new Error("Wallet not connected");
@@ -174,6 +198,23 @@ export default function useTradingSession() {
 
       setTradingSession(newSession);
       saveSession(eoaAddress, newSession);
+      
+      // Step 8: Update server with Safe address for WILD points tracking
+      try {
+        const res = await fetch(`/api/wallet/${eoaAddress}/safe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ safeAddress, isSafeDeployed: true }),
+        });
+        if (!res.ok) {
+          console.warn("[TradingSession] Server returned non-OK saving Safe:", res.status);
+        } else {
+          console.log("[TradingSession] Updated server with Safe address for WILD tracking");
+        }
+      } catch (err) {
+        console.warn("[TradingSession] Failed to update server with Safe address:", err);
+        // Non-fatal - continue with session
+      }
 
       setCurrentStep("complete");
     } catch (err) {

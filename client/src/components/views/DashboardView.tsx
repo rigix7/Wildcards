@@ -347,18 +347,45 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     });
   };
 
-  const wonBets = bets.filter((b) => b.status === "won");
-  const pendingBets = bets.filter((b) => b.status === "pending");
-  const totalPnL = bets.reduce((acc, bet) => {
-    if (bet.status === "won") return acc + (bet.potentialPayout - bet.amount);
-    if (bet.status === "lost") return acc - bet.amount;
-    return acc;
-  }, 0);
-
+  // Filter positions by status
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
   const claimablePositions = positions.filter(p => p.status === "claimable");
   const pendingPositions = positions.filter(p => p.status === "pending");
   const lostPositions = positions.filter(p => p.status === "lost");
+  
+  // Aliases for stats calculation
+  const wonPositions = claimablePositions;
+  const pendingWinPositions = pendingPositions;
+  const openActivePositions = openPositions;
+  
+  // Unrealized P&L from open positions (most accurate data source)
+  const unrealizedPnL = openActivePositions.reduce((acc, pos) => {
+    if (pos.unrealizedPnl !== undefined) {
+      return acc + pos.unrealizedPnl;
+    }
+    return acc;
+  }, 0);
+  
+  // Realized P&L from resolved positions:
+  // - Claimable wins: full size is profit (we paid avgPrice, get back 1.00)
+  // - Lost positions: we lost what we paid (size * avgPrice)
+  const claimableProfit = claimablePositions.reduce((sum, p) => {
+    // Profit = payout (size) - cost (size * avgPrice)
+    const cost = p.size * p.avgPrice;
+    const payout = p.size;
+    return sum + (payout - cost);
+  }, 0);
+  
+  const lostAmount = lostPositions.reduce((sum, p) => {
+    // Lost = cost paid = size * avgPrice
+    return sum + (p.size * p.avgPrice);
+  }, 0);
+  
+  // Total P&L = realized gains/losses + unrealized from open positions
+  const totalPnL = claimableProfit - lostAmount + unrealizedPnL;
+  
+  // Won/Total ratio: only count fully resolved (won vs lost, exclude pending)
+  const totalResolvedPositions = wonPositions.length + lostPositions.length;
   // Resolved tab only shows actionable positions (pending wins and claimable wins)
   const resolvedPositions = [...claimablePositions, ...pendingPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
@@ -442,7 +469,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             </div>
             <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Won / Total</div>
             <div className="text-xl font-black font-mono text-white" data-testid="text-win-ratio">
-              {wonBets.length} / {bets.length}
+              {wonPositions.length} / {totalResolvedPositions}
             </div>
           </div>
 
@@ -450,9 +477,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             <div className="w-8 h-8 rounded-full bg-wild-brand/20 flex items-center justify-center mb-3">
               <History className="w-4 h-4 text-wild-brand" />
             </div>
-            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Pending</div>
+            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Open Bets</div>
             <div className="text-xl font-black font-mono text-white" data-testid="text-pending">
-              {pendingBets.length}
+              {openActivePositions.length}
             </div>
           </div>
         </div>
@@ -781,27 +808,29 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     const isPending = pos.status === "pending";
                     const isWin = isClaimable || isPending;
                     return (
-                      <div key={`${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`resolved-${i}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
-                              isClaimable ? "bg-wild-scout/20 text-wild-scout" 
-                                : isPending ? "bg-wild-gold/20 text-wild-gold"
-                                : "bg-wild-brand/20 text-wild-brand"
-                            )}>
-                              {isClaimable ? "WON" : isPending ? "PENDING" : "LOST"}
-                            </span>
-                            <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
+                      <div key={`${pos.tokenId}-${i}`} className="p-3" data-testid={`resolved-${i}`}>
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2">
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                                isClaimable ? "bg-wild-scout/20 text-wild-scout" 
+                                  : isPending ? "bg-wild-gold/20 text-wild-gold"
+                                  : "bg-wild-brand/20 text-wild-brand"
+                              )}>
+                                {isClaimable ? "WON" : isPending ? "PENDING" : "LOST"}
+                              </span>
+                              <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+                            </div>
+                            <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
                           </div>
-                          <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
-                        </div>
-                        <div className="text-right shrink-0 ml-2">
-                          {isWin ? (
-                            <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
-                          ) : (
-                            <div className="text-sm font-mono text-zinc-500">-${(pos.size * pos.avgPrice).toFixed(2)}</div>
-                          )}
+                          <div className="text-right shrink-0 ml-2">
+                            {isWin ? (
+                              <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
+                            ) : (
+                              <div className="text-sm font-mono text-zinc-500">-${(pos.size * pos.avgPrice).toFixed(2)}</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -823,7 +852,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     <div key={`${pos.tokenId}-${i}`} className="p-3" data-testid={`position-${i}`}>
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs text-white truncate">{pos.marketQuestion || "Unknown Market"}</div>
+                          <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Unknown Market"}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || pos.side}</span>
                             <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
@@ -864,19 +893,21 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   <>
                     {/* Lost positions first */}
                     {lostPositions.map((pos, i) => (
-                      <div key={`lost-${pos.tokenId}-${i}`} className="p-3 flex justify-between items-center gap-2" data-testid={`history-lost-${i}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
-                              LOST
-                            </span>
-                            <div className="text-xs text-white truncate">{pos.marketQuestion || "Resolved Position"}</div>
+                      <div key={`lost-${pos.tokenId}-${i}`} className="p-3" data-testid={`history-lost-${i}`}>
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
+                                LOST
+                              </span>
+                              <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+                            </div>
+                            <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
                           </div>
-                          <div className="text-[10px] font-mono text-zinc-500 mt-1">{pos.outcomeLabel || pos.side}</div>
-                        </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <div className="text-sm font-mono font-bold text-wild-brand">
-                            -${(pos.size * pos.avgPrice).toFixed(2)}
+                          <div className="text-right shrink-0 ml-2">
+                            <div className="text-sm font-mono font-bold text-wild-brand">
+                              -${(pos.size * pos.avgPrice).toFixed(2)}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -885,40 +916,42 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     {activity.slice(0, 20).map((act, i) => (
                     <div 
                       key={`${act.transactionHash}-${i}`} 
-                      className="p-3 flex justify-between items-center gap-2" 
+                      className="p-3" 
                       data-testid={`activity-${i}`}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2">
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
+                              act.type === "REDEEM" 
+                                ? "bg-wild-scout/20 text-wild-scout"
+                                : act.side === "SELL"
+                                ? "bg-wild-gold/20 text-wild-gold"
+                                : "bg-wild-trade/20 text-wild-trade"
+                            )}>
+                              {act.type === "REDEEM" ? "CLAIMED" : act.side === "SELL" ? "SOLD" : "BOUGHT"}
+                            </span>
+                            <div className="text-xs text-white leading-tight">{act.title}</div>
+                          </div>
+                          <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">
+                            {act.outcome} {act.price ? `@ ${(act.price).toFixed(2)}` : ""}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className={cn(
+                            "text-sm font-mono font-bold",
                             act.type === "REDEEM" 
-                              ? "bg-wild-scout/20 text-wild-scout"
-                              : act.side === "SELL"
-                              ? "bg-wild-gold/20 text-wild-gold"
-                              : "bg-wild-trade/20 text-wild-trade"
+                              ? "text-wild-scout" 
+                              : act.side === "SELL" 
+                              ? "text-wild-gold" 
+                              : "text-white"
                           )}>
-                            {act.type === "REDEEM" ? "CLAIMED" : act.side === "SELL" ? "SOLD" : "BOUGHT"}
-                          </span>
-                          <div className="text-xs text-white truncate">{act.title}</div>
-                        </div>
-                        <div className="text-[10px] font-mono text-zinc-500 mt-1">
-                          {act.outcome} {act.price ? `@ ${(act.price).toFixed(2)}` : ""}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className={cn(
-                          "text-sm font-mono font-bold",
-                          act.type === "REDEEM" 
-                            ? "text-wild-scout" 
-                            : act.side === "SELL" 
-                            ? "text-wild-gold" 
-                            : "text-white"
-                        )}>
-                          {act.type === "REDEEM" ? "+" : act.side === "SELL" ? "+" : "-"}${act.usdcSize.toFixed(2)}
-                        </div>
-                        <div className="text-[10px] text-zinc-500">
-                          {formatActivityTime(act.timestamp)}
+                            {act.type === "REDEEM" ? "+" : act.side === "SELL" ? "+" : "-"}${act.usdcSize.toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-zinc-500">
+                            {formatActivityTime(act.timestamp)}
+                          </div>
                         </div>
                       </div>
                     </div>
