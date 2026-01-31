@@ -389,9 +389,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       const result = await placeOrder({
         tokenId: sellPosition.tokenId,
         side: "SELL",
-        size: shareAmount,
+        amount: shareAmount,
         negRisk: sellPosition.negRisk,
-        isMarketOrder: true,
       });
 
       if (result.success) {
@@ -1382,45 +1381,99 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 </div>
               </div>
 
+              {/* Cost Basis Section */}
+              <div className="bg-zinc-800/30 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-400">Amount spent</span>
+                  <span className="text-sm font-mono text-white">
+                    ${(sellPosition.size * sellPosition.avgPrice).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-zinc-400">Breakeven price</span>
+                  <span className="text-sm font-mono text-zinc-300">
+                    ${sellPosition.avgPrice.toFixed(2)}
+                  </span>
+                </div>
+                {sellPosition.currentPrice && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Current price</span>
+                    <span className={cn("text-sm font-mono", 
+                      sellPosition.currentPrice >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-brand"
+                    )}>
+                      ${sellPosition.currentPrice.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Percentage Buttons */}
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400">Quick select</Label>
+                <div className="flex gap-2">
+                  {[25, 50, 75, 100].map((pct) => (
+                    <Button
+                      key={pct}
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "flex-1 border-zinc-700 text-xs",
+                        sellAmount === (sellPosition.size * pct / 100).toFixed(2) && "border-wild-gold text-wild-gold"
+                      )}
+                      onClick={() => setSellAmount((sellPosition.size * pct / 100).toFixed(2))}
+                      data-testid={`button-sell-${pct}pct`}
+                    >
+                      {pct}%
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               {/* Amount Input */}
               <div className="space-y-2">
                 <Label htmlFor="sell-amount" className="text-xs text-zinc-400">
                   Shares to sell
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="sell-amount"
-                    type="number"
-                    value={sellAmount}
-                    onChange={(e) => setSellAmount(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                    placeholder="0.00"
-                    min={0}
-                    max={sellPosition.size}
-                    step={0.01}
-                    data-testid="input-sell-amount"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-zinc-700 text-xs"
-                    onClick={() => setSellAmount(sellPosition.size.toString())}
-                    data-testid="button-sell-max"
-                  >
-                    Max
-                  </Button>
-                </div>
+                <Input
+                  id="sell-amount"
+                  type="number"
+                  value={sellAmount}
+                  onChange={(e) => setSellAmount(e.target.value)}
+                  className="bg-zinc-800 border-zinc-700 text-white text-center font-mono"
+                  placeholder="0.00"
+                  min={0}
+                  max={sellPosition.size}
+                  step={0.01}
+                  data-testid="input-sell-amount"
+                />
               </div>
 
-              {/* Estimated Value */}
+              {/* Estimated Return Section */}
               {sellAmount && parseFloat(sellAmount) > 0 && (
-                <div className="bg-zinc-800/30 rounded-lg p-3">
+                <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-zinc-400">Estimated value</span>
+                    <span className="text-xs text-zinc-400">Selling cost</span>
+                    <span className="text-sm font-mono text-zinc-300">
+                      ${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Estimated return</span>
                     <span className="text-sm font-mono text-wild-gold">
                       ~${(parseFloat(sellAmount) * (sellPosition.currentPrice || sellPosition.avgPrice)).toFixed(2)}
                     </span>
                   </div>
+                  {sellPosition.currentPrice && (
+                    <div className="flex justify-between items-center border-t border-zinc-700 pt-2 mt-2">
+                      <span className="text-xs text-zinc-400">Estimated P&L</span>
+                      <span className={cn("text-sm font-mono font-semibold",
+                        (sellPosition.currentPrice - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
+                      )}>
+                        {(sellPosition.currentPrice - sellPosition.avgPrice) >= 0 ? "+" : ""}
+                        ${((parseFloat(sellAmount) * sellPosition.currentPrice) - (parseFloat(sellAmount) * sellPosition.avgPrice)).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-[10px] text-zinc-500 mt-1">
                     Final value depends on market liquidity
                   </p>
