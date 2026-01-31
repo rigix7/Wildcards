@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp, Loader2, ExternalLink } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, Activity, Wallet, History, Package, Coins, ArrowDownToLine, ArrowUpFromLine, RefreshCw, CheckCircle2, Copy, Check, HelpCircle, ChevronDown, ChevronUp, Loader2, ExternalLink, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchPositions, fetchActivity, type PolymarketPosition, type PolymarketActivity } from "@/lib/polymarketOrder";
 import { usePolymarketClient } from "@/hooks/usePolymarketClient";
@@ -45,10 +48,19 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const [bridgeTransactions, setBridgeTransactions] = useState<BridgeTransaction[]>([]);
   const [bridgeTransactionsLoading, setBridgeTransactionsLoading] = useState(false);
   
+  // Sell modal state
+  const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [sellPosition, setSellPosition] = useState<PolymarketPosition | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
+  const [sellError, setSellError] = useState<string | null>(null);
+  const [sellSuccess, setSellSuccess] = useState(false);
+  
   const { 
     withdrawUSDC, 
     redeemPositions,
     batchRedeemPositions,
+    placeOrder,
+    isSubmitting: isSelling,
   } = usePolymarketClient();
   
   const { 
@@ -347,6 +359,61 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     });
   };
 
+  // Handler to open sell modal
+  const handleOpenSellModal = (position: PolymarketPosition) => {
+    setSellPosition(position);
+    setSellAmount(position.size.toString()); // Default to full position
+    setSellError(null);
+    setSellSuccess(false);
+    setSellModalOpen(true);
+  };
+
+  // Handler to execute sell
+  const handleExecuteSell = async () => {
+    if (!sellPosition || !sellAmount) return;
+    
+    const shareAmount = parseFloat(sellAmount);
+    if (isNaN(shareAmount) || shareAmount <= 0) {
+      setSellError("Please enter a valid amount");
+      return;
+    }
+    if (shareAmount > sellPosition.size) {
+      setSellError(`You only have ${sellPosition.size.toFixed(2)} shares`);
+      return;
+    }
+
+    setSellError(null);
+    setSellSuccess(false);
+
+    try {
+      const result = await placeOrder({
+        tokenId: sellPosition.tokenId,
+        side: "SELL",
+        size: shareAmount,
+        negRisk: sellPosition.negRisk,
+        isMarketOrder: true,
+      });
+
+      if (result.success) {
+        setSellSuccess(true);
+        // Refresh positions after successful sell
+        if (safeAddress) {
+          fetchPositions(safeAddress).then(setPositions);
+          fetchActivity(safeAddress).then(setActivity);
+        }
+        // Close modal after short delay to show success
+        setTimeout(() => {
+          setSellModalOpen(false);
+          setSellPosition(null);
+        }, 1500);
+      } else {
+        setSellError(result.error || "Failed to sell position");
+      }
+    } catch (err) {
+      setSellError(err instanceof Error ? err.message : "Sell failed");
+    }
+  };
+
   // Filter positions by status
   const openPositions = positions.filter(p => p.status === "open" || p.status === "filled");
   const claimablePositions = positions.filter(p => p.status === "claimable");
@@ -358,58 +425,28 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   const pendingWinPositions = pendingPositions;
   const openActivePositions = openPositions;
   
-  // Count wins from REDEEM events that are NOT already counted in claimable positions
-  // REDEEM events = already claimed wins (no longer show as positions)
-  // Use conditionId for deduplication since positions may share conditionIds across outcomes
-  // We count REDEEM events that represent markets we no longer have claimable positions for
-  const currentPositionConditionIds = new Set([
-    ...claimablePositions.map(p => p.conditionId).filter(Boolean),
-    ...pendingPositions.map(p => p.conditionId).filter(Boolean),
-  ]);
+  // ===== Activity-based P&L Calculation =====
+  // P&L = Total Claimed + Total Sold - Total Bought
+  // This uses Activity data as the source of truth
   
-  // Count unique REDEEM events by conditionId (one per resolved market)
-  // A REDEEM represents a claimed win for a specific market condition
-  const redeemedConditionIds = new Set<string>();
-  const claimedWinsCount = activity.filter(act => {
-    if (act.type !== "REDEEM") return false;
-    // Skip if we already have this market as claimable/pending
-    if (currentPositionConditionIds.has(act.conditionId)) return false;
-    // Dedupe by conditionId
-    if (redeemedConditionIds.has(act.conditionId)) return false;
-    redeemedConditionIds.add(act.conditionId);
-    return true;
-  }).length;
+  // Calculate totals from Activity API
+  const buyActivity = activity.filter(act => act.type === "TRADE" && act.side === "BUY");
+  const sellActivity = activity.filter(act => act.type === "TRADE" && act.side === "SELL");
+  const redeemActivity = activity.filter(act => act.type === "REDEEM");
   
-  // Unrealized P&L from open positions (most accurate data source)
-  const unrealizedPnL = openActivePositions.reduce((acc, pos) => {
-    if (pos.unrealizedPnl !== undefined) {
-      return acc + pos.unrealizedPnl;
-    }
-    return acc;
-  }, 0);
+  const totalBought = buyActivity.reduce((sum, act) => sum + act.usdcSize, 0);
+  const totalSold = sellActivity.reduce((sum, act) => sum + act.usdcSize, 0);
+  const totalClaimed = redeemActivity.reduce((sum, act) => sum + act.usdcSize, 0);
   
-  // Realized P&L from resolved positions:
-  // - Claimable wins: full size is profit (we paid avgPrice, get back 1.00)
-  // - Lost positions: we lost what we paid (size * avgPrice)
-  const claimableProfit = claimablePositions.reduce((sum, p) => {
-    // Profit = payout (size) - cost (size * avgPrice)
-    const cost = p.size * p.avgPrice;
-    const payout = p.size;
-    return sum + (payout - cost);
-  }, 0);
+  // P&L = What you got back (claimed + sold) - What you spent (bought)
+  const totalPnL = totalClaimed + totalSold - totalBought;
   
-  const lostAmount = lostPositions.reduce((sum, p) => {
-    // Lost = cost paid = size * avgPrice
-    return sum + (p.size * p.avgPrice);
-  }, 0);
-  
-  // Total P&L = realized gains/losses + unrealized from open positions
-  const totalPnL = claimableProfit - lostAmount + unrealizedPnL;
-  
-  // Won/Total ratio: include both current claimable positions AND already claimed wins from activity
-  // Total resolved = claimable wins + claimed wins (from REDEEM activity) + lost positions
-  const totalWonCount = wonPositions.length + claimedWinsCount;
-  const totalResolvedPositions = totalWonCount + lostPositions.length;
+  // ===== Won/Total Ratio =====
+  // Won/Total = Claimed count / Bought count (from Activity)
+  const buyCount = buyActivity.length;
+  const claimedCount = redeemActivity.length;
+  const totalWonCount = claimedCount;
+  const totalResolvedPositions = buyCount; // Total bets made
   // Resolved tab only shows actionable positions (pending wins and claimable wins)
   const resolvedPositions = [...claimablePositions, ...pendingPositions];
   const totalClaimable = claimablePositions.reduce((sum, p) => sum + p.size, 0);
@@ -915,16 +952,28 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                             <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
                           </div>
                         </div>
-                        <div className="text-right shrink-0 ml-2">
-                          <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
-                          {pos.unrealizedPnl !== undefined && (
-                            <div className={cn(
-                              "text-[10px] font-mono",
-                              pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
-                            )}>
-                              {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
-                            </div>
-                          )}
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <div className="text-right">
+                            <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                            {pos.unrealizedPnl !== undefined && (
+                              <div className={cn(
+                                "text-[10px] font-mono",
+                                pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
+                              )}>
+                                {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-[10px] h-7 px-2 border-wild-gold/50 text-wild-gold hover:bg-wild-gold/10"
+                            onClick={() => handleOpenSellModal(pos)}
+                            data-testid={`button-sell-position-${i}`}
+                          >
+                            <DollarSign className="w-3 h-3 mr-1" />
+                            Sell
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1305,6 +1354,125 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         )}
 
       </div>
+
+      {/* Sell Position Modal */}
+      <Dialog open={sellModalOpen} onOpenChange={setSellModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-wild-gold" />
+              Sell Position
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Sell shares from your open position
+            </DialogDescription>
+          </DialogHeader>
+          
+          {sellPosition && (
+            <div className="space-y-4">
+              {/* Position Info */}
+              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                <div className="text-sm text-white">{sellPosition.marketQuestion || "Unknown Market"}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-400">{sellPosition.outcomeLabel || sellPosition.side}</span>
+                  <span className="text-xs text-wild-trade">@{sellPosition.avgPrice.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-2">
+                <Label htmlFor="sell-amount" className="text-xs text-zinc-400">
+                  Shares to sell
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="sell-amount"
+                    type="number"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="0.00"
+                    min={0}
+                    max={sellPosition.size}
+                    step={0.01}
+                    data-testid="input-sell-amount"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-700 text-xs"
+                    onClick={() => setSellAmount(sellPosition.size.toString())}
+                    data-testid="button-sell-max"
+                  >
+                    Max
+                  </Button>
+                </div>
+              </div>
+
+              {/* Estimated Value */}
+              {sellAmount && parseFloat(sellAmount) > 0 && (
+                <div className="bg-zinc-800/30 rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Estimated value</span>
+                    <span className="text-sm font-mono text-wild-gold">
+                      ~${(parseFloat(sellAmount) * (sellPosition.currentPrice || sellPosition.avgPrice)).toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Final value depends on market liquidity
+                  </p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {sellError && (
+                <div className="p-3 rounded-md bg-wild-brand/10 border border-wild-brand/30">
+                  <p className="text-xs text-wild-brand">{sellError}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {sellSuccess && (
+                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
+                    <p className="text-xs text-wild-scout">Position sold successfully!</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSellModalOpen(false)}
+              className="border-zinc-700"
+              data-testid="button-cancel-sell"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExecuteSell}
+              disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
+              className="bg-wild-gold border-wild-gold text-zinc-950"
+              data-testid="button-confirm-sell"
+            >
+              {isSelling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Selling...
+                </>
+              ) : (
+                "Confirm Sell"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

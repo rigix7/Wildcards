@@ -11,7 +11,7 @@ import { TradeView } from "@/components/views/TradeView";
 import { DashboardView } from "@/components/views/DashboardView";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { fetchGammaEvents, gammaEventToMarket, gammaEventToDisplayEvent, type DisplayEvent } from "@/lib/polymarket";
-import { fetchPositions, type PolymarketPosition } from "@/lib/polymarketOrder";
+import { fetchPositions, fetchActivity, type PolymarketPosition } from "@/lib/polymarketOrder";
 import { getUSDCBalance } from "@/lib/polygon";
 import { useWallet } from "@/providers/WalletContext";
 import useTradingSession from "@/hooks/useTradingSession";
@@ -19,6 +19,11 @@ import useClobClient from "@/hooks/useClobClient";
 import useClobOrder from "@/hooks/useClobOrder";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import useFeeCollection from "@/hooks/useFeeCollection";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Loader2, CheckCircle2 } from "lucide-react";
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures, PolymarketTagRecord, FuturesCategory } from "@shared/schema";
 
 export default function HomePage() {
@@ -73,6 +78,14 @@ export default function HomePage() {
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [userPositions, setUserPositions] = useState<PolymarketPosition[]>([]);
   const { showToast, ToastContainer } = useTerminalToast();
+  
+  // Sell modal state (for selling from PredictView)
+  const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [sellPosition, setSellPosition] = useState<{ tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean } | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
+  const [sellError, setSellError] = useState<string | null>(null);
+  const [sellSuccess, setSellSuccess] = useState(false);
+  const [isSelling, setIsSelling] = useState(false);
   
   // Live prices from WebSocket
   const livePrices = useLivePrices();
@@ -493,6 +506,64 @@ export default function HomePage() {
     setShowBetSlip(true);
   };
 
+  // Handler to open sell modal from PredictView
+  const handleOpenSellModal = useCallback((position: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean }) => {
+    setSellPosition(position);
+    setSellAmount(position.size.toString());
+    setSellError(null);
+    setSellSuccess(false);
+    setSellModalOpen(true);
+  }, []);
+
+  // Handler to execute sell
+  const handleExecuteSell = useCallback(async () => {
+    if (!sellPosition || !sellAmount || !submitOrder) return;
+    
+    const shareAmount = parseFloat(sellAmount);
+    if (isNaN(shareAmount) || shareAmount <= 0) {
+      setSellError("Please enter a valid amount");
+      return;
+    }
+    if (shareAmount > sellPosition.size) {
+      setSellError(`You only have ${sellPosition.size.toFixed(2)} shares`);
+      return;
+    }
+
+    setSellError(null);
+    setSellSuccess(false);
+    setIsSelling(true);
+
+    try {
+      const result = await submitOrder({
+        tokenId: sellPosition.tokenId,
+        side: "SELL",
+        size: shareAmount,
+        negRisk: sellPosition.negRisk,
+        isMarketOrder: true,
+      });
+
+      if (result.success) {
+        setSellSuccess(true);
+        showToast("Position sold successfully!", "success");
+        // Refresh positions after successful sell
+        if (safeAddress) {
+          fetchPositions(safeAddress).then(setUserPositions);
+        }
+        // Close modal after short delay to show success
+        setTimeout(() => {
+          setSellModalOpen(false);
+          setSellPosition(null);
+        }, 1500);
+      } else {
+        setSellError(result.error || "Failed to sell position");
+      }
+    } catch (err) {
+      setSellError(err instanceof Error ? err.message : "Sell failed");
+    } finally {
+      setIsSelling(false);
+    }
+  }, [sellPosition, sellAmount, submitOrder, safeAddress, showToast]);
+
   const handleConfirmBet = async (stake: number, direction: "yes" | "no", effectiveOdds: number, executionPrice: number, originalStake?: number): Promise<{ success: boolean; error?: string; orderId?: string }> => {
     if (!selectedBet) {
       return { success: false, error: "No bet selected" };
@@ -666,6 +737,7 @@ export default function HomePage() {
               livePrices={livePrices}
               enabledTags={enabledTags}
               futuresCategories={futuresCategories}
+              onSellPosition={handleOpenSellModal}
             />
           )}
           {activeTab === "scout" && (
@@ -739,6 +811,125 @@ export default function HomePage() {
       )}
 
       <ToastContainer />
+
+      {/* Sell Position Modal (for PredictView) */}
+      <Dialog open={sellModalOpen} onOpenChange={setSellModalOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-wild-gold" />
+              Sell Position
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Sell shares from your position
+            </DialogDescription>
+          </DialogHeader>
+          
+          {sellPosition && (
+            <div className="space-y-4">
+              {/* Position Info */}
+              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                <div className="text-sm text-white">{sellPosition.marketQuestion || "Market Position"}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-400">{sellPosition.outcomeLabel || "Yes"}</span>
+                  <span className="text-xs text-wild-trade">@{sellPosition.avgPrice.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-2">
+                <Label htmlFor="sell-amount" className="text-xs text-zinc-400">
+                  Shares to sell
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="sell-amount"
+                    type="number"
+                    value={sellAmount}
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="0.00"
+                    min={0}
+                    max={sellPosition.size}
+                    step={0.01}
+                    data-testid="input-predict-sell-amount"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-700 text-xs"
+                    onClick={() => setSellAmount(sellPosition.size.toString())}
+                    data-testid="button-predict-sell-max"
+                  >
+                    Max
+                  </Button>
+                </div>
+              </div>
+
+              {/* Estimated Value */}
+              {sellAmount && parseFloat(sellAmount) > 0 && (
+                <div className="bg-zinc-800/30 rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-zinc-400">Estimated value</span>
+                    <span className="text-sm font-mono text-wild-gold">
+                      ~${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Final value depends on market liquidity
+                  </p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {sellError && (
+                <div className="p-3 rounded-md bg-wild-brand/10 border border-wild-brand/30">
+                  <p className="text-xs text-wild-brand">{sellError}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {sellSuccess && (
+                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
+                    <p className="text-xs text-wild-scout">Position sold successfully!</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSellModalOpen(false)}
+              className="border-zinc-700"
+              data-testid="button-cancel-predict-sell"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExecuteSell}
+              disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
+              className="bg-wild-gold border-wild-gold text-zinc-950"
+              data-testid="button-confirm-predict-sell"
+            >
+              {isSelling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Selling...
+                </>
+              ) : (
+                "Confirm Sell"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

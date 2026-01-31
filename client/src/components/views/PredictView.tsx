@@ -62,10 +62,11 @@ interface PredictViewProps {
   onPlaceBet: (marketId: string, outcomeId: string, odds: number, marketTitle?: string, outcomeLabel?: string, marketType?: string, direction?: "yes" | "no", yesTokenId?: string, noTokenId?: string, yesPrice?: number, noPrice?: number, orderMinSize?: number, question?: string, isSoccer3Way?: boolean, negRisk?: boolean) => void;
   selectedBet?: { marketId: string; outcomeId: string; direction?: string };
   adminSettings?: AdminSettings;
-  userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; unrealizedPnl?: number }[];
+  userPositions?: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; unrealizedPnl?: number; negRisk?: boolean }[];
   livePrices?: UseLivePricesResult;
   enabledTags?: { id: string; label: string; slug: string }[];
   futuresCategories?: FuturesCategory[];
+  onSellPosition?: (position: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean }) => void;
 }
 
 function formatVolume(vol: number): string {
@@ -1179,6 +1180,7 @@ interface UserPosition {
   outcomeLabel?: string;
   marketQuestion?: string;
   unrealizedPnl?: number;
+  negRisk?: boolean;
 }
 
 // New EventCard component using DisplayEvent
@@ -1191,6 +1193,7 @@ function EventCard({
   selectedOutcomeIndex,
   userPositions = [],
   livePrices,
+  onSellPosition,
 }: { 
   event: DisplayEvent;
   onSelectMarket: (market: ParsedMarket, eventTitle: string, marketType: string, direction?: string, outcomeLabel?: string) => void;
@@ -1200,6 +1203,7 @@ function EventCard({
   selectedOutcomeIndex?: number;
   userPositions?: UserPosition[];
   livePrices?: Map<string, { bestAsk: number; bestBid: number }>;
+  onSellPosition?: (position: UserPosition) => void;
 }) {
   const countdown = getCountdown(event.gameStartTime);
   
@@ -1261,12 +1265,25 @@ function EventCard({
                       <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
-                    {pos.unrealizedPnl !== undefined && (
-                      <div className={`text-[10px] font-mono ${pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"}`}>
-                        {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
-                      </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                      {pos.unrealizedPnl !== undefined && (
+                        <div className={`text-[10px] font-mono ${pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"}`}>
+                          {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                    {onSellPosition && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-[10px] h-6 px-2 border-wild-gold/50 text-wild-gold hover:bg-wild-gold/10"
+                        onClick={() => onSellPosition(pos)}
+                        data-testid={`button-sell-event-position-${i}`}
+                      >
+                        Sell
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -1472,6 +1489,7 @@ export function PredictView({
   livePrices,
   enabledTags = [],
   futuresCategories = [],
+  onSellPosition,
 }: PredictViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
@@ -1787,6 +1805,7 @@ export function PredictView({
                         selectedDirection={selectedBet?.direction}
                         userPositions={userPositions}
                         livePrices={livePrices?.prices}
+                        onSellPosition={onSellPosition}
                       />
                     ))}
                   </div>
@@ -1808,6 +1827,7 @@ export function PredictView({
                         selectedDirection={selectedBet?.direction}
                         userPositions={userPositions}
                         livePrices={livePrices?.prices}
+                        onSellPosition={onSellPosition}
                       />
                     ))}
                   </div>
