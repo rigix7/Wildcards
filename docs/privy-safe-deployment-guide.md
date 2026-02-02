@@ -37,9 +37,13 @@ export const NEG_RISK_ADAPTER_ADDRESS = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35
 // Collateral
 export const WRAPPED_COLLATERAL_ADDRESS = "0x3A3BD7bb9528E159577F7C2e685CC81A765002E2";
 
+// Safe Wallet Infrastructure (VERIFIED - from actual deployment logs)
+export const SAFE_FACTORY_ADDRESS = "0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b";  // Deploys new Safe proxies
+export const SAFE_MULTISEND_ADDRESS = "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761";  // Batches token approvals
+
 // Safe Derivation (for CREATE2 address computation)
 export const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf";
-// Safe Factory is retrieved dynamically: getContractConfig(137).SafeContracts.SafeFactory
+// Safe Factory can also be retrieved dynamically: getContractConfig(137).SafeContracts.SafeFactory
 ```
 
 ---
