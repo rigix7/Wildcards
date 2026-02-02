@@ -1,0 +1,645 @@
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/k7sv5/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1 Request for the Private Access Token challenge.
+5 Note that 'script-src' was not explicitly set, so 'default-src' is used as a fallback.
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+5The resource <URL> was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+  POST https://auth.privy.io/api/v1/sessions 400 (Bad Request)
+(anonymous) @ /assets/index-Cdtcijud.js:77
+Zs @ /assets/index-Cdtcijud.js:77
+await in Zs
+Xs @ /assets/index-Cdtcijud.js:77
+post @ /assets/index-Cdtcijud.js:352
+_refresh @ /assets/index-Cdtcijud.js:352
+await in _refresh
+(anonymous) @ /assets/index-Cdtcijud.js:110
+execute @ /assets/index-Cdtcijud.js:110
+refresh @ /assets/index-Cdtcijud.js:352
+getAuthenticatedUser @ /assets/index-Cdtcijud.js:352
+link @ /assets/index-Cdtcijud.js:352
+await in link
+loginWithWallet @ /assets/index-Cdtcijud.js:352
+await in loginWithWallet
+N @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+(anonymous) @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+(anonymous) @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+Ey @ /assets/index-Cdtcijud.js:9
+ym @ /assets/index-Cdtcijud.js:9
+(anonymous) @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+ Unable to refresh tokens - token is missing or no longer valid
+_refresh @ /assets/index-Cdtcijud.js:352
+await in _refresh
+(anonymous) @ /assets/index-Cdtcijud.js:110
+execute @ /assets/index-Cdtcijud.js:110
+refresh @ /assets/index-Cdtcijud.js:352
+getAuthenticatedUser @ /assets/index-Cdtcijud.js:352
+link @ /assets/index-Cdtcijud.js:352
+await in link
+loginWithWallet @ /assets/index-Cdtcijud.js:352
+await in loginWithWallet
+N @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+(anonymous) @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+(anonymous) @ ConnectionStatusScreen-B3NfUQx_-bFAvIAF1.js:1
+Ey @ /assets/index-Cdtcijud.js:9
+ym @ /assets/index-Cdtcijud.js:9
+(anonymous) @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+3content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+  POST https://auth.privy.io/api/v1/sessions/logout 400 (Bad Request)
+(anonymous) @ /assets/index-Cdtcijud.js:77
+Zs @ /assets/index-Cdtcijud.js:77
+await in Zs
+Xs @ /assets/index-Cdtcijud.js:77
+post @ /assets/index-Cdtcijud.js:352
+_destroy @ /assets/index-Cdtcijud.js:352
+(anonymous) @ /assets/index-Cdtcijud.js:110
+execute @ /assets/index-Cdtcijud.js:110
+destroy @ /assets/index-Cdtcijud.js:352
+logout @ /assets/index-Cdtcijud.js:352
+logout @ /assets/index-Cdtcijud.js:352
+sd @ /assets/index-Cdtcijud.js:543
+fl @ /assets/index-Cdtcijud.js:6
+sd @ /assets/index-Cdtcijud.js:6
+Gl @ /assets/index-Cdtcijud.js:6
+kb @ /assets/index-Cdtcijud.js:6
+Pb @ /assets/index-Cdtcijud.js:6
+(anonymous) @ /assets/index-Cdtcijud.js:6
+Jg @ /assets/index-Cdtcijud.js:9
+nl @ /assets/index-Cdtcijud.js:6
+Jy @ /assets/index-Cdtcijud.js:6
+M0 @ /assets/index-Cdtcijud.js:6
+Kh @ /assets/index-Cdtcijud.js:6
+ Error destroying session
+_destroy @ /assets/index-Cdtcijud.js:352
+await in _destroy
+(anonymous) @ /assets/index-Cdtcijud.js:110
+execute @ /assets/index-Cdtcijud.js:110
+destroy @ /assets/index-Cdtcijud.js:352
+logout @ /assets/index-Cdtcijud.js:352
+logout @ /assets/index-Cdtcijud.js:352
+sd @ /assets/index-Cdtcijud.js:543
+fl @ /assets/index-Cdtcijud.js:6
+sd @ /assets/index-Cdtcijud.js:6
+Gl @ /assets/index-Cdtcijud.js:6
+kb @ /assets/index-Cdtcijud.js:6
+Pb @ /assets/index-Cdtcijud.js:6
+(anonymous) @ /assets/index-Cdtcijud.js:6
+Jg @ /assets/index-Cdtcijud.js:9
+nl @ /assets/index-Cdtcijud.js:6
+Jy @ /assets/index-Cdtcijud.js:6
+M0 @ /assets/index-Cdtcijud.js:6
+Kh @ /assets/index-Cdtcijud.js:6
+inpage.js:1 MetaMask no longer injects web3. For details, see: https://docs.metamask.io/guide/provider-migration.html#replacing-window-web3
+get @ inpage.js:1
+mI @ normal?lang=auto:1
+ml.<computed> @ normal?lang=auto:1
+dM @ normal?lang=auto:1
+dw @ normal?lang=auto:1
+dM @ normal?lang=auto:1
+dw @ normal?lang=auto:1
+dM @ normal?lang=auto:1
+dw @ normal?lang=auto:1
+YMdDD @ normal?lang=auto:1
+b.<computed> @ normal?lang=auto:1
+XMLHttpRequest.send
+mz @ normal?lang=auto:1
+setTimeout
+cHrwU @ normal?lang=auto:1
+(anonymous) @ normal?lang=auto:1
+CCXgh @ normal?lang=auto:1
+mF @ normal?lang=auto:1
+mx @ normal?lang=auto:1
+Z @ normal?lang=auto:1
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+normal?lang=auto:1 
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1 Request for the Private Access Token challenge.
+TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1 Execution mode is not set to "execute"
+execute @ TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1
+execute @ /assets/index-Cdtcijud.js:121
+(anonymous) @ /assets/index-Cdtcijud.js:352
+Ey @ /assets/index-Cdtcijud.js:9
+ym @ /assets/index-Cdtcijud.js:9
+(anonymous) @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+2content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+selectionchange
+X1 @ /assets/index-Cdtcijud.js:9
+J1 @ /assets/index-Cdtcijud.js:9
+tw @ /assets/index-Cdtcijud.js:9
+sw @ /assets/index-Cdtcijud.js:9
+V0 @ /assets/index-Cdtcijud.js:9
+tv @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+2content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:1 MetaMask no longer injects web3. For details, see: https://docs.metamask.io/guide/provider-migration.html#replacing-window-web3
+get @ chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:1
+kN @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+DYGJa @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kd.<computed> @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kJ @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kV @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kJ @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kV @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kJ @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kV @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kJ @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+kV @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1 Request for the Private Access Token challenge.
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/akqzw/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/api/normal?lang=auto:1 
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1 Execution mode is not set to "execute"
+execute @ TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1
+execute @ /assets/index-Cdtcijud.js:121
+(anonymous) @ /assets/index-Cdtcijud.js:352
+Ey @ /assets/index-Cdtcijud.js:9
+ym @ /assets/index-Cdtcijud.js:9
+(anonymous) @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+3content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+selectionchange
+X1 @ /assets/index-Cdtcijud.js:9
+J1 @ /assets/index-Cdtcijud.js:9
+tw @ /assets/index-Cdtcijud.js:9
+sw @ /assets/index-Cdtcijud.js:9
+V0 @ /assets/index-Cdtcijud.js:9
+tv @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+2content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+selectionchange
+set @ /assets/index-Cdtcijud.js:6
+Nl @ /assets/index-Cdtcijud.js:6
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+Y1 @ /assets/index-Cdtcijud.js:9
+Hp @ /assets/index-Cdtcijud.js:9
+ [SafeDeployment] Derived Safe address using SDK deriveSafe: 0x7291726D8BFbAB3FB3F059A441B53CcA64d03D0f
+ [TradingSession] Safe address synced to server
+3content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:1 MetaMask no longer injects web3. For details, see: https://docs.metamask.io/guide/provider-migration.html#replacing-window-web3
+get @ chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/scripts/inpage.js:1
+mI @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+ml.<computed> @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dM @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dw @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dM @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dw @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dM @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dw @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dM @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+dw @ challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1 Request for the Private Access Token challenge.
+challenges.cloudflare.com/cdn-cgi/challenge-platform/h/b/turnstile/f/ov2/av0/rch/1tv1t/0x4AAAAAAAM8ceq5KhP1uJBt/auto/fbE/new/normal?lang=auto:1 
+TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1 Execution mode is not set to "execute"
+execute @ TurnstileWrapper-Co-t5mTh-ChmBD5xh.js:1
+execute @ /assets/index-Cdtcijud.js:121
+(anonymous) @ /assets/index-Cdtcijud.js:352
+Ey @ /assets/index-Cdtcijud.js:9
+ym @ /assets/index-Cdtcijud.js:9
+(anonymous) @ /assets/index-Cdtcijud.js:9
+Uu @ /assets/index-Cdtcijud.js:2
+Hc @ /assets/index-Cdtcijud.js:2
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+6content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+ [SafeDeployment] Derived Safe address using SDK deriveSafe: 0x8E4879f220d6961c813dac4C847A541501b858cD
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+ [TradingSession] Using Safe address: 0x8E4879f220d6961c813dac4C847A541501b858cD
+content.js:11 Uncaught Error: Extension context invalidated.
+    at i (content.js:11:1184)
+    at content.js:11:1066
+i @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+o @ content.js:11
+(anonymous) @ content.js:11
+setTimeout
+u @ content.js:11
+ Deploying safe 0x8E4879f220d6961c813dac4C847A541501b858cD...
+ Sig: 0xceb178b50a5ef20c20df968c8f26d6df58bce67e48712a32d67603d8d52d296f34d9ad5c194775e7a72a88bb6ad00d609b3f9bf6c5a036a132253f3c99fd23ef1c
+ Created a SAFE-CREATE Transaction:
+ {from: '0xc3357bf63657C8fE9B8d6CFB811b809694D5EB3E', to: '0xaacFeEa03eb1561C4e67d661e40682Bd20E3541b', proxyWallet: '0x8E4879f220d6961c813dac4C847A541501b858cD', data: '0x', signature: '0xceb178b50a5ef20c20df968c8f26d6df58bce67e48712a32…72a88bb6ad00d609b3f9bf6c5a036a132253f3c99fd23ef1c', …}
+ Client side deploy request creation took: 4.026 seconds
+ Waiting for transaction 019c204b-5785-7d68-b834-33f1182aa687 matching states: STATE_MINED,STATE_CONFIRMED,STATE_FAILED...
+ [TradingSession] Deriving credentials with EOA: 0xc3357bf63657C8fE9B8d6CFB811b809694D5EB3E (Safe: 0x8E4879f220d6961c813dac4C847A541501b858cD)
+  GET https://clob.polymarket.com/auth/derive-api-key 400 (Bad Request)
+(anonymous) @ /assets/index-Cdtcijud.js:478
+xhr @ /assets/index-Cdtcijud.js:478
+dispatchRequest @ /assets/index-Cdtcijud.js:478
+Dc.request @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:477
+(anonymous) @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:352
+__awaiter @ /assets/index-Cdtcijud.js:352
+Zs @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:352
+__awaiter @ /assets/index-Cdtcijud.js:352
+Mc @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:543
+(anonymous) @ /assets/index-Cdtcijud.js:352
+__awaiter @ /assets/index-Cdtcijud.js:352
+get @ /assets/index-Cdtcijud.js:543
+(anonymous) @ /assets/index-Cdtcijud.js:543
+Mc @ /assets/index-Cdtcijud.js:352
+ [CLOB Client] request error {"status":400,"statusText":"","data":{"error":"Could not derive api key!"},"config":{"transitional":{"silentJSONParsing":true,"forcedJSONParsing":true,"clarifyTimeoutError":false},"transformRequest":[null],"transformResponse":[null],"timeout":0,"xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN","maxContentLength":-1,"maxBodyLength":-1,"env":{"FormData":null},"headers":{"Accept":"application/json, text/plain, */*","POLY_ADDRESS":"0xc3357bf63657C8fE9B8d6CFB811b809694D5EB3E","POLY_SIGNATURE":"0xe2c239850a20caae74d20173a0f32736e7227bfb8211efb24d40bae8c328d5866c38bb19056ffb428431e2767277dce2b4d399290a899c2b1ac00f7b4856a3231b","POLY_TIMESTAMP":"1770068336","POLY_NONCE":"0"},"method":"get","url":"https://clob.polymarket.com/auth/derive-api-key","params":{}}}
+vu @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:478
+Dc @ /assets/index-Cdtcijud.js:352
+Promise.then
+vu @ /assets/index-Cdtcijud.js:352
+(anonymous) @ /assets/index-Cdtcijud.js:352
+__awaiter @ /assets/index-Cdtcijud.js:352
+Mc @ /assets/index-Cdtcijud.js:478
+(anonymous) @ /assets/index-Cdtcijud.js:543
+(anonymous) @ /assets/index-Cdtcijud.js:352
+__awaiter @ /assets/index-Cdtcijud.js:352
+get @ /assets/index-Cdtcijud.js:543
+(anonymous) @ /assets/index-Cdtcijud.js:543
+Mc @ /assets/index-Cdtcijud.js:352
+ Creating new User API Credentials...
+ Successfully created new User API Credentials
+ Executing safe transactions...
+ Created Safe Transaction Request: 
+ {from: '0xc3357bf63657C8fE9B8d6CFB811b809694D5EB3E', to: '0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761', proxyWallet: '0x8E4879f220d6961c813dac4C847A541501b858cD', data: '0x8d80ff0a0000000000000000000000000000000000000000…0000000000000010000000000000000000000000000000000', nonce: '0', …}
+ Client side safe request creation took: 2.66 seconds
+ Waiting for transaction 019c204b-97d3-78b5-9ab5-563118a0cf10 matching states: STATE_MINED,STATE_CONFIRMED...
+ [TradingSession] Safe address synced to server
+ [TradingSession] Updated server with Safe address for WILD tracking
