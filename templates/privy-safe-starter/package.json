@@ -1,0 +1,21 @@
+{
+  "name": "privy-safe-starter",
+  "version": "1.0.0",
+  "description": "Minimal Privy + Safe wallet integration for Polymarket trading",
+  "dependencies": {
+    "@polymarket/builder-relayer-client": "^0.0.8",
+    "@polymarket/builder-signing-sdk": "^0.0.8",
+    "@polymarket/clob-client": "^4.22.8",
+    "@privy-io/react-auth": "^3.8.1",
+    "ethers": "^5.8.0",
+    "viem": "^2.43.5",
+    "express": "^4.21.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
