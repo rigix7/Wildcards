@@ -1,3 +1,17 @@
+/**
+ * useTradingSession – Unified trading session hook
+ *
+ * Based on PolyHouse version (cleaner, post-rollback stable) with automatic
+ * Safe address tracking from Wildcards (Task 5 integration).
+ *
+ * Key changes from base PolyHouse version:
+ * - Automatic Safe address sync to server after session init and restore
+ *   (from Wildcards' explicit POST to /api/wallet/:address/safe)
+ * - No callback approach needed – Safe tracking is built-in
+ *
+ * Both Wildcards and PolyHouse import this hook directly. No wrapper needed.
+ */
+
 import { useState, useCallback, useEffect } from "react";
 import useRelayClient from "@/hooks/useRelayClient";
 import { useWallet } from "@/providers/WalletContext";
@@ -16,6 +30,34 @@ import {
 // Run force session clear once on module load (one-time migration)
 forceSessionClearIfNeeded();
 
+// ---------------------------------------------------------------------------
+// Safe address sync helper
+// From Wildcards: ensures server knows the EOA → Safe mapping for points tracking.
+// Non-fatal – if the POST fails, betting still works; only points tracking
+// may be affected until next successful sync.
+// ---------------------------------------------------------------------------
+
+async function syncSafeAddressToServer(
+  eoaAddress: string,
+  safeAddress: string,
+  isSafeDeployed: boolean,
+): Promise<void> {
+  const res = await fetch(`/api/wallet/${eoaAddress}/safe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ safeAddress, isSafeDeployed }),
+  });
+  if (!res.ok) {
+    console.warn("[TradingSession] Server returned non-OK syncing Safe:", res.status);
+  } else {
+    console.log("[TradingSession] Safe address synced to server for points tracking");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
 // This is the coordination hook that manages the user's trading session
 // It orchestrates the steps for initializing both the clob and relay clients
 // It creates, stores, and loads the user's L2 credentials for the trading session (API credentials)
@@ -25,7 +67,7 @@ export default function useTradingSession() {
   const [currentStep, setCurrentStep] = useState<SessionStep>("idle");
   const [sessionError, setSessionError] = useState<Error | null>(null);
   const [tradingSession, setTradingSession] = useState<TradingSession | null>(
-    null
+    null,
   );
 
   const { eoaAddress, walletClient } = useWallet();
@@ -36,8 +78,11 @@ export default function useTradingSession() {
   const { relayClient, initializeRelayClient, clearRelayClient } =
     useRelayClient();
 
-  // Check for existing trading session in localStorage when wallet is connected
-  // Note: We no longer auto-restore from database to guarantee fresh credential derivation
+  // -------------------------------------------------------------------------
+  // Restore session from localStorage when wallet connects
+  // Note: We no longer auto-restore from database to guarantee fresh
+  // credential derivation (from PolyHouse, post-rollback stable approach)
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (!eoaAddress) {
       setTradingSession(null);
@@ -51,10 +96,12 @@ export default function useTradingSession() {
     // Validate that stored session has valid credentials for current EOA
     if (stored && stored.hasApiCredentials) {
       // Check if credentials were derived for this EOA
-      if (!stored.credentialsDerivedFor || 
-          stored.credentialsDerivedFor.toLowerCase() !== eoaAddress.toLowerCase()) {
+      if (
+        !stored.credentialsDerivedFor ||
+        stored.credentialsDerivedFor.toLowerCase() !== eoaAddress.toLowerCase()
+      ) {
         console.log(
-          "[TradingSession] Session credentials mismatch - clearing to force re-initialization"
+          "[TradingSession] Session credentials mismatch – clearing to force re-initialization",
         );
         clearStoredSession(eoaAddress);
         setTradingSession(null);
@@ -66,7 +113,7 @@ export default function useTradingSession() {
       return;
     }
 
-    // No valid stored session - user will need to click Activate
+    // No valid stored session – user will need to click Activate
     if (stored) {
       setTradingSession(stored);
     } else {
@@ -74,7 +121,9 @@ export default function useTradingSession() {
     }
   }, [eoaAddress]);
 
-  // Restores the relay client when session exists
+  // -------------------------------------------------------------------------
+  // Restore relay client when session exists (from PolyHouse)
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (tradingSession && !relayClient && eoaAddress && walletClient) {
       initializeRelayClient().catch((err) => {
@@ -89,31 +138,27 @@ export default function useTradingSession() {
     initializeRelayClient,
   ]);
 
-  // Sync Safe address to server for WILD points tracking when session is restored
+  // -------------------------------------------------------------------------
+  // From Wildcards: Automatically sync Safe address to server when session
+  // is restored from cache. This ensures points tracking stays up-to-date
+  // even without a full re-initialization.
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (tradingSession?.safeAddress && eoaAddress) {
-      fetch(`/api/wallet/${eoaAddress}/safe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          safeAddress: tradingSession.safeAddress, 
-          isSafeDeployed: tradingSession.isSafeDeployed ?? true
-        }),
-      })
-        .then((res) => {
-          if (!res.ok) {
-            console.warn("[TradingSession] Server returned non-OK syncing Safe:", res.status);
-          } else {
-            console.log("[TradingSession] Safe address synced to server");
-          }
-        })
-        .catch((err) => {
-          console.warn("[TradingSession] Failed to sync Safe address to server:", err);
-        });
+      syncSafeAddressToServer(
+        eoaAddress,
+        tradingSession.safeAddress,
+        tradingSession.isSafeDeployed ?? true,
+      ).catch((err) => {
+        console.warn("[PointsTracking] Failed to sync Safe address:", err);
+        // Non-fatal – points may not track but betting still works
+      });
     }
   }, [tradingSession?.safeAddress, tradingSession?.isSafeDeployed, eoaAddress]);
 
-  // The core function that orchestrates the trading session initialization
+  // -------------------------------------------------------------------------
+  // Core session initialization (from PolyHouse, with Safe sync from Wildcards)
+  // -------------------------------------------------------------------------
   const initializeTradingSession = useCallback(async () => {
     if (!eoaAddress) throw new Error("Wallet not connected");
 
@@ -121,19 +166,17 @@ export default function useTradingSession() {
     setSessionError(null);
 
     try {
-      // Step 1: Initializes relayClient with the ethers signer and
-      // Builder's credentials (via remote signing server) for authentication
+      // Step 1: Initialize relayClient with ethers signer and Builder's credentials
       const initializedRelayClient = await initializeRelayClient();
 
-      // Step 2: Get Safe address (already derived synchronously via useMemo in useSafeDeployment)
-      // Uses official SDK deriveSafe function for correct address computation
+      // Step 2: Get Safe address (already derived synchronously via useMemo)
       if (!derivedSafeAddressFromEoa) {
         throw new Error("Failed to derive Safe address");
       }
       const safeAddress = derivedSafeAddressFromEoa;
       console.log("[TradingSession] Using Safe address:", safeAddress);
 
-      // Step 3: Check if Safe is deployed (skip if we already have a session)
+      // Step 3: Check if Safe is deployed
       let isDeployed = tradingSession?.isSafeDeployed ?? false;
       if (!isDeployed) {
         isDeployed = await isSafeDeployed(initializedRelayClient, safeAddress);
@@ -146,14 +189,8 @@ export default function useTradingSession() {
       }
 
       // Step 5: Get User API Credentials (derive or create)
-      // NOTE: Per official Polymarket example, credentials are derived with EOA-only client
-      // The ClobClient with signatureType=2 handles Safe association for order building
       let apiCreds = tradingSession?.apiCredentials;
 
-      // Check if credentials need re-derivation:
-      // - No credentials stored
-      // - Credentials were derived for wrong address
-      // NOTE: Credentials are derived with EOA-only client, so credentialsDerivedFor should match EOA
       const needsCredentials =
         !tradingSession?.hasApiCredentials ||
         !apiCreds ||
@@ -163,12 +200,12 @@ export default function useTradingSession() {
         (tradingSession?.credentialsDerivedFor &&
           tradingSession.credentialsDerivedFor.toLowerCase() !==
             eoaAddress.toLowerCase()) ||
-        !tradingSession?.credentialsDerivedFor; // Force re-derive if field is missing (old session)
+        !tradingSession?.credentialsDerivedFor;
 
       if (needsCredentials) {
         setCurrentStep("credentials");
         console.log(
-          `[TradingSession] Deriving credentials with EOA: ${eoaAddress} (Safe: ${safeAddress})`
+          `[TradingSession] Deriving credentials with EOA: ${eoaAddress} (Safe: ${safeAddress})`,
         );
         apiCreds = await createOrDeriveUserApiCredentials(safeAddress);
       }
@@ -184,7 +221,7 @@ export default function useTradingSession() {
         hasApprovals = await setAllTokenApprovals(initializedRelayClient);
       }
 
-      // Step 7: Create custom session object
+      // Step 7: Create session object
       const newSession: TradingSession = {
         eoaAddress: eoaAddress,
         safeAddress: safeAddress,
@@ -192,28 +229,19 @@ export default function useTradingSession() {
         hasApiCredentials: true,
         hasApprovals,
         apiCredentials: apiCreds,
-        credentialsDerivedFor: eoaAddress, // Track EOA that derived credentials (EOA-only client)
+        credentialsDerivedFor: eoaAddress,
         lastChecked: Date.now(),
       };
 
       setTradingSession(newSession);
       saveSession(eoaAddress, newSession);
-      
-      // Step 8: Update server with Safe address for WILD points tracking
+
+      // Step 8: From Wildcards – sync Safe address to server for points tracking
       try {
-        const res = await fetch(`/api/wallet/${eoaAddress}/safe`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ safeAddress, isSafeDeployed: true }),
-        });
-        if (!res.ok) {
-          console.warn("[TradingSession] Server returned non-OK saving Safe:", res.status);
-        } else {
-          console.log("[TradingSession] Updated server with Safe address for WILD tracking");
-        }
+        await syncSafeAddressToServer(eoaAddress, safeAddress, true);
       } catch (err) {
         console.warn("[TradingSession] Failed to update server with Safe address:", err);
-        // Non-fatal - continue with session
+        // Non-fatal – continue with session
       }
 
       setCurrentStep("complete");
@@ -238,8 +266,9 @@ export default function useTradingSession() {
     setAllTokenApprovals,
   ]);
 
-
-  // This function clears the trading session and resets the state
+  // -------------------------------------------------------------------------
+  // End session
+  // -------------------------------------------------------------------------
   const endTradingSession = useCallback(() => {
     if (!eoaAddress) return;
 
