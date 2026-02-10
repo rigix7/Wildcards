@@ -830,6 +830,8 @@ export default function HomePage() {
           question={selectedBet.question}
           isSoccer3Way={selectedBet.isSoccer3Way}
           getOrderBook={clobClient ? getOrderBook : undefined}
+          showFeeInUI={true}
+          pointsName="WILD"
         />
       )}
 

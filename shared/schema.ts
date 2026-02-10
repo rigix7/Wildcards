@@ -68,6 +68,18 @@ export const walletRecords = pgTable("wallet_records", {
   totalBetAmount: real("total_bet_amount").notNull().default(0),
   safeAddress: varchar("safe_address", { length: 42 }),
   isSafeDeployed: boolean("is_safe_deployed").notNull().default(false),
+  referralCode: varchar("referral_code", { length: 20 }),
+  referredBy: varchar("referred_by", { length: 42 }),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const whiteLabelConfig = pgTable("white_label_config", {
+  id: serial("id").primaryKey(),
+  themeConfig: jsonb("theme_config").$type<Record<string, unknown>>().default({}),
+  apiCredentials: jsonb("api_credentials").$type<Record<string, unknown>>().default({}),
+  feeConfig: jsonb("fee_config").$type<{ feeBps: number; feeAddress?: string; wallets?: Array<{ address: string; percentage: number }> }>().default({ feeBps: 0 }),
+  pointsConfig: jsonb("points_config").$type<{ enabled: boolean; name: string; resetSchedule: string; referralEnabled: boolean; referralPercentage: number } | null>(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

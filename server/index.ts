@@ -1,5 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { registerAdminRoutes } from "./admin-routes";
+import { registerPointsRoutes } from "./points-routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
@@ -61,6 +63,10 @@ app.use((req, res, next) => {
 
 (async () => {
   await registerRoutes(httpServer, app);
+
+  // Admin panel and points system (password-protected)
+  registerAdminRoutes(app);
+  registerPointsRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
