@@ -43,6 +43,9 @@ import {
   type InsertPolymarketTag,
   type BridgeTransaction,
   type InsertBridgeTransaction,
+  type WhiteLabelConfig,
+  type InsertWhiteLabelConfig,
+  whiteLabelConfig,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -125,6 +128,9 @@ export interface IStorage {
 
   getBridgeTransactions(userAddress: string): Promise<BridgeTransaction[]>;
   createBridgeTransaction(tx: InsertBridgeTransaction): Promise<BridgeTransaction>;
+
+  getWhiteLabelConfig(): Promise<WhiteLabelConfig | undefined>;
+  upsertWhiteLabelConfig(config: Partial<WhiteLabelConfig>): Promise<WhiteLabelConfig>;
 
   seedInitialData(): Promise<void>;
 }
@@ -855,6 +861,44 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date().toISOString(),
     }).returning();
     return newTx;
+  }
+
+  async getWhiteLabelConfig(): Promise<WhiteLabelConfig | undefined> {
+    const [config] = await db.select().from(whiteLabelConfig).limit(1);
+    return config;
+  }
+
+  async upsertWhiteLabelConfig(config: Partial<WhiteLabelConfig>): Promise<WhiteLabelConfig> {
+    const now = new Date().toISOString();
+    const existing = await this.getWhiteLabelConfig();
+
+    if (existing) {
+      const [updated] = await db
+        .update(whiteLabelConfig)
+        .set({
+          themeConfig: config.themeConfig ?? existing.themeConfig,
+          apiCredentials: config.apiCredentials ?? existing.apiCredentials,
+          feeConfig: config.feeConfig ?? existing.feeConfig,
+          pointsConfig: config.pointsConfig ?? existing.pointsConfig,
+          updatedAt: now,
+        })
+        .where(eq(whiteLabelConfig.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(whiteLabelConfig)
+      .values({
+        themeConfig: config.themeConfig ?? {},
+        apiCredentials: config.apiCredentials ?? {},
+        feeConfig: config.feeConfig ?? { feeBps: 0 },
+        pointsConfig: config.pointsConfig ?? null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return created;
   }
 }
 

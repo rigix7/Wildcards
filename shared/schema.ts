@@ -70,6 +70,7 @@ export const walletRecords = pgTable("wallet_records", {
   isSafeDeployed: boolean("is_safe_deployed").notNull().default(false),
   referralCode: varchar("referral_code", { length: 20 }),
   referredBy: varchar("referred_by", { length: 42 }),
+  referralPointsEarned: real("referral_points_earned").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -210,6 +211,10 @@ export type Trade = typeof trades.$inferSelect;
 export type WalletRecord = typeof walletRecords.$inferSelect;
 export type AdminSettings = typeof adminSettings.$inferSelect;
 
+export const insertWhiteLabelConfigSchema = createInsertSchema(whiteLabelConfig).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertWhiteLabelConfig = z.infer<typeof insertWhiteLabelConfigSchema>;
+export type WhiteLabelConfig = typeof whiteLabelConfig.$inferSelect;
+
 export const insertBridgeTransactionSchema = createInsertSchema(bridgeTransactions).omit({ id: true, createdAt: true });
 export type InsertBridgeTransaction = z.infer<typeof insertBridgeTransactionSchema>;
 export type BridgeTransaction = typeof bridgeTransactions.$inferSelect;
@@ -321,6 +326,9 @@ export const walletRecordSchema = z.object({
   totalBetAmount: z.number(),
   safeAddress: z.string().nullable().optional(),
   isSafeDeployed: z.boolean(),
+  referralCode: z.string().nullable().optional(),
+  referredBy: z.string().nullable().optional(),
+  referralPointsEarned: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
