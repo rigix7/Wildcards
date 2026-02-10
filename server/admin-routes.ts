@@ -7,6 +7,7 @@
  *   - GET  /api/admin/white-label         – Read all white-label config
  *   - PATCH /api/admin/white-label/fees   – Update fee configuration
  *   - PATCH /api/admin/white-label/points – Update points configuration
+ *   - PATCH /api/admin/white-label/theme  – Update theme configuration
  *
  * All /api/admin/* endpoints require the Authorization header:
  *   Authorization: Bearer <ADMIN_SECRET_KEY>
@@ -198,6 +199,38 @@ export function registerAdminRoutes(app: Express): void {
       } catch (error) {
         console.error("[Admin] Failed to update points config:", error);
         res.status(500).json({ error: "Failed to update points settings" });
+      }
+    },
+  );
+
+  // -----------------------------------------------------------------------
+  // PATCH /api/admin/white-label/theme – Update theme configuration
+  //
+  // Body: { selectedTheme: string, customColors?: {...} | null }
+  // -----------------------------------------------------------------------
+
+  app.patch(
+    "/api/admin/white-label/theme",
+    requireAdminAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const themeConfig = req.body;
+
+        const existing = await getOrCreateWhiteLabelConfig();
+
+        const [updated] = await db
+          .update(whiteLabelConfig)
+          .set({
+            themeConfig,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(whiteLabelConfig.id, existing.id))
+          .returning();
+
+        res.json(updated);
+      } catch (error) {
+        console.error("[Admin] Failed to update theme:", error);
+        res.status(500).json({ error: "Failed to update theme settings" });
       }
     },
   );
