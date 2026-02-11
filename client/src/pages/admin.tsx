@@ -2,8 +2,8 @@
  * Admin Panel – Full version with all features and password protection
  *
  * Combines the original Wildcards admin (Tags, Match Day, Futures, Players,
- * Wild Points, Sport Config) with the PolyHouse-derived sections (Points
- * Config, Fee Config) and password protection via ADMIN_SECRET_KEY.
+ * Wild Points) with the PolyHouse-derived sections (Points Config, Fee Config,
+ * White Label Theme) and password protection via ADMIN_SECRET_KEY.
  *
  * Tabs:
  *   - Tags          – Sync & toggle Polymarket sport tags
@@ -13,7 +13,7 @@
  *   - $WILD Points  – View wallet-level points & activity
  *   - Points Config – Enable/disable points, referral %, reset schedule
  *   - Fees          – Fee BPS, multi-wallet splits
- *   - Sport Config  – Per-sport + market-type field mapping
+ *   - White Label   – Theme / brand customization (colors, logo, etc.)
  */
 
 import { useState, useEffect } from "react";
@@ -38,7 +38,17 @@ import {
   Star,
   Users,
   AlertTriangle,
-  Settings2,
+  Palette,
+  Zap,
+  Flame,
+  Target,
+  Trophy,
+  Crown,
+  Shield,
+  Rocket,
+  Gem,
+  Heart,
+  Sparkles,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -65,10 +75,10 @@ import type {
   InsertPlayer,
   AdminSettings,
   Futures,
-  SportMarketConfig,
   PolymarketTagRecord,
   FuturesCategory,
 } from "@shared/schema";
+import { themeConfigSchema, type ThemeConfig } from "@shared/schema";
 
 // ---------------------------------------------------------------------------
 // Types (mirror server-side white-label config)
@@ -99,6 +109,7 @@ interface WhiteLabelConfig {
   id: number;
   feeConfig?: FeeConfig | null;
   pointsConfig?: PointsConfig | null;
+  themeConfig?: ThemeConfig | null;
   updatedAt: string;
 }
 
@@ -113,7 +124,7 @@ const playerFormSchema = z.object({
     .min(1, "Symbol is required")
     .max(6, "Max 6 characters"),
   team: z.string().min(1, "Team is required"),
-  sport: z.string().min(1, "Sport is required"),
+  sport: z.string().default("Basketball"),
   fundingTarget: z.number().min(1000, "Minimum 1,000"),
   fundingCurrent: z.number().min(0),
   status: z.enum(["offering", "available", "closed"]),
@@ -674,6 +685,394 @@ interface WildWallet {
   createdAt: string;
 }
 
+// ===========================================================================
+// White Label / Theme Section
+// ===========================================================================
+
+const PRESET_COLORS = [
+  { name: "Rose", value: "#f43f5e" },
+  { name: "Amber", value: "#f59e0b" },
+  { name: "Emerald", value: "#10b981" },
+  { name: "Blue", value: "#3b82f6" },
+  { name: "Violet", value: "#8b5cf6" },
+  { name: "Cyan", value: "#06b6d4" },
+  { name: "Pink", value: "#ec4899" },
+  { name: "Orange", value: "#f97316" },
+  { name: "White", value: "#ffffff" },
+  { name: "Zinc 50", value: "#fafafa" },
+  { name: "Zinc 200", value: "#e4e4e7" },
+  { name: "Zinc 400", value: "#a1a1aa" },
+  { name: "Zinc 600", value: "#52525b" },
+  { name: "Zinc 800", value: "#27272a" },
+  { name: "Zinc 900", value: "#18181b" },
+  { name: "Zinc 950", value: "#09090b" },
+];
+
+function ColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex-1">
+        <Label className="text-xs text-zinc-400">{label}</Label>
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-10 h-10 rounded cursor-pointer border border-zinc-700"
+          />
+          <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="font-mono text-sm"
+            placeholder="#000000"
+          />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {PRESET_COLORS.map((preset) => (
+          <button
+            key={preset.value}
+            type="button"
+            onClick={() => onChange(preset.value)}
+            className={`w-5 h-5 rounded border transition-all ${value === preset.value ? 'border-white ring-1 ring-white' : 'border-zinc-700 hover:border-zinc-500'}`}
+            style={{ backgroundColor: preset.value }}
+            title={preset.name}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WhiteLabelSection({
+  localTheme,
+  setLocalTheme,
+  activeThemeTab,
+  setActiveThemeTab,
+  onSave,
+  isSaving,
+}: {
+  localTheme: ThemeConfig;
+  setLocalTheme: (t: ThemeConfig) => void;
+  activeThemeTab: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav";
+  setActiveThemeTab: (t: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav") => void;
+  onSave: () => void;
+  isSaving: boolean;
+}) {
+  const ICON_OPTIONS: { name: string; icon: typeof Zap | null }[] = [
+    { name: "none", icon: null },
+    { name: "zap", icon: Zap },
+    { name: "flame", icon: Flame },
+    { name: "target", icon: Target },
+    { name: "trophy", icon: Trophy },
+    { name: "crown", icon: Crown },
+    { name: "shield", icon: Shield },
+    { name: "rocket", icon: Rocket },
+    { name: "gem", icon: Gem },
+    { name: "heart", icon: Heart },
+    { name: "sparkles", icon: Sparkles },
+    { name: "star", icon: Star },
+  ];
+
+  const IconMap: Record<string, typeof Zap> = {
+    zap: Zap, flame: Flame, target: Target, trophy: Trophy, crown: Crown,
+    shield: Shield, rocket: Rocket, gem: Gem, heart: Heart, sparkles: Sparkles, star: Star,
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold">White Label Configuration</h2>
+        <p className="text-sm text-zinc-500">
+          Customize the look and feel of your betting platform
+        </p>
+      </div>
+
+      {/* Sub-tab navigation */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant={activeThemeTab === "brand" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("brand")}>
+          <Palette className="w-4 h-4 mr-2" /> Brand
+        </Button>
+        <Button variant={activeThemeTab === "header" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("header")}>
+          Header
+        </Button>
+        <Button variant={activeThemeTab === "betslip" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("betslip")}>
+          Bet Slip
+        </Button>
+        <Button variant={activeThemeTab === "marketCards" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("marketCards")}>
+          Market Cards
+        </Button>
+        <Button variant={activeThemeTab === "sortingBar" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("sortingBar")}>
+          Sorting Bar
+        </Button>
+        <Button variant={activeThemeTab === "bottomNav" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("bottomNav")}>
+          Bottom Nav
+        </Button>
+      </div>
+
+      {/* ---- Brand ---- */}
+      {activeThemeTab === "brand" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Brand Settings</h3>
+              <p className="text-sm text-zinc-500">Configure your platform branding</p>
+            </div>
+            <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-700">
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const iconName = localTheme.brand?.logoIcon;
+                  const IconComponent = iconName && iconName !== "none" ? IconMap[iconName] : null;
+                  if (localTheme.brand?.logoUrl) {
+                    return <img src={localTheme.brand.logoUrl} alt="Logo" className="w-6 h-6 object-contain" />;
+                  } else if (IconComponent) {
+                    return <IconComponent className="w-6 h-6" style={{ color: localTheme.brand?.primaryColor }} />;
+                  }
+                  return null;
+                })()}
+                <span className="font-bold italic tracking-tighter" style={{ color: localTheme.brand?.accentColor }}>
+                  {localTheme.brand?.name || "WILDCARDS"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs text-zinc-400">Platform Name</Label>
+              <Input
+                value={localTheme.brand?.name || ""}
+                onChange={(e) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, name: e.target.value } })}
+                placeholder="WILDCARDS"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-zinc-400">Logo URL (optional)</Label>
+              <Input
+                value={localTheme.brand?.logoUrl || ""}
+                onChange={(e) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, logoUrl: e.target.value } })}
+                placeholder="https://..."
+                className="mt-1"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-xs text-zinc-400">Logo Icon (used if no URL provided)</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {ICON_OPTIONS.map((item) => {
+                  const isSelected = (localTheme.brand?.logoIcon || "none") === item.name;
+                  const IconComponent = item.icon;
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, logoIcon: item.name } })}
+                      className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all ${
+                        isSelected ? 'border-white bg-zinc-800 ring-1 ring-white' : 'border-zinc-700 bg-zinc-900 hover:border-zinc-500'
+                      }`}
+                      style={isSelected ? { color: localTheme.brand?.primaryColor || "#f43f5e" } : undefined}
+                      title={item.name === "none" ? "No icon" : item.name}
+                    >
+                      {IconComponent ? <IconComponent className="w-5 h-5" /> : <X className="w-4 h-4 text-zinc-600" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <ColorPicker label="Primary Color" value={localTheme.brand?.primaryColor || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, primaryColor: v } })} />
+            <ColorPicker label="Accent Color" value={localTheme.brand?.accentColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, accentColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Brand Settings
+          </Button>
+        </Card>
+      )}
+
+      {/* ---- Header ---- */}
+      {activeThemeTab === "header" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Header Customization</h3>
+              <p className="text-sm text-zinc-500">Style the top navigation bar</p>
+            </div>
+            <div className="rounded-lg p-3 border border-zinc-700 min-w-[200px]" style={{ backgroundColor: localTheme.header?.backgroundColor }}>
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm italic tracking-tighter" style={{ color: localTheme.header?.textColor }}>
+                  {localTheme.brand?.name || "WILDCARDS"}
+                </span>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: localTheme.header?.accentColor }}>
+                  <span className="text-[8px] text-zinc-900 font-bold">W</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorPicker label="Background Color" value={localTheme.header?.backgroundColor || "#09090b"} onChange={(v) => setLocalTheme({ ...localTheme, header: { ...localTheme.header, backgroundColor: v } })} />
+            <ColorPicker label="Brand Text Color" value={localTheme.header?.textColor || "#fafafa"} onChange={(v) => setLocalTheme({ ...localTheme, header: { ...localTheme.header, textColor: v } })} />
+            <ColorPicker label="Accent Color (Logo area)" value={localTheme.header?.accentColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, header: { ...localTheme.header, accentColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Header Settings
+          </Button>
+        </Card>
+      )}
+
+      {/* ---- BetSlip ---- */}
+      {activeThemeTab === "betslip" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Bet Slip Customization</h3>
+              <p className="text-sm text-zinc-500">Style the betting interface</p>
+            </div>
+            <div className="rounded-lg p-3 border border-zinc-700 min-w-[180px]" style={{ backgroundColor: localTheme.betSlip?.backgroundColor }}>
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="rounded p-2 mb-2" style={{ backgroundColor: localTheme.betSlip?.cardColor }}>
+                <div style={{ color: localTheme.betSlip?.textColor }} className="text-xs">Bet Amount</div>
+                <div style={{ color: localTheme.betSlip?.textColor }} className="font-bold">$10.00</div>
+              </div>
+              <button className="w-full py-2 rounded text-white text-sm font-bold" style={{ backgroundColor: localTheme.betSlip?.primaryButtonColor }}>
+                Place Bet
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorPicker label="Background Color" value={localTheme.betSlip?.backgroundColor || "#18181b"} onChange={(v) => setLocalTheme({ ...localTheme, betSlip: { ...localTheme.betSlip, backgroundColor: v } })} />
+            <ColorPicker label="Card Color" value={localTheme.betSlip?.cardColor || "#27272a"} onChange={(v) => setLocalTheme({ ...localTheme, betSlip: { ...localTheme.betSlip, cardColor: v } })} />
+            <ColorPicker label="Primary Button" value={localTheme.betSlip?.primaryButtonColor || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, betSlip: { ...localTheme.betSlip, primaryButtonColor: v } })} />
+            <ColorPicker label="Success Color" value={localTheme.betSlip?.successColor || "#10b981"} onChange={(v) => setLocalTheme({ ...localTheme, betSlip: { ...localTheme.betSlip, successColor: v } })} />
+            <ColorPicker label="Text Color" value={localTheme.betSlip?.textColor || "#fafafa"} onChange={(v) => setLocalTheme({ ...localTheme, betSlip: { ...localTheme.betSlip, textColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Bet Slip Settings
+          </Button>
+        </Card>
+      )}
+
+      {/* ---- Market Cards ---- */}
+      {activeThemeTab === "marketCards" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Market Cards Customization</h3>
+              <p className="text-sm text-zinc-500">Style the betting market cards</p>
+            </div>
+            <div className="rounded-lg p-3 min-w-[200px]" style={{ backgroundColor: localTheme.marketCards?.backgroundColor, borderColor: localTheme.marketCards?.borderColor, borderWidth: 1 }}>
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div style={{ color: localTheme.marketCards?.textColor }} className="text-sm font-medium mb-2">Team A vs Team B</div>
+              <div className="flex gap-2">
+                <span className="px-2 py-1 rounded text-xs font-bold" style={{ backgroundColor: localTheme.marketCards?.oddsBadgeColor, color: "#000" }}>2.50</span>
+                <span className="px-2 py-1 rounded text-xs font-bold" style={{ backgroundColor: localTheme.marketCards?.oddsBadgeColor, color: "#000" }}>1.80</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorPicker label="Background Color" value={localTheme.marketCards?.backgroundColor || "#18181b"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, backgroundColor: v } })} />
+            <ColorPicker label="Hover Color" value={localTheme.marketCards?.hoverColor || "#27272a"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, hoverColor: v } })} />
+            <ColorPicker label="Border Color" value={localTheme.marketCards?.borderColor || "#3f3f46"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, borderColor: v } })} />
+            <ColorPicker label="Odds Badge Color" value={localTheme.marketCards?.oddsBadgeColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, oddsBadgeColor: v } })} />
+            <ColorPicker label="Text Color" value={localTheme.marketCards?.textColor || "#fafafa"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, textColor: v } })} />
+          </div>
+
+          <div className="border-t border-zinc-800 pt-4">
+            <h4 className="text-sm font-medium mb-3">Market Type Accent Colors</h4>
+            <p className="text-xs text-zinc-500 mb-3">These colors are used as accent stripes for different market types</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ColorPicker label="Moneyline Accent" value={localTheme.marketCards?.moneylineAccent || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moneylineAccent: v } })} />
+              <ColorPicker label="Totals (O/U) Accent" value={localTheme.marketCards?.totalsAccent || "#3b82f6"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, totalsAccent: v } })} />
+              <ColorPicker label="More Markets Accent" value={localTheme.marketCards?.moreMarketsAccent || "#8b5cf6"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moreMarketsAccent: v } })} />
+            </div>
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Market Card Settings
+          </Button>
+        </Card>
+      )}
+
+      {/* ---- Sorting Bar ---- */}
+      {activeThemeTab === "sortingBar" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Sorting Bar Customization</h3>
+              <p className="text-sm text-zinc-500">Style the filter and sorting tabs</p>
+            </div>
+            <div className="rounded-lg p-3 min-w-[200px]" style={{ backgroundColor: localTheme.sortingBar?.backgroundColor }}>
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 rounded text-xs font-bold" style={{ backgroundColor: localTheme.sortingBar?.activeTabColor, color: "#fff" }}>All</span>
+                <span className="px-3 py-1 rounded text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>Soccer</span>
+                <span className="px-3 py-1 rounded text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>NBA</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorPicker label="Background Color" value={localTheme.sortingBar?.backgroundColor || "#09090b"} onChange={(v) => setLocalTheme({ ...localTheme, sortingBar: { ...localTheme.sortingBar, backgroundColor: v } })} />
+            <ColorPicker label="Active Tab Color" value={localTheme.sortingBar?.activeTabColor || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, sortingBar: { ...localTheme.sortingBar, activeTabColor: v } })} />
+            <ColorPicker label="Inactive Tab Color" value={localTheme.sortingBar?.inactiveTabColor || "#71717a"} onChange={(v) => setLocalTheme({ ...localTheme, sortingBar: { ...localTheme.sortingBar, inactiveTabColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Sorting Bar Settings
+          </Button>
+        </Card>
+      )}
+
+      {/* ---- Bottom Nav ---- */}
+      {activeThemeTab === "bottomNav" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Bottom Navigation Customization</h3>
+              <p className="text-sm text-zinc-500">Style the bottom navigation bar</p>
+            </div>
+            <div className="rounded-lg p-3 min-w-[200px]" style={{ backgroundColor: localTheme.bottomNav?.backgroundColor }}>
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="flex justify-around">
+                <div className="flex flex-col items-center">
+                  <div className="w-5 h-5 rounded" style={{ backgroundColor: localTheme.bottomNav?.activeColor }} />
+                  <span className="text-[10px] mt-1" style={{ color: localTheme.bottomNav?.activeColor }}>Predict</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-5 h-5 rounded" style={{ backgroundColor: localTheme.bottomNav?.inactiveColor }} />
+                  <span className="text-[10px] mt-1" style={{ color: localTheme.bottomNav?.inactiveColor }}>Dashboard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ColorPicker label="Background Color" value={localTheme.bottomNav?.backgroundColor || "#09090b"} onChange={(v) => setLocalTheme({ ...localTheme, bottomNav: { ...localTheme.bottomNav, backgroundColor: v } })} />
+            <ColorPicker label="Active Color" value={localTheme.bottomNav?.activeColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, bottomNav: { ...localTheme.bottomNav, activeColor: v } })} />
+            <ColorPicker label="Inactive Color" value={localTheme.bottomNav?.inactiveColor || "#71717a"} onChange={(v) => setLocalTheme({ ...localTheme, bottomNav: { ...localTheme.bottomNav, inactiveColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Bottom Nav Settings
+          </Button>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function WildPointsManager() {
   const { data: wallets = [], isLoading } = useQuery<WildWallet[]>({
     queryKey: ["/api/admin/wild-points"],
@@ -804,716 +1203,6 @@ function WildPointsManager() {
 }
 
 // ===========================================================================
-// Sport Config Editor
-// ===========================================================================
-
-interface EnhancedSampleData {
-  event: {
-    id: string;
-    title: string;
-    slug?: string;
-    description: string;
-    startDate: string;
-    endDate?: string;
-    seriesSlug?: string;
-  } | null;
-  market: {
-    id: string;
-    conditionId?: string;
-    slug?: string;
-    question: string;
-    groupItemTitle: string;
-    sportsMarketType: string;
-    subtitle?: string;
-    extraInfo?: string;
-    participantName?: string;
-    teamAbbrev?: string;
-    line?: number;
-    outcomes: string;
-    outcomePrices: string;
-    bestAsk?: number;
-    bestBid?: number;
-    volume?: string;
-    liquidity?: string;
-    gameStartTime?: string;
-    tokens?: unknown;
-    spread?: number;
-    active?: boolean;
-    closed?: boolean;
-    clobTokenIds?: string;
-  } | null;
-  rawMarket?: Record<string, unknown>;
-  allMarketTypes: string[];
-  availableMarketTypes?: string[];
-  eventsSearched?: number;
-  message?: string;
-}
-
-function SportConfigEditor({
-  sportsData,
-  toast,
-}: {
-  sportsData: SportWithMarketTypes[];
-  toast: ReturnType<typeof useToast>["toast"];
-}) {
-  const [selectedSport, setSelectedSport] = useState<string>("");
-  const [selectedMarketType, setSelectedMarketType] = useState<string>("");
-  const [availableMarketTypes, setAvailableMarketTypes] = useState<
-    {
-      type: string;
-      label: string;
-      count: number;
-      sampleQuestion: string;
-    }[]
-  >([]);
-  const [sampleData, setSampleData] = useState<EnhancedSampleData | null>(
-    null,
-  );
-  const [loadingMarketTypes, setLoadingMarketTypes] = useState(false);
-  const [loadingSample, setLoadingSample] = useState(false);
-  const [showRawJson, setShowRawJson] = useState(false);
-  const [eventsScanned, setEventsScanned] = useState(0);
-
-  const [formData, setFormData] = useState({
-    titleField: "groupItemTitle",
-    buttonLabelField: "outcomes",
-    betSlipTitleField: "question",
-    useQuestionForTitle: false,
-    showLine: false,
-    lineFieldPath: "line",
-    lineFormatter: "default",
-    outcomeStrategy: { type: "default" } as {
-      type: string;
-      fallback?: string;
-      regex?: string;
-      template?: string;
-    },
-    notes: "",
-  });
-
-  const { data: configs = [] } = useQuery<SportMarketConfig[]>({
-    queryKey: ["/api/admin/sport-market-configs"],
-  });
-
-  const saveConfigMutation = useMutation({
-    mutationFn: async (data: {
-      sportSlug: string;
-      sportLabel: string;
-      marketType: string;
-      marketTypeLabel?: string;
-      titleField: string;
-      buttonLabelField: string;
-      betSlipTitleField: string;
-      useQuestionForTitle: boolean;
-      showLine: boolean;
-      lineFieldPath?: string;
-      lineFormatter?: string;
-      outcomeStrategy?: {
-        type: string;
-        fallback?: string;
-        regex?: string;
-        template?: string;
-      };
-      sampleData?: Record<string, unknown>;
-      notes?: string;
-    }) => {
-      return apiRequest("POST", "/api/admin/sport-market-configs", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/admin/sport-market-configs"],
-      });
-      toast({ title: "Configuration saved" });
-    },
-    onError: () => {
-      toast({ title: "Failed to save config", variant: "destructive" });
-    },
-  });
-
-  const deleteConfigMutation = useMutation({
-    mutationFn: async ({
-      sportSlug,
-      marketType,
-    }: {
-      sportSlug: string;
-      marketType: string;
-    }) => {
-      return apiRequest(
-        "DELETE",
-        `/api/admin/sport-market-configs/${sportSlug}/${marketType}`,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/admin/sport-market-configs"],
-      });
-      toast({ title: "Config deleted" });
-    },
-  });
-
-  const handleSelectSport = async (sportId: string) => {
-    setSelectedSport(sportId);
-    setSelectedMarketType("");
-    setSampleData(null);
-    setAvailableMarketTypes([]);
-
-    const sport = sportsData.find((s) => s.id === sportId);
-    if (!sport) return;
-
-    setLoadingMarketTypes(true);
-    try {
-      const response = await fetch(
-        `/api/admin/sport-market-types/${sport.seriesId}`,
-      );
-      const data = await response.json();
-      setAvailableMarketTypes(data.marketTypes || []);
-      setEventsScanned(data.eventsScanned || 0);
-    } catch (error) {
-      console.error("Failed to fetch market types:", error);
-      setAvailableMarketTypes([]);
-      setEventsScanned(0);
-    } finally {
-      setLoadingMarketTypes(false);
-    }
-  };
-
-  const handleSelectMarketType = async (marketType: string) => {
-    setSelectedMarketType(marketType);
-
-    const sport = sportsData.find((s) => s.id === selectedSport);
-    if (!sport) return;
-
-    const existingConfig = configs.find(
-      (c) => c.sportSlug === sport.slug && c.marketType === marketType,
-    );
-
-    if (existingConfig) {
-      setFormData({
-        titleField: existingConfig.titleField,
-        buttonLabelField: existingConfig.buttonLabelField,
-        betSlipTitleField: existingConfig.betSlipTitleField,
-        useQuestionForTitle: existingConfig.useQuestionForTitle,
-        showLine: existingConfig.showLine,
-        lineFieldPath: existingConfig.lineFieldPath || "line",
-        lineFormatter: existingConfig.lineFormatter || "default",
-        outcomeStrategy: existingConfig.outcomeStrategy || {
-          type: "default",
-        },
-        notes: existingConfig.notes || "",
-      });
-    } else {
-      const isSpreads =
-        marketType.includes("spread") || marketType.includes("handicap");
-      const isTotals =
-        marketType.includes("total") || marketType.includes("over_under");
-      setFormData({
-        titleField: "groupItemTitle",
-        buttonLabelField: "outcomes",
-        betSlipTitleField: "question",
-        useQuestionForTitle: false,
-        showLine: isSpreads || isTotals,
-        lineFieldPath: "line",
-        lineFormatter: isSpreads
-          ? "spread"
-          : isTotals
-            ? "total"
-            : "default",
-        outcomeStrategy: { type: "default" },
-        notes: "",
-      });
-    }
-
-    setLoadingSample(true);
-    try {
-      const response = await fetch(
-        `/api/admin/sport-sample-v2/${sport.seriesId}/${marketType}`,
-      );
-      const data = await response.json();
-      setSampleData(data);
-    } catch (error) {
-      console.error("Failed to fetch sample data:", error);
-    } finally {
-      setLoadingSample(false);
-    }
-  };
-
-  const handleSave = () => {
-    const sport = sportsData.find((s) => s.id === selectedSport);
-    if (!sport || !selectedMarketType) return;
-
-    saveConfigMutation.mutate({
-      sportSlug: sport.slug,
-      sportLabel: sport.label,
-      marketType: selectedMarketType,
-      marketTypeLabel: selectedMarketType
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase()),
-      ...formData,
-      sampleData: sampleData?.market as Record<string, unknown> | undefined,
-    });
-  };
-
-  const availableFields = [
-    { value: "question", label: "question - Full question text" },
-    {
-      value: "groupItemTitle",
-      label: "groupItemTitle - Short market title",
-    },
-    {
-      value: "sportsMarketType",
-      label: "sportsMarketType - Market type label",
-    },
-    { value: "outcomes", label: "outcomes - Outcome labels" },
-    { value: "subtitle", label: "subtitle - Additional context" },
-    { value: "extraInfo", label: "extraInfo - Extra market info" },
-  ];
-
-  const outcomeStrategies = [
-    { value: "default", label: "Default - Use raw outcome labels" },
-    {
-      value: "team_abbrev",
-      label: "Team Abbreviation - Parse team abbreviations",
-    },
-    { value: "yes_no", label: "Yes/No - Binary outcome mapping" },
-    { value: "over_under", label: "Over/Under - O/U with line" },
-    { value: "spread", label: "Spread - +/- with line" },
-    { value: "regex", label: "Regex - Custom pattern extraction" },
-  ];
-
-  const lineFormatters = [
-    { value: "default", label: "Default - Show as-is" },
-    { value: "spread", label: "Spread - Show as +X.X or -X.X" },
-    { value: "total", label: "Total - Show as O/U X.X" },
-    { value: "none", label: "None - Hide line" },
-  ];
-
-  const getFieldPreview = (fieldName: string) => {
-    if (!sampleData?.market) return "N/A";
-    const market = sampleData.market as Record<string, unknown>;
-    const value = market[fieldName];
-    if (value === null || value === undefined) return "null";
-    if (typeof value === "string")
-      return value.length > 50 ? value.slice(0, 50) + "..." : value;
-    return String(value);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold">
-          Sport + Market Type Configuration
-        </h2>
-        <p className="text-sm text-zinc-500">
-          Configure display settings for each sport and bet type combination
-        </p>
-      </div>
-
-      <Card className="p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>1. Select Sport</Label>
-            <Select value={selectedSport} onValueChange={handleSelectSport}>
-              <SelectTrigger data-testid="select-sport-config">
-                <SelectValue placeholder="Choose a sport..." />
-              </SelectTrigger>
-              <SelectContent>
-                {sportsData.map((sport) => {
-                  const configCount = configs.filter(
-                    (c) => c.sportSlug === sport.slug,
-                  ).length;
-                  return (
-                    <SelectItem key={sport.id} value={sport.id}>
-                      {sport.label}
-                      {configCount > 0 && ` (${configCount} configs)`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>2. Select Market Type</Label>
-            <Select
-              value={selectedMarketType}
-              onValueChange={handleSelectMarketType}
-              disabled={
-                !selectedSport ||
-                loadingMarketTypes ||
-                availableMarketTypes.length === 0
-              }
-            >
-              <SelectTrigger data-testid="select-market-type">
-                <SelectValue
-                  placeholder={
-                    loadingMarketTypes
-                      ? "Loading market types..."
-                      : "Choose bet type..."
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableMarketTypes.map((mt) => {
-                  const sport = sportsData.find(
-                    (s) => s.id === selectedSport,
-                  );
-                  const hasConfig =
-                    sport &&
-                    configs.some(
-                      (c) =>
-                        c.sportSlug === sport.slug &&
-                        c.marketType === mt.type,
-                    );
-                  return (
-                    <SelectItem key={mt.type} value={mt.type}>
-                      {mt.label} ({mt.count})
-                      {hasConfig ? " - configured" : ""}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            {eventsScanned > 0 && (
-              <p className="text-xs text-zinc-500">
-                Found {availableMarketTypes.length} market types from{" "}
-                {eventsScanned} events
-              </p>
-            )}
-          </div>
-        </div>
-
-        {selectedSport && selectedMarketType && (
-          <>
-            <div className="border-t border-zinc-800 pt-4">
-              <h3 className="font-medium text-zinc-300 mb-3">
-                Field Mappings
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Market Title Field</Label>
-                  <Select
-                    value={formData.titleField}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        titleField: v,
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-title-field">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map((f) => (
-                        <SelectItem key={f.value} value={f.value}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="text-xs text-zinc-500 truncate">
-                    Preview: {getFieldPreview(formData.titleField)}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Button Labels Field</Label>
-                  <Select
-                    value={formData.buttonLabelField}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        buttonLabelField: v,
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-button-field">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map((f) => (
-                        <SelectItem key={f.value} value={f.value}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Bet Slip Title</Label>
-                  <Select
-                    value={formData.betSlipTitleField}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        betSlipTitleField: v,
-                      }))
-                    }
-                  >
-                    <SelectTrigger data-testid="select-betslip-field">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map((f) => (
-                        <SelectItem key={f.value} value={f.value}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-zinc-800 pt-4">
-              <h3 className="font-medium text-zinc-300 mb-3">
-                Line & Outcome Display
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Show Line Number</Label>
-                  <div className="flex items-center gap-2 pt-2">
-                    <Checkbox
-                      checked={formData.showLine}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          showLine: checked as boolean,
-                        }))
-                      }
-                      data-testid="checkbox-show-line"
-                    />
-                    <span className="text-sm text-zinc-400">
-                      Display line (e.g., 246.5, +12.5)
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Line Formatter</Label>
-                  <Select
-                    value={formData.lineFormatter}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lineFormatter: v,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {lineFormatters.map((f) => (
-                        <SelectItem key={f.value} value={f.value}>
-                          {f.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Outcome Strategy</Label>
-                  <Select
-                    value={formData.outcomeStrategy.type}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        outcomeStrategy: {
-                          ...prev.outcomeStrategy,
-                          type: v,
-                        },
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {outcomeStrategies.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mt-3">
-                <Checkbox
-                  checked={formData.useQuestionForTitle}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      useQuestionForTitle: checked as boolean,
-                    }))
-                  }
-                  data-testid="checkbox-use-question"
-                />
-                <span className="text-sm text-zinc-400">
-                  Use question field for market title (overrides title field
-                  selection)
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Input
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    notes: e.target.value,
-                  }))
-                }
-                placeholder="Add notes about this configuration..."
-                data-testid="input-notes"
-              />
-            </div>
-
-            <Button
-              onClick={handleSave}
-              disabled={saveConfigMutation.isPending}
-              className="w-full"
-              data-testid="button-save-config"
-            >
-              {saveConfigMutation.isPending
-                ? "Saving..."
-                : `Save ${selectedMarketType.replace(/_/g, " ")} Configuration`}
-            </Button>
-          </>
-        )}
-      </Card>
-
-      {selectedSport && sampleData?.market && (
-        <Card className="p-4 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-zinc-300">Sample API Data</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRawJson(!showRawJson)}
-            >
-              {showRawJson ? "Hide Raw JSON" : "Show Raw JSON"}
-            </Button>
-          </div>
-
-          {showRawJson ? (
-            <div className="p-3 bg-zinc-900 rounded text-xs font-mono overflow-x-auto max-h-96 overflow-y-auto">
-              <pre>
-                {JSON.stringify(
-                  sampleData.rawMarket || sampleData.market,
-                  null,
-                  2,
-                )}
-              </pre>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {Object.entries(sampleData.market).map(([key, value]) => (
-                  <div key={key} className="p-2 bg-zinc-900 rounded">
-                    <span className="text-blue-400 font-mono">{key}:</span>{" "}
-                    <span className="text-green-400">
-                      {typeof value === "object"
-                        ? JSON.stringify(value).slice(0, 60) + "..."
-                        : String(value).slice(0, 60)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="text-xs text-zinc-500">
-            <strong>All market types for this sport:</strong>{" "}
-            {availableMarketTypes.map((mt) => mt.label).join(", ") ||
-              "None found"}
-          </div>
-          {sampleData?.eventsSearched && (
-            <div className="text-xs text-zinc-400">
-              Sample from searching {sampleData.eventsSearched} events
-            </div>
-          )}
-        </Card>
-      )}
-
-      {configs.length > 0 && (
-        <Card className="p-4 space-y-3">
-          <h3 className="font-bold text-zinc-300">
-            Saved Configurations ({configs.length})
-          </h3>
-          <div className="space-y-2">
-            {configs.map((config) => (
-              <div
-                key={config.id}
-                className="p-3 bg-zinc-900 rounded flex justify-between items-start gap-2"
-                data-testid={`config-${config.sportSlug}-${config.marketType}`}
-              >
-                <div className="text-sm min-w-0 flex-1">
-                  <div className="font-medium text-white">
-                    {config.sportLabel} -{" "}
-                    {config.marketType.replace(/_/g, " ")}
-                  </div>
-                  <div className="text-zinc-500 text-xs space-y-0.5">
-                    <div>
-                      Title: {config.titleField} | Buttons:{" "}
-                      {config.buttonLabelField}
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {config.showLine && (
-                        <span className="text-wild-trade">Shows line</span>
-                      )}
-                      {config.useQuestionForTitle && (
-                        <span className="text-wild-brand">
-                          Uses question
-                        </span>
-                      )}
-                      {config.outcomeStrategy && (
-                        <span className="text-wild-scout">
-                          Strategy:{" "}
-                          {
-                            (config.outcomeStrategy as { type: string })
-                              .type
-                          }
-                        </span>
-                      )}
-                    </div>
-                    {config.notes && (
-                      <div className="text-zinc-600 italic truncate">
-                        {config.notes}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() =>
-                    deleteConfigMutation.mutate({
-                      sportSlug: config.sportSlug,
-                      marketType: config.marketType,
-                    })
-                  }
-                  disabled={deleteConfigMutation.isPending}
-                  data-testid={`delete-config-${config.sportSlug}-${config.marketType}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// ===========================================================================
 // Tab type (all sections)
 // ===========================================================================
 
@@ -1525,7 +1214,7 @@ type AdminTab =
   | "wild"
   | "points"
   | "fees"
-  | "sportconfig";
+  | "whitelabel";
 
 // ===========================================================================
 // Main Admin Page with Auth Wrapper
@@ -1641,6 +1330,9 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
   });
   const [savingFees, setSavingFees] = useState(false);
   const [savingPoints, setSavingPoints] = useState(false);
+  const [localTheme, setLocalTheme] = useState<ThemeConfig>(themeConfigSchema.parse({}));
+  const [activeThemeTab, setActiveThemeTab] = useState<"brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav">("brand");
+  const [savingTheme, setSavingTheme] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -1689,6 +1381,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
         const data: WhiteLabelConfig = await res.json();
         if (data.feeConfig) setFeeConfig(data.feeConfig);
         if (data.pointsConfig) setPointsConfig(data.pointsConfig);
+        if (data.themeConfig) setLocalTheme(data.themeConfig as ThemeConfig);
       })
       .catch((err) => {
         console.error("[Admin] Failed to load config:", err);
@@ -1715,10 +1408,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
   };
 
   useEffect(() => {
-    if (
-      (activeSection === "matchday" || activeSection === "sportconfig") &&
-      sportsData.length === 0
-    ) {
+    if (activeSection === "matchday" && sportsData.length === 0) {
       loadSportsLeagues();
     }
   }, [activeSection]);
@@ -2230,6 +1920,25 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const handleSaveTheme = async () => {
+    setSavingTheme(true);
+    try {
+      const res = await adminFetch("/api/admin/white-label/theme", {
+        method: "PATCH",
+        body: JSON.stringify(localTheme),
+      });
+      if (res.ok) {
+        showStatus("success", "Theme settings saved");
+      } else {
+        showStatus("error", "Failed to save theme settings");
+      }
+    } catch {
+      showStatus("error", "Failed to save theme settings");
+    } finally {
+      setSavingTheme(false);
+    }
+  };
+
   // =========================================================================
   // RENDER
   // =========================================================================
@@ -2326,13 +2035,13 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
           </Button>
           <Button
             variant={
-              activeSection === "sportconfig" ? "default" : "secondary"
+              activeSection === "whitelabel" ? "default" : "secondary"
             }
-            onClick={() => setActiveSection("sportconfig")}
-            data-testid="button-section-sportconfig"
+            onClick={() => setActiveSection("whitelabel")}
+            data-testid="button-section-whitelabel"
           >
-            <Settings2 className="w-4 h-4 mr-1" />
-            Sport Config
+            <Palette className="w-4 h-4 mr-1" />
+            White Label
           </Button>
         </div>
 
@@ -3192,11 +2901,23 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
           ))}
 
         {/* ============================================================= */}
-        {/* SPORT CONFIG */}
+        {/* WHITE LABEL / THEME */}
         {/* ============================================================= */}
-        {activeSection === "sportconfig" && (
-          <SportConfigEditor sportsData={sportsData} toast={toast} />
-        )}
+        {activeSection === "whitelabel" &&
+          (wlLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+            </div>
+          ) : (
+            <WhiteLabelSection
+              localTheme={localTheme}
+              setLocalTheme={setLocalTheme}
+              activeThemeTab={activeThemeTab}
+              setActiveThemeTab={setActiveThemeTab}
+              onSave={handleSaveTheme}
+              isSaving={savingTheme}
+            />
+          ))}
       </div>
     </div>
   );
