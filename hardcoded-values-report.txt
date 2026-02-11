@@ -1,0 +1,712 @@
+=========================================
+WILDCARDS HARDCODED VALUES SEARCH REPORT
+=========================================
+
+Generated: Wed Feb 11 11:28:05 UTC 2026
+
+===========================================
+1. HARDCODED HEX COLORS
+===========================================
+
+Searching for #RRGGBB patterns in components and pages...
+
+client/src/components/terminal/BetSlip.tsx:580:              style={{ color: "var(--wl-betslip-text, #71717a)" }}
+client/src/components/terminal/BetSlip.tsx:586:              style={{ color: "var(--wl-betslip-text, #ffffff)" }}
+client/src/components/terminal/BetSlip.tsx:597:              style={{ color: "var(--wl-betslip-text, #a1a1aa)" }}
+client/src/components/terminal/BetSlip.tsx:835:            style={{ backgroundColor: 'var(--betslip-primary, #f43f5e)' }}
+client/src/components/terminal/BottomNav.tsx:22:      style={{ backgroundColor: 'var(--nav-bg, #09090b)' }}
+client/src/components/terminal/BottomNav.tsx:33:              style={{ color: isActive ? 'var(--nav-active, #fbbf24)' : 'var(--nav-inactive, #71717a)' }}
+client/src/components/terminal/Header.tsx:22:      style={{ backgroundColor: 'var(--header-bg, #09090b)' }}
+client/src/components/terminal/Header.tsx:24:      <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
+client/src/components/terminal/Header.tsx:26:        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>WILDCARD</span>
+client/src/components/terminal/MarketCard.tsx:49:        backgroundColor: 'var(--market-bg, #18181b)',
+client/src/components/terminal/MarketCard.tsx:50:        borderColor: 'var(--market-border, #27272a)',
+client/src/components/terminal/MarketCard.tsx:54:      <div className="h-0.5 w-full absolute top-0 left-0" style={{ backgroundColor: 'var(--market-moneyline, #f43f5e)' }} />
+client/src/components/terminal/MarketCard.tsx:70:            <h3 className="font-black text-base leading-tight" style={{ color: 'var(--market-text, #ffffff)' }}>{market.title}</h3>
+client/src/pages/home.tsx:737:    <div className="min-h-screen bg-hud-grid bg-[size:30px_30px] font-sans selection:bg-wild-brand selection:text-black text-sm overflow-hidden" style={{ backgroundColor: 'var(--header-bg, #09090b)' }}>
+client/src/pages/home.tsx:738:      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-zinc-800/50 shadow-2xl pb-safe" style={{ backgroundColor: 'var(--header-bg, #09090b)', opacity: 0.95 }}>
+
+===========================================
+2. HARDCODED TAILWIND BACKGROUND COLORS
+===========================================
+
+Searching for bg-* classes that should use CSS variables...
+
+client/src/components/terminal/BetSlip.tsx:467:      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+client/src/components/terminal/BetSlip.tsx:468:        <div className="w-full max-w-[430px] bg-zinc-900 border-t border-emerald-500/50 rounded-t-xl p-6 animate-slide-up">
+client/src/components/terminal/BetSlip.tsx:515:      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+client/src/components/terminal/BetSlip.tsx:516:        <div className={`w-full max-w-[430px] bg-zinc-900 border-t ${borderColor} rounded-t-xl p-6 animate-slide-up`}>
+client/src/components/terminal/BetSlip.tsx:570:    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+client/src/components/terminal/BetSlip.tsx:573:        className="w-full max-w-[430px] bg-zinc-900 border-t border-zinc-700 rounded-t-xl p-4 animate-slide-up"
+client/src/components/terminal/BetSlip.tsx:624:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:636:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:707:                className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/terminal/BetSlip.tsx:743:                    : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-wild-gold"
+client/src/components/terminal/BetSlip.tsx:758:                className="flex-1 py-2 text-sm font-mono bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition-colors"
+client/src/components/terminal/BetSlip.tsx:775:          <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+client/src/components/terminal/DepositInstructions.tsx:23:        <TabsList className="grid w-full grid-cols-2 bg-zinc-950">
+client/src/components/terminal/DepositInstructions.tsx:33:          <div className="bg-zinc-900 rounded-lg p-3 space-y-3">
+client/src/components/terminal/DepositInstructions.tsx:36:              <div className="flex items-center gap-2 bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:88:              <div className="flex items-center gap-2 bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:121:          <div className="bg-zinc-900 rounded-lg p-3 space-y-3">
+client/src/components/terminal/DepositInstructions.tsx:185:                  <div key={chain.name} className="flex items-center gap-1.5 bg-zinc-950 rounded px-2 py-1.5 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:241:      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+client/src/components/terminal/Header.tsx:32:          className="group flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 px-3 py-1.5 rounded-full"
+client/src/components/terminal/Header.tsx:41:          <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
+client/src/components/terminal/MarketCard.tsx:65:                <span className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+client/src/components/terminal/MarketCard.tsx:92:                    : "bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-600"
+client/src/components/terminal/MarketCard.tsx:116:    <div className="bg-zinc-900 border border-zinc-800 p-4 relative overflow-hidden">
+client/src/components/terminal/MarketCard.tsx:118:        <div className="w-24 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/MarketCard.tsx:119:        <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/MarketCard.tsx:121:      <div className="w-48 h-6 bg-zinc-850 rounded animate-pulse-skeleton mb-6" />
+client/src/components/terminal/MarketCard.tsx:123:        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/MarketCard.tsx:124:        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/MarketCard.tsx:125:        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:26:        className="bg-zinc-900 border border-zinc-800 relative group overflow-visible"
+client/src/components/terminal/PlayerCard.tsx:33:              <div className="w-12 h-12 bg-zinc-800 rounded flex items-center justify-center font-bold text-sm text-zinc-500">
+client/src/components/terminal/PlayerCard.tsx:52:            <div className="h-3 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+client/src/components/terminal/PlayerCard.tsx:80:      className="bg-zinc-900 border border-zinc-800 p-3 hover:border-zinc-600 transition-colors"
+client/src/components/terminal/PlayerCard.tsx:84:        <div className="w-8 h-8 bg-zinc-800 rounded-full text-[10px] flex items-center justify-center font-medium text-zinc-400">
+client/src/components/terminal/PlayerCard.tsx:87:        <span className="text-[9px] bg-zinc-950 text-wild-scout px-1.5 py-0.5 rounded border border-wild-scout/20">
+client/src/components/terminal/PlayerCard.tsx:140:      <div className="bg-zinc-900 border border-zinc-800 p-4">
+client/src/components/terminal/PlayerCard.tsx:142:          <div className="w-12 h-12 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:144:            <div className="w-24 h-5 bg-zinc-850 rounded animate-pulse-skeleton mb-2" />
+client/src/components/terminal/PlayerCard.tsx:145:            <div className="w-32 h-3 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:148:        <div className="h-3 w-full bg-zinc-850 rounded-full animate-pulse-skeleton mb-4" />
+client/src/components/terminal/PlayerCard.tsx:149:        <div className="h-10 w-full bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:155:    <div className="bg-zinc-900 border border-zinc-800 p-3">
+client/src/components/terminal/PlayerCard.tsx:157:        <div className="w-8 h-8 bg-zinc-850 rounded-full animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:158:        <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:160:      <div className="w-20 h-4 bg-zinc-850 rounded animate-pulse-skeleton mb-1" />
+client/src/components/terminal/PlayerCard.tsx:161:      <div className="w-16 h-3 bg-zinc-850 rounded animate-pulse-skeleton mb-3" />
+client/src/components/terminal/PlayerCard.tsx:163:        <div className="h-8 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/PlayerCard.tsx:164:        <div className="h-8 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/terminal/SubTabs.tsx:11:    <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-2 z-20">
+client/src/components/terminal/SubTabs.tsx:12:      <div className="grid gap-1 bg-zinc-900 p-1 rounded-lg font-mono text-[10px] font-bold" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+client/src/components/terminal/SubTabs.tsx:22:                  ? "bg-zinc-800 text-white shadow"
+client/src/components/terminal/Toast.tsx:45:        "bg-zinc-850 border rounded-lg p-3 shadow-2xl",
+client/src/components/terminal/WalletDrawer.tsx:27:    <div className="flex items-center justify-between bg-zinc-900 rounded p-2 mt-2">
+client/src/components/terminal/WalletDrawer.tsx:152:        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+client/src/components/terminal/WalletDrawer.tsx:156:        <div className="bg-zinc-900 border-t border-zinc-800 rounded-t-2xl">
+client/src/components/terminal/WalletDrawer.tsx:192:                <div className="flex items-center justify-between bg-zinc-950 rounded-lg p-3 border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:208:                  <div className="flex justify-between items-center p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:234:                  <div className="flex justify-between items-center p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:253:                  <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:274:                            <SelectTrigger className="h-7 text-[11px] bg-zinc-900 border-zinc-700 flex-1" data-testid="select-drawer-deposit-chain">
+client/src/components/terminal/WalletDrawer.tsx:277:                            <SelectContent className="bg-zinc-900 border-zinc-700">
+client/src/components/terminal/WalletDrawer.tsx:297:                            <div className="flex items-center justify-between bg-zinc-900 rounded p-2">
+client/src/components/terminal/WalletDrawer.tsx:383:                <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-4">
+client/src/components/ui/alert-dialog.tsx:19:      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+client/src/components/ui/dialog.tsx:24:      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+client/src/components/ui/drawer.tsx:31:    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+client/src/components/ui/sheet.tsx:24:      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+client/src/components/views/DashboardView.tsx:534:            <div key={i} className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:535:              <div className="w-8 h-8 bg-zinc-850 rounded animate-pulse-skeleton mb-3" />
+client/src/components/views/DashboardView.tsx:536:              <div className="w-16 h-3 bg-zinc-850 rounded animate-pulse-skeleton mb-2" />
+client/src/components/views/DashboardView.tsx:537:              <div className="w-24 h-6 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/views/DashboardView.tsx:541:        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md space-y-3">
+client/src/components/views/DashboardView.tsx:542:          <div className="w-32 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/views/DashboardView.tsx:545:              <div key={i} className="h-12 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/views/DashboardView.tsx:555:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 z-20">
+client/src/components/views/DashboardView.tsx:561:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:571:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:592:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:602:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:613:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:649:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:660:                    <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-deposit-chain">
+client/src/components/views/DashboardView.tsx:673:                            <span className="w-4 h-4 rounded-full bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-white">
+client/src/components/views/DashboardView.tsx:688:                      <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-deposit-token">
+client/src/components/views/DashboardView.tsx:712:                    <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/views/DashboardView.tsx:748:                    <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/views/DashboardView.tsx:834:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:884:                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-zinc-700 text-zinc-300">
+client/src/components/views/DashboardView.tsx:1133:                        className="p-3 hover:bg-zinc-800/30 transition-colors"
+client/src/components/views/DashboardView.tsx:1196:          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:1205:                  <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-withdraw-chain">
+client/src/components/views/DashboardView.tsx:1218:                          <span className="w-4 h-4 rounded-full bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-white">
+client/src/components/views/DashboardView.tsx:1233:                    <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-withdraw-token">
+client/src/components/views/DashboardView.tsx:1276:                        className={`w-full bg-zinc-950 border rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none ${isAmountBelowMin ? 'border-rose-500 focus:border-rose-500' : 'border-zinc-800 focus:border-wild-gold'}`}
+client/src/components/views/DashboardView.tsx:1295:                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-wild-gold"
+client/src/components/views/DashboardView.tsx:1303:                    <div className="bg-zinc-950 border border-zinc-800 rounded p-2 space-y-1">
+client/src/components/views/DashboardView.tsx:1392:        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+client/src/components/views/DashboardView.tsx:1393:          <div className="w-full max-w-[430px] bg-zinc-900 border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+client/src/components/views/DashboardView.tsx:1421:              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+client/src/components/views/DashboardView.tsx:1462:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/views/DashboardView.tsx:1490:                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+client/src/components/views/DashboardView.tsx:1515:                <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+client/src/components/views/PredictView.tsx:256:    <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
+client/src/components/views/PredictView.tsx:309:    <div className="sticky top-0 z-10 bg-zinc-950 pb-2 pt-1 -mx-3 px-3">
+client/src/components/views/PredictView.tsx:381:                ? "bg-zinc-600 text-white font-bold"
+client/src/components/views/PredictView.tsx:382:                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+client/src/components/views/PredictView.tsx:719:              ? "bg-zinc-600 border-zinc-500" 
+client/src/components/views/PredictView.tsx:720:              : "bg-zinc-800/60 border-zinc-700/50 hover:bg-zinc-700/50";
+client/src/components/views/PredictView.tsx:754:        <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden flex">
+client/src/components/views/PredictView.tsx:846:        <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+client/src/components/views/PredictView.tsx:928:                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+client/src/components/views/PredictView.tsx:1422:                      : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50"
+client/src/components/views/PredictView.tsx:1880:        <div className="shrink-0 py-3 px-4 border-t border-zinc-800 bg-zinc-950 flex justify-center" data-testid="container-polymarket-attribution">
+client/src/components/views/ScoutView.tsx:28:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 flex justify-between items-center z-20">
+client/src/components/views/TradeView.tsx:43:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 z-20">
+client/src/components/views/TradeView.tsx:51:                sortBy === "recent" ? "bg-zinc-800 text-white" : "text-zinc-500"
+client/src/components/views/TradeView.tsx:62:                sortBy === "volume" ? "bg-zinc-800 text-white" : "text-zinc-500"
+client/src/components/views/TradeView.tsx:89:                  <div className="w-8 h-8 bg-zinc-850 rounded-full animate-pulse-skeleton" />
+client/src/components/views/TradeView.tsx:91:                    <div className="w-16 h-3 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/views/TradeView.tsx:92:                    <div className="w-12 h-2 bg-zinc-850 rounded animate-pulse-skeleton" />
+client/src/components/views/TradeView.tsx:95:                <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
+client/src/components/views/TradeView.tsx:96:                <div className="w-10 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
+client/src/components/views/TradeView.tsx:97:                <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
+client/src/components/views/TradeView.tsx:106:                className="grid grid-cols-4 items-center p-3 hover:bg-zinc-900/50 transition-colors"
+client/src/components/views/TradeView.tsx:110:                  <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] font-medium text-zinc-400">
+client/src/components/views/TradeView.tsx:149:                  className="flex justify-between items-center text-xs bg-zinc-900/50 p-2 rounded border border-zinc-800/50"
+client/src/pages/home.tsx:842:        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
+client/src/pages/home.tsx:843:          <div className="w-full max-w-[430px] bg-zinc-900 border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+client/src/pages/home.tsx:871:              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+client/src/pages/home.tsx:912:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/pages/home.tsx:940:                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+client/src/pages/home.tsx:965:                <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+client/src/pages/not-found.tsx:7:    <div className="min-h-screen bg-zinc-950 bg-hud-grid bg-[size:30px_30px] flex items-center justify-center p-4">
+
+===========================================
+3. HARDCODED TAILWIND TEXT COLORS
+===========================================
+
+Searching for text-* classes that should use CSS variables...
+
+client/src/components/terminal/BetSlip.tsx:474:              <h3 className="text-xl font-bold text-white mb-1">Bet Placed!</h3>
+client/src/components/terminal/BetSlip.tsx:478:              <p className="text-zinc-400 text-sm mt-2">{marketTitle}</p>
+client/src/components/terminal/BetSlip.tsx:484:                className="w-full bg-emerald-600 text-white font-bold"
+client/src/components/terminal/BetSlip.tsx:493:                className="w-full text-zinc-400"
+client/src/components/terminal/BetSlip.tsx:526:              <h3 className="text-xl font-bold text-white mb-1">
+client/src/components/terminal/BetSlip.tsx:530:                <p className="text-zinc-400 text-sm mt-2">{errorDetails.actionable}</p>
+client/src/components/terminal/BetSlip.tsx:534:                  <Info className="w-3 h-3 text-zinc-500" />
+client/src/components/terminal/BetSlip.tsx:535:                  <p className="text-zinc-500 text-xs font-mono">
+client/src/components/terminal/BetSlip.tsx:545:                className="w-full bg-wild-brand text-white font-bold"
+client/src/components/terminal/BetSlip.tsx:554:                className="w-full text-zinc-400"
+client/src/components/terminal/BetSlip.tsx:602:              <p className="text-xs text-zinc-500 mt-1 italic">{question}</p>
+client/src/components/terminal/BetSlip.tsx:607:            className="text-zinc-400 hover:text-white p-1"
+client/src/components/terminal/BetSlip.tsx:623:                    ? "bg-wild-scout text-white border-2 border-wild-scout"
+client/src/components/terminal/BetSlip.tsx:624:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:635:                    ? "bg-wild-brand text-white border-2 border-wild-brand"
+client/src/components/terminal/BetSlip.tsx:636:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:648:            <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm py-2">
+client/src/components/terminal/BetSlip.tsx:701:              <label className="text-xs text-zinc-500 mb-1 block">Stake (USDC)</label>
+client/src/components/terminal/BetSlip.tsx:707:                className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/terminal/BetSlip.tsx:717:                  <p className="text-xs text-zinc-500">Odds</p>
+client/src/components/terminal/BetSlip.tsx:733:                  <p className="text-[10px] text-zinc-500">@ ${executionPrice.toFixed(2)}</p>
+client/src/components/terminal/BetSlip.tsx:743:                    : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-wild-gold"
+client/src/components/terminal/BetSlip.tsx:758:                className="flex-1 py-2 text-sm font-mono bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition-colors"
+client/src/components/terminal/BetSlip.tsx:777:              <span className="text-zinc-400">Potential Win</span>
+client/src/components/terminal/BetSlip.tsx:778:              <span className="font-mono font-bold text-white">${potentialWin.toFixed(2)}</span>
+client/src/components/terminal/BetSlip.tsx:785:                  <span className="text-zinc-500">
+client/src/components/terminal/BetSlip.tsx:788:                  <span className="font-mono text-zinc-500">-${formatUSDC(feeAmount)}</span>
+client/src/components/terminal/BetSlip.tsx:791:                  <span className="text-zinc-500">Your Bet Amount</span>
+client/src/components/terminal/BetSlip.tsx:792:                  <span className="font-mono text-zinc-400">${formatUSDC(effectiveBetAmount)}</span>
+client/src/components/terminal/BetSlip.tsx:797:              <span className="text-zinc-400">{pointsName} Points Earned</span>
+client/src/components/terminal/BetSlip.tsx:803:              <span className="text-zinc-500">Available Balance</span>
+client/src/components/terminal/BetSlip.tsx:804:              <span className="font-mono text-zinc-400">${maxBalance.toFixed(2)} USDC</span>
+client/src/components/terminal/BetSlip.tsx:834:            className="w-full text-white font-bold text-lg"
+client/src/components/terminal/BetSlip.tsx:853:          <p className="text-[10px] text-zinc-600 text-center">
+client/src/components/terminal/DepositInstructions.tsx:35:              <p className="text-[10px] text-zinc-500 mb-1">Your Deposit Address (Polygon)</p>
+client/src/components/terminal/DepositInstructions.tsx:37:                <code className="text-[11px] font-mono text-zinc-300 flex-1 break-all">
+client/src/components/terminal/DepositInstructions.tsx:50:                    <Copy className="w-3 h-3 text-zinc-400" />
+client/src/components/terminal/DepositInstructions.tsx:57:              <p className="text-xs font-medium text-white mb-2">How to Deposit</p>
+client/src/components/terminal/DepositInstructions.tsx:65:                    <p className="text-zinc-300 font-medium">Exchange Withdrawal (Recommended)</p>
+client/src/components/terminal/DepositInstructions.tsx:66:                    <p className="text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:77:                    <p className="text-zinc-300 font-medium">Wallet Transfer</p>
+client/src/components/terminal/DepositInstructions.tsx:78:                    <p className="text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:87:              <p className="text-xs font-medium text-white mb-2">Accepted Token</p>
+client/src/components/terminal/DepositInstructions.tsx:90:                  <span className="text-[10px] font-bold text-white">$</span>
+client/src/components/terminal/DepositInstructions.tsx:93:                  <p className="text-xs text-white font-medium">USDC.e (Bridged USDC)</p>
+client/src/components/terminal/DepositInstructions.tsx:94:                  <p className="text-[10px] text-zinc-500 font-mono break-all">
+client/src/components/terminal/DepositInstructions.tsx:101:            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:125:                <p className="text-xs font-medium text-white">Multi-Chain Bridge</p>
+client/src/components/terminal/DepositInstructions.tsx:126:                <p className="text-[10px] text-zinc-400 mt-0.5">
+client/src/components/terminal/DepositInstructions.tsx:133:              <p className="text-xs font-medium text-white mb-2">How It Works</p>
+client/src/components/terminal/DepositInstructions.tsx:141:                    <p className="text-zinc-300 font-medium">Select Your Chain</p>
+client/src/components/terminal/DepositInstructions.tsx:142:                    <p className="text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:153:                    <p className="text-zinc-300 font-medium">Get Your Deposit Address</p>
+client/src/components/terminal/DepositInstructions.tsx:154:                    <p className="text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:165:                    <p className="text-zinc-300 font-medium">Send Funds</p>
+client/src/components/terminal/DepositInstructions.tsx:166:                    <p className="text-zinc-500">
+client/src/components/terminal/DepositInstructions.tsx:175:              <p className="text-xs font-medium text-white mb-2">Supported Chains</p>
+client/src/components/terminal/DepositInstructions.tsx:187:                    <span className="text-[10px] text-zinc-300">{chain.name}</span>
+client/src/components/terminal/DepositInstructions.tsx:195:                <span className="text-zinc-500 flex items-center gap-1">
+client/src/components/terminal/DepositInstructions.tsx:199:                <span className="text-zinc-300">5-20 minutes (varies by chain)</span>
+client/src/components/terminal/DepositInstructions.tsx:202:                <span className="text-zinc-500 flex items-center gap-1">
+client/src/components/terminal/DepositInstructions.tsx:206:                <span className="text-zinc-300">Varies by asset (see deposit section)</span>
+client/src/components/terminal/DepositInstructions.tsx:242:        <p className="text-[10px] text-zinc-500 leading-relaxed">
+client/src/components/terminal/DepositInstructions.tsx:243:          <span className="font-medium text-zinc-400">Disclaimer:</span> By using this deposit service, you acknowledge that you understand the risks involved in cryptocurrency transactions. Wildcard is not responsible for any loss of funds due to user error, including but not limited to: sending unsupported tokens, using incorrect networks, sending to wrong addresses, or failing to meet minimum deposit requirements. All transactions are final and irreversible.
+client/src/components/terminal/EmptyState.tsx:12:      <Icon className="w-12 h-12 text-zinc-700 mb-4" />
+client/src/components/terminal/EmptyState.tsx:13:      <h3 className="font-bold text-zinc-500">{title}</h3>
+client/src/components/terminal/EmptyState.tsx:14:      <p className="text-xs text-zinc-600 mt-2">{description}</p>
+client/src/components/terminal/Header.tsx:35:          <div className="text-[10px] font-mono text-right leading-tight text-zinc-400 group-hover:text-white">
+client/src/components/terminal/Header.tsx:42:            <Wallet className="w-3 h-3 text-zinc-400 group-hover:text-white" />
+client/src/components/terminal/MarketCard.tsx:60:                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+client/src/components/terminal/MarketCard.tsx:65:                <span className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+client/src/components/terminal/MarketCard.tsx:73:            <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono">
+client/src/components/terminal/MarketCard.tsx:77:            <div className="text-[10px] text-zinc-600 font-mono">{formatTime(market.startTime)}</div>
+client/src/components/terminal/MarketCard.tsx:91:                    ? "bg-wild-brand/20 border-wild-brand text-white shadow-[0_0_15px_rgba(251,113,133,0.3)]"
+client/src/components/terminal/MarketCard.tsx:92:                    : "bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-600"
+client/src/components/terminal/MarketCard.tsx:97:                <span className="text-[10px] text-zinc-400 mt-1 truncate w-full text-center">
+client/src/components/terminal/MarketCard.tsx:105:        <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+client/src/components/terminal/PlayerCard.tsx:33:              <div className="w-12 h-12 bg-zinc-800 rounded flex items-center justify-center font-bold text-sm text-zinc-500">
+client/src/components/terminal/PlayerCard.tsx:37:                <h3 className="font-black text-white text-base">{player.name}</h3>
+client/src/components/terminal/PlayerCard.tsx:38:                <p className="text-[10px] font-mono text-zinc-500">
+client/src/components/terminal/PlayerCard.tsx:47:              <div className="text-[9px] text-zinc-500">Funded</div>
+client/src/components/terminal/PlayerCard.tsx:61:            <p className="text-[9px] text-zinc-500 mt-2 font-mono text-right">
+client/src/components/terminal/PlayerCard.tsx:68:            className="w-full py-3 bg-wild-scout text-zinc-950 font-black text-xs uppercase tracking-wide"
+client/src/components/terminal/PlayerCard.tsx:84:        <div className="w-8 h-8 bg-zinc-800 rounded-full text-[10px] flex items-center justify-center font-medium text-zinc-400">
+client/src/components/terminal/PlayerCard.tsx:91:      <div className="font-bold text-white text-sm">{player.name}</div>
+client/src/components/terminal/PlayerCard.tsx:92:      <div className="text-[10px] text-zinc-500 font-mono mb-3">{player.team}</div>
+client/src/components/terminal/PlayerCard.tsx:96:          <span className="text-zinc-400">{formatNumber(player.stats.marketCap)} MC</span>
+client/src/components/terminal/SubTabs.tsx:22:                  ? "bg-zinc-800 text-white shadow"
+client/src/components/terminal/SubTabs.tsx:23:                  : "text-zinc-500 hover:text-zinc-300"
+client/src/components/terminal/Toast.tsx:53:      <span className="text-xs text-white">{message}</span>
+client/src/components/terminal/WalletDrawer.tsx:29:        <span className="text-[10px] text-zinc-500 mb-0.5">Deposit Address</span>
+client/src/components/terminal/WalletDrawer.tsx:30:        <span className="text-[11px] font-mono text-zinc-300">{truncateAddress(address)}</span>
+client/src/components/terminal/WalletDrawer.tsx:43:            <Copy className="w-3 h-3 text-zinc-400" />
+client/src/components/terminal/WalletDrawer.tsx:53:          <ExternalLink className="w-3 h-3 text-zinc-400" />
+client/src/components/terminal/WalletDrawer.tsx:169:                <h2 className="font-bold text-white">How to Deposit</h2>
+client/src/components/terminal/WalletDrawer.tsx:172:              <h2 className="font-bold text-white">Wallet</h2>
+client/src/components/terminal/WalletDrawer.tsx:195:                      <Wallet className="w-5 h-5 text-white" />
+client/src/components/terminal/WalletDrawer.tsx:198:                      <div className="text-sm font-medium text-white">Connected</div>
+client/src/components/terminal/WalletDrawer.tsx:199:                      <div className="text-[11px] text-zinc-500">
+client/src/components/terminal/WalletDrawer.tsx:210:                      <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">
+client/src/components/terminal/WalletDrawer.tsx:213:                      <span className="text-sm text-zinc-300">USDC</span>
+client/src/components/terminal/WalletDrawer.tsx:216:                      <span className="font-mono font-bold text-white" data-testid="text-drawer-usdc">
+client/src/components/terminal/WalletDrawer.tsx:228:                          <RefreshCw className={`w-3 h-3 text-zinc-400 ${isRefreshingBalance ? 'animate-spin' : ''}`} />
+client/src/components/terminal/WalletDrawer.tsx:236:                      <div className="w-6 h-6 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+client/src/components/terminal/WalletDrawer.tsx:239:                      <span className="text-sm text-zinc-300">WILD</span>
+client/src/components/terminal/WalletDrawer.tsx:241:                    <span className="font-mono font-bold text-white" data-testid="text-drawer-wild">
+client/src/components/terminal/WalletDrawer.tsx:247:                    <span className="text-sm text-zinc-300">Total Value</span>
+client/src/components/terminal/WalletDrawer.tsx:248:                    <span className="font-mono font-bold text-lg text-white" data-testid="text-drawer-total">
+client/src/components/terminal/WalletDrawer.tsx:257:                        <span className="text-sm font-medium text-white">Prediction Wallet</span>
+client/src/components/terminal/WalletDrawer.tsx:272:                          <span className="text-[10px] text-zinc-500 whitespace-nowrap">Deposit from:</span>
+client/src/components/terminal/WalletDrawer.tsx:293:                            <span className="text-[10px] text-zinc-400 ml-2">Loading...</span>
+client/src/components/terminal/WalletDrawer.tsx:299:                                <span className="text-[10px] text-zinc-500 mb-0.5">Bridge Deposit Address</span>
+client/src/components/terminal/WalletDrawer.tsx:300:                                <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-drawer-bridge-address">
+client/src/components/terminal/WalletDrawer.tsx:321:                                  <Copy className="w-3 h-3 text-zinc-400" />
+client/src/components/terminal/WalletDrawer.tsx:328:                            <p className="text-[10px] text-zinc-500">
+client/src/components/terminal/WalletDrawer.tsx:364:                    <p className="text-[10px] text-zinc-600 mt-2">
+client/src/components/terminal/WalletDrawer.tsx:384:                  <Wallet className="w-8 h-8 text-zinc-500" />
+client/src/components/terminal/WalletDrawer.tsx:386:                <h3 className="font-bold text-white mb-2">Connect Wallet</h3>
+client/src/components/terminal/WalletDrawer.tsx:387:                <p className="text-sm text-zinc-500 mb-6">
+client/src/components/terminal/WalletDrawer.tsx:391:                  className="w-full bg-wild-brand text-zinc-950 font-bold"
+client/src/components/views/DashboardView.tsx:556:        <h2 className="text-xs font-bold text-zinc-400 tracking-wider">DASHBOARD</h2>
+client/src/components/views/DashboardView.tsx:565:            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Total Value</div>
+client/src/components/views/DashboardView.tsx:566:            <div className="text-xl font-black font-mono text-white" data-testid="text-total-value">
+client/src/components/views/DashboardView.tsx:575:            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">P&L</div>
+client/src/components/views/DashboardView.tsx:596:            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Won / Total</div>
+client/src/components/views/DashboardView.tsx:597:            <div className="text-xl font-black font-mono text-white" data-testid="text-win-ratio">
+client/src/components/views/DashboardView.tsx:606:            <div className="text-[10px] font-mono text-zinc-500 uppercase mb-1">Open Bets</div>
+client/src/components/views/DashboardView.tsx:607:            <div className="text-xl font-black font-mono text-white" data-testid="text-pending">
+client/src/components/views/DashboardView.tsx:615:            <h3 className="text-xs font-bold text-zinc-400 tracking-wider">BALANCES</h3>
+client/src/components/views/DashboardView.tsx:620:                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white">
+client/src/components/views/DashboardView.tsx:624:                  <div className="text-sm font-medium text-white">USDC</div>
+client/src/components/views/DashboardView.tsx:625:                  <div className="text-[10px] text-zinc-500 font-mono">Polygon</div>
+client/src/components/views/DashboardView.tsx:628:              <span className="font-mono font-bold text-white" data-testid="text-dash-usdc">
+client/src/components/views/DashboardView.tsx:634:                <div className="w-8 h-8 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+client/src/components/views/DashboardView.tsx:638:                  <div className="text-sm font-medium text-white">WILD</div>
+client/src/components/views/DashboardView.tsx:639:                  <div className="text-[10px] text-zinc-500 font-mono">Wildcard Token</div>
+client/src/components/views/DashboardView.tsx:642:              <span className="font-mono font-bold text-white" data-testid="text-dash-wild">
+client/src/components/views/DashboardView.tsx:652:            <h3 className="text-xs font-bold text-zinc-400 tracking-wider">DEPOSIT</h3>
+client/src/components/views/DashboardView.tsx:658:                  <label className="text-[10px] text-zinc-500 block mb-1">Deposit From</label>
+client/src/components/views/DashboardView.tsx:666:                          <span className="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-[8px] font-bold text-white">P</span>
+client/src/components/views/DashboardView.tsx:673:                            <span className="w-4 h-4 rounded-full bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-white">
+client/src/components/views/DashboardView.tsx:686:                    <label className="text-[10px] text-zinc-500 block mb-1">Token</label>
+client/src/components/views/DashboardView.tsx:696:                              <span className="text-[9px] text-zinc-500 font-mono">
+client/src/components/views/DashboardView.tsx:714:                        <span className="text-[10px] text-zinc-500 mb-0.5">Deposit Address (Polygon)</span>
+client/src/components/views/DashboardView.tsx:715:                        <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-deposit-address">
+client/src/components/views/DashboardView.tsx:733:                          <Copy className="w-3 h-3 text-zinc-400" />
+client/src/components/views/DashboardView.tsx:744:                    <span className="text-xs text-zinc-400 ml-2">Loading deposit address...</span>
+client/src/components/views/DashboardView.tsx:750:                        <span className="text-[10px] text-zinc-500 mb-0.5">Bridge Deposit Address</span>
+client/src/components/views/DashboardView.tsx:751:                        <span className="text-[11px] font-mono text-zinc-300 truncate" data-testid="text-bridge-deposit-address">
+client/src/components/views/DashboardView.tsx:772:                          <Copy className="w-3 h-3 text-zinc-400" />
+client/src/components/views/DashboardView.tsx:784:                    <p className="text-xs text-zinc-400">Select a chain to get deposit address</p>
+client/src/components/views/DashboardView.tsx:816:                <p className="text-[10px] text-zinc-600">
+client/src/components/views/DashboardView.tsx:822:                <p className="text-xs text-zinc-400 mb-2">
+client/src/components/views/DashboardView.tsx:825:                <p className="text-[10px] text-zinc-500">
+client/src/components/views/DashboardView.tsx:838:              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">ACTIVITY</h3>
+client/src/components/views/DashboardView.tsx:847:              <RefreshCw className={cn("w-4 h-4 text-zinc-500", positionsLoading && "animate-spin")} />
+client/src/components/views/DashboardView.tsx:879:                className="rounded-none border-b-2 border-transparent data-[state=active]:border-zinc-400 data-[state=active]:bg-transparent data-[state=active]:text-zinc-300 px-3 py-2 text-xs"
+client/src/components/views/DashboardView.tsx:884:                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-zinc-700 text-zinc-300">
+client/src/components/views/DashboardView.tsx:911:                    className="bg-wild-scout border-wild-scout text-zinc-950 text-xs shrink-0"
+client/src/components/views/DashboardView.tsx:928:                    <Coins className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+client/src/components/views/DashboardView.tsx:929:                    <p className="text-xs text-zinc-500">No resolved positions</p>
+client/src/components/views/DashboardView.tsx:949:                              <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+client/src/components/views/DashboardView.tsx:951:                            <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
+client/src/components/views/DashboardView.tsx:957:                              <div className="text-sm font-mono text-zinc-500">-${(pos.size * pos.avgPrice).toFixed(2)}</div>
+client/src/components/views/DashboardView.tsx:973:                    <Package className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+client/src/components/views/DashboardView.tsx:974:                    <p className="text-xs text-zinc-500">No open positions</p>
+client/src/components/views/DashboardView.tsx:981:                          <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Unknown Market"}</div>
+client/src/components/views/DashboardView.tsx:983:                            <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || pos.side}</span>
+client/src/components/views/DashboardView.tsx:989:                            <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+client/src/components/views/DashboardView.tsx:1022:                    <RefreshCw className="w-6 h-6 text-zinc-600 mx-auto mb-2 animate-spin" />
+client/src/components/views/DashboardView.tsx:1023:                    <p className="text-xs text-zinc-500">Loading history...</p>
+client/src/components/views/DashboardView.tsx:1027:                    <History className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+client/src/components/views/DashboardView.tsx:1028:                    <p className="text-xs text-zinc-500">No history yet</p>
+client/src/components/views/DashboardView.tsx:1043:                                  <div className="text-xs text-white leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
+client/src/components/views/DashboardView.tsx:1045:                                <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
+client/src/components/views/DashboardView.tsx:1076:                                  <div className="text-xs text-white leading-tight">{act.title}</div>
+client/src/components/views/DashboardView.tsx:1078:                                <div className="text-[10px] font-mono text-zinc-500 mt-1 ml-10">
+client/src/components/views/DashboardView.tsx:1089:                                    : "text-white"
+client/src/components/views/DashboardView.tsx:1093:                                <div className="text-[10px] text-zinc-500">
+client/src/components/views/DashboardView.tsx:1112:                    <RefreshCw className="w-6 h-6 text-zinc-600 mx-auto mb-2 animate-spin" />
+client/src/components/views/DashboardView.tsx:1113:                    <p className="text-xs text-zinc-500">Loading bridge history...</p>
+client/src/components/views/DashboardView.tsx:1117:                    <ArrowUpFromLine className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+client/src/components/views/DashboardView.tsx:1118:                    <p className="text-xs text-zinc-500">No bridge transactions yet</p>
+client/src/components/views/DashboardView.tsx:1119:                    <p className="text-[10px] text-zinc-600 mt-1">Deposit or withdraw via bridge to see history</p>
+client/src/components/views/DashboardView.tsx:1152:                            <div className="text-xs text-white">
+client/src/components/views/DashboardView.tsx:1175:                              <div className="text-[10px] text-zinc-500">
+client/src/components/views/DashboardView.tsx:1199:              <h3 className="text-xs font-bold text-zinc-400 tracking-wider">WITHDRAW</h3>
+client/src/components/views/DashboardView.tsx:1203:                <label className="text-[10px] text-zinc-500 block mb-1">Withdraw To</label>
+client/src/components/views/DashboardView.tsx:1211:                        <span className="w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center text-[8px] font-bold text-white">P</span>
+client/src/components/views/DashboardView.tsx:1218:                          <span className="w-4 h-4 rounded-full bg-zinc-600 flex items-center justify-center text-[8px] font-bold text-white">
+client/src/components/views/DashboardView.tsx:1231:                  <label className="text-[10px] text-zinc-500 block mb-1">Receive Token</label>
+client/src/components/views/DashboardView.tsx:1241:                            <span className="text-[9px] text-zinc-500 font-mono">
+client/src/components/views/DashboardView.tsx:1258:                <label className="text-[10px] text-zinc-500 block mb-1">Amount (USDC)</label>
+client/src/components/views/DashboardView.tsx:1276:                        className={`w-full bg-zinc-950 border rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none ${isAmountBelowMin ? 'border-rose-500 focus:border-rose-500' : 'border-zinc-800 focus:border-wild-gold'}`}
+client/src/components/views/DashboardView.tsx:1289:                <label className="text-[10px] text-zinc-500 block mb-1">To Address</label>
+client/src/components/views/DashboardView.tsx:1295:                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-wild-gold"
+client/src/components/views/DashboardView.tsx:1305:                        <span className="text-zinc-500">Network Fee</span>
+client/src/components/views/DashboardView.tsx:1306:                        <span className="text-zinc-300">${withdrawQuote.fee}</span>
+client/src/components/views/DashboardView.tsx:1309:                        <span className="text-zinc-400">You'll Receive</span>
+client/src/components/views/DashboardView.tsx:1332:                className="w-full bg-wild-gold border-wild-gold text-zinc-950"
+client/src/components/views/DashboardView.tsx:1359:                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+client/src/components/views/DashboardView.tsx:1373:                    <p className="text-xs text-zinc-400 mt-2">
+client/src/components/views/DashboardView.tsx:1397:                <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+client/src/components/views/DashboardView.tsx:1401:                <h3 className="font-bold text-white text-lg">
+client/src/components/views/DashboardView.tsx:1404:                <p className="text-xs text-zinc-400 mt-0.5">{sellPosition.marketQuestion || "Unknown Market"}</p>
+client/src/components/views/DashboardView.tsx:1405:                <p className="text-xs text-zinc-500 mt-1">
+client/src/components/views/DashboardView.tsx:1406:                  You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
+client/src/components/views/DashboardView.tsx:1411:                className="text-zinc-400 hover:text-white p-1"
+client/src/components/views/DashboardView.tsx:1423:                  <span className="text-xs text-zinc-400">Amount spent</span>
+client/src/components/views/DashboardView.tsx:1424:                  <span className="text-sm font-mono text-white">
+client/src/components/views/DashboardView.tsx:1429:                  <span className="text-xs text-zinc-400">Avg cost / Breakeven</span>
+client/src/components/views/DashboardView.tsx:1430:                  <span className="text-sm font-mono text-zinc-300">
+client/src/components/views/DashboardView.tsx:1435:                  <span className="text-xs text-zinc-400">Best bid (sell now)</span>
+client/src/components/views/DashboardView.tsx:1437:                    <span className="text-sm font-mono text-zinc-500 flex items-center gap-1">
+client/src/components/views/DashboardView.tsx:1448:                    <span className="text-sm font-mono text-zinc-500">—</span>
+client/src/components/views/DashboardView.tsx:1456:                  <label className="text-xs text-zinc-500 mb-1 block">Shares to sell</label>
+client/src/components/views/DashboardView.tsx:1462:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/views/DashboardView.tsx:1471:                  <p className="text-xs text-zinc-500">Best Bid</p>
+client/src/components/views/DashboardView.tsx:1490:                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+client/src/components/views/DashboardView.tsx:1517:                    <span className="text-zinc-400">Cost basis</span>
+client/src/components/views/DashboardView.tsx:1518:                    <span className="font-mono text-zinc-300">
+client/src/components/views/DashboardView.tsx:1523:                    <span className="text-zinc-400">Estimated return</span>
+client/src/components/views/DashboardView.tsx:1530:                      <span className="text-zinc-400">Estimated P&L</span>
+client/src/components/views/DashboardView.tsx:1539:                  <p className="text-[10px] text-zinc-500">
+client/src/components/views/DashboardView.tsx:1576:                  className="flex-1 bg-wild-gold text-zinc-950 font-bold text-lg"
+client/src/components/views/DashboardView.tsx:1590:              <p className="text-[10px] text-zinc-600 text-center">
+client/src/components/views/PredictView.tsx:277:            <span className="text-zinc-500 text-[10px] font-medium">{item.league}</span>
+client/src/components/views/PredictView.tsx:278:            <span className="text-zinc-400">{item.eventTitle}:</span>
+client/src/components/views/PredictView.tsx:282:                  <span className="text-zinc-300">{o.abbrev}</span>
+client/src/components/views/PredictView.tsx:285:                    <span className="text-zinc-600 mx-1">|</span>
+client/src/components/views/PredictView.tsx:365:        className="p-1 text-zinc-500 hover:text-zinc-300 shrink-0"
+client/src/components/views/PredictView.tsx:381:                ? "bg-zinc-600 text-white font-bold"
+client/src/components/views/PredictView.tsx:382:                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+client/src/components/views/PredictView.tsx:392:        className="p-1 text-zinc-500 hover:text-zinc-300 shrink-0"
+client/src/components/views/PredictView.tsx:551:            ? "bg-teal-600 border border-teal-500 text-white" 
+client/src/components/views/PredictView.tsx:552:            : "bg-teal-900/40 border border-teal-800/50 hover:bg-teal-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:557:        <span className="font-mono font-bold text-white shrink-0">{leftPrice}¢</span>
+client/src/components/views/PredictView.tsx:563:            ? "bg-amber-600 border border-amber-500 text-white" 
+client/src/components/views/PredictView.tsx:564:            : "bg-amber-900/40 border border-amber-800/50 hover:bg-amber-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:569:        <span className="font-mono font-bold text-white shrink-0">{rightPrice}¢</span>
+client/src/components/views/PredictView.tsx:608:            ? "bg-blue-600 border border-blue-500 text-white" 
+client/src/components/views/PredictView.tsx:609:            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:614:        <span className="font-mono font-bold text-white">{overPrice}¢</span>
+client/src/components/views/PredictView.tsx:620:            ? "bg-blue-600 border border-blue-500 text-white" 
+client/src/components/views/PredictView.tsx:621:            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:626:        <span className="font-mono font-bold text-white">{underPrice}¢</span>
+client/src/components/views/PredictView.tsx:735:              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${colorClass} text-zinc-100`}
+client/src/components/views/PredictView.tsx:746:              <span className="font-mono font-bold text-sm text-white">{priceInCents}¢</span>
+client/src/components/views/PredictView.tsx:820:                    ? "bg-teal-600 border-teal-500 text-white" 
+client/src/components/views/PredictView.tsx:821:                    : "bg-amber-600 border-amber-500 text-white"
+client/src/components/views/PredictView.tsx:823:                    ? "bg-teal-900/40 border-teal-800/50 hover:bg-teal-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:824:                    : "bg-amber-900/40 border-amber-800/50 hover:bg-amber-800/50 text-zinc-100"
+client/src/components/views/PredictView.tsx:836:              <span className="font-mono font-bold text-sm text-white">
+client/src/components/views/PredictView.tsx:912:      <div className="text-sm text-zinc-300 break-words">{market.question}</div>
+client/src/components/views/PredictView.tsx:927:                  ? "border-wild-brand bg-wild-brand/20 text-white" 
+client/src/components/views/PredictView.tsx:928:                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+client/src/components/views/PredictView.tsx:932:              <div className="text-xs text-zinc-400 truncate">{outcome.label}</div>
+client/src/components/views/PredictView.tsx:975:        className="flex items-center justify-between w-full text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
+client/src/components/views/PredictView.tsx:993:                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+client/src/components/views/PredictView.tsx:996:                <span className="text-xs text-zinc-600">
+client/src/components/views/PredictView.tsx:1096:        <span className={`text-xs font-medium text-zinc-400 ${isTennis ? "normal-case" : "uppercase"} tracking-wide truncate`}>
+client/src/components/views/PredictView.tsx:1099:        <span className="text-xs text-zinc-600 shrink-0">
+client/src/components/views/PredictView.tsx:1249:                    <div className="text-xs text-white truncate">{pos.marketQuestion || event.title}</div>
+client/src/components/views/PredictView.tsx:1251:                      <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || "Yes"}</span>
+client/src/components/views/PredictView.tsx:1257:                      <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+client/src/components/views/PredictView.tsx:1288:            <p className="text-sm text-zinc-400 mt-1 line-clamp-2">{event.description}</p>
+client/src/components/views/PredictView.tsx:1290:          <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1.5">
+client/src/components/views/PredictView.tsx:1398:            <p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{future.description}</p>
+client/src/components/views/PredictView.tsx:1428:                    <span className="text-xs text-zinc-500">{probability.toFixed(0)}%</span>
+client/src/components/views/PredictView.tsx:1452:        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-800">
+client/src/components/views/PredictView.tsx:1794:                    <div className="flex items-center gap-2 text-sm font-bold text-zinc-400">
+client/src/components/views/PredictView.tsx:1890:              className="flex items-center gap-2 text-zinc-500"
+client/src/components/views/ScoutView.tsx:29:        <h2 className="text-xs font-bold text-zinc-400 tracking-wider">PLAYER LAUNCHPAD</h2>
+client/src/components/views/ScoutView.tsx:37:                : "text-zinc-600 hover:text-white"
+client/src/components/views/ScoutView.tsx:49:                : "text-zinc-600 hover:text-white"
+client/src/components/views/TradeView.tsx:45:          <h2 className="text-xs font-bold text-zinc-400 tracking-wider">PLAYER MARKETS</h2>
+client/src/components/views/TradeView.tsx:51:                sortBy === "recent" ? "bg-zinc-800 text-white" : "text-zinc-500"
+client/src/components/views/TradeView.tsx:62:                sortBy === "volume" ? "bg-zinc-800 text-white" : "text-zinc-500"
+client/src/components/views/TradeView.tsx:72:        <div className="grid grid-cols-4 text-[9px] font-mono text-zinc-600 uppercase pb-1 border-b border-zinc-800/50">
+client/src/components/views/TradeView.tsx:110:                  <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] font-medium text-zinc-400">
+client/src/components/views/TradeView.tsx:114:                    <div className="text-xs font-bold text-white">{player.name}</div>
+client/src/components/views/TradeView.tsx:115:                    <div className="text-[10px] font-mono text-zinc-500">${player.symbol}</div>
+client/src/components/views/TradeView.tsx:118:                <div className="text-right font-mono text-xs text-white">
+client/src/components/views/TradeView.tsx:134:                <div className="text-right font-mono text-xs text-zinc-400">
+client/src/components/views/TradeView.tsx:144:            <h3 className="text-xs font-bold text-zinc-400 tracking-wider mb-3">RECENT TRADES</h3>
+client/src/components/views/TradeView.tsx:163:                    <span className="text-white font-medium">{trade.playerName}</span>
+client/src/components/views/TradeView.tsx:165:                  <div className="flex items-center gap-3 font-mono text-zinc-400">
+client/src/pages/home.tsx:737:    <div className="min-h-screen bg-hud-grid bg-[size:30px_30px] font-sans selection:bg-wild-brand selection:text-black text-sm overflow-hidden" style={{ backgroundColor: 'var(--header-bg, #09090b)' }}>
+client/src/pages/home.tsx:847:                <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+client/src/pages/home.tsx:851:                <h3 className="font-bold text-white text-lg">
+client/src/pages/home.tsx:854:                <p className="text-xs text-zinc-400 mt-0.5">{sellPosition.marketQuestion || "Market Position"}</p>
+client/src/pages/home.tsx:855:                <p className="text-xs text-zinc-500 mt-1">
+client/src/pages/home.tsx:856:                  You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
+client/src/pages/home.tsx:861:                className="text-zinc-400 hover:text-white p-1"
+client/src/pages/home.tsx:873:                  <span className="text-xs text-zinc-400">Amount spent</span>
+client/src/pages/home.tsx:874:                  <span className="text-sm font-mono text-white">
+client/src/pages/home.tsx:879:                  <span className="text-xs text-zinc-400">Avg cost / Breakeven</span>
+client/src/pages/home.tsx:880:                  <span className="text-sm font-mono text-zinc-300">
+client/src/pages/home.tsx:885:                  <span className="text-xs text-zinc-400">Best bid (sell now)</span>
+client/src/pages/home.tsx:887:                    <span className="text-sm font-mono text-zinc-500 flex items-center gap-1">
+client/src/pages/home.tsx:898:                    <span className="text-sm font-mono text-zinc-500">—</span>
+client/src/pages/home.tsx:906:                  <label className="text-xs text-zinc-500 mb-1 block">Shares to sell</label>
+client/src/pages/home.tsx:912:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/pages/home.tsx:921:                  <p className="text-xs text-zinc-500">Best Bid</p>
+client/src/pages/home.tsx:940:                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+client/src/pages/home.tsx:967:                    <span className="text-zinc-400">Cost basis</span>
+client/src/pages/home.tsx:968:                    <span className="font-mono text-zinc-300">
+client/src/pages/home.tsx:973:                    <span className="text-zinc-400">Estimated return</span>
+client/src/pages/home.tsx:980:                      <span className="text-zinc-400">Estimated P&L</span>
+client/src/pages/home.tsx:989:                  <p className="text-[10px] text-zinc-500">
+client/src/pages/home.tsx:1026:                  className="flex-1 bg-wild-gold text-zinc-950 font-bold text-lg"
+client/src/pages/home.tsx:1040:              <p className="text-[10px] text-zinc-600 text-center">
+client/src/pages/not-found.tsx:11:          <span className="font-black italic tracking-tighter text-2xl text-white">WILDCARD</span>
+client/src/pages/not-found.tsx:14:        <div className="font-mono text-6xl font-black text-zinc-700 mb-4">404</div>
+client/src/pages/not-found.tsx:16:        <h1 className="text-xl font-bold text-white mb-2">Page Not Found</h1>
+client/src/pages/not-found.tsx:17:        <p className="text-sm text-zinc-500 mb-6">
+client/src/pages/not-found.tsx:22:          <Button className="bg-wild-brand text-zinc-950 font-bold" data-testid="button-go-home">
+
+===========================================
+4. HARDCODED TAILWIND BORDER COLORS
+===========================================
+
+Searching for border-* classes that should use CSS variables...
+
+client/src/components/terminal/BetSlip.tsx:573:        className="w-full max-w-[430px] bg-zinc-900 border-t border-zinc-700 rounded-t-xl p-4 animate-slide-up"
+client/src/components/terminal/BetSlip.tsx:624:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:636:                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+client/src/components/terminal/BetSlip.tsx:707:                className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/terminal/BottomNav.tsx:21:      className="shrink-0 border-t border-zinc-800 z-30 bottom-nav-safe"
+client/src/components/terminal/DepositInstructions.tsx:36:              <div className="flex items-center gap-2 bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:56:            <div className="border-t border-zinc-800 pt-3">
+client/src/components/terminal/DepositInstructions.tsx:86:            <div className="border-t border-zinc-800 pt-3">
+client/src/components/terminal/DepositInstructions.tsx:88:              <div className="flex items-center gap-2 bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:132:            <div className="border-t border-zinc-800 pt-3">
+client/src/components/terminal/DepositInstructions.tsx:174:            <div className="border-t border-zinc-800 pt-3">
+client/src/components/terminal/DepositInstructions.tsx:185:                  <div key={chain.name} className="flex items-center gap-1.5 bg-zinc-950 rounded px-2 py-1.5 border border-zinc-800">
+client/src/components/terminal/DepositInstructions.tsx:193:            <div className="border-t border-zinc-800 pt-3 space-y-2">
+client/src/components/terminal/DepositInstructions.tsx:241:      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+client/src/components/terminal/Header.tsx:21:      className="h-14 shrink-0 flex items-center justify-between px-4 backdrop-blur-lg border-b border-zinc-800/50 z-30"
+client/src/components/terminal/Header.tsx:32:          className="group flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 px-3 py-1.5 rounded-full"
+client/src/components/terminal/MarketCard.tsx:92:                    : "bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-600"
+client/src/components/terminal/MarketCard.tsx:116:    <div className="bg-zinc-900 border border-zinc-800 p-4 relative overflow-hidden">
+client/src/components/terminal/PlayerCard.tsx:26:        className="bg-zinc-900 border border-zinc-800 relative group overflow-visible"
+client/src/components/terminal/PlayerCard.tsx:52:            <div className="h-3 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+client/src/components/terminal/PlayerCard.tsx:80:      className="bg-zinc-900 border border-zinc-800 p-3 hover:border-zinc-600 transition-colors"
+client/src/components/terminal/PlayerCard.tsx:140:      <div className="bg-zinc-900 border border-zinc-800 p-4">
+client/src/components/terminal/PlayerCard.tsx:155:    <div className="bg-zinc-900 border border-zinc-800 p-3">
+client/src/components/terminal/SubTabs.tsx:11:    <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-2 z-20">
+client/src/components/terminal/WalletDrawer.tsx:156:        <div className="bg-zinc-900 border-t border-zinc-800 rounded-t-2xl">
+client/src/components/terminal/WalletDrawer.tsx:157:          <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:192:                <div className="flex items-center justify-between bg-zinc-950 rounded-lg p-3 border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:208:                  <div className="flex justify-between items-center p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:234:                  <div className="flex justify-between items-center p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:246:                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-wild-brand/10 to-wild-trade/10 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:253:                  <div className="p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+client/src/components/terminal/WalletDrawer.tsx:274:                            <SelectTrigger className="h-7 text-[11px] bg-zinc-900 border-zinc-700 flex-1" data-testid="select-drawer-deposit-chain">
+client/src/components/terminal/WalletDrawer.tsx:277:                            <SelectContent className="bg-zinc-900 border-zinc-700">
+client/src/components/terminal/WalletDrawer.tsx:337:                          className="w-full text-xs border-zinc-700"
+client/src/components/ui/avatar.tsx:15:      after:content-[''] after:block after:absolute after:inset-0 after:rounded-full after:pointer-events-none after:border after:border-black/10 dark:after:border-white/10
+client/src/components/views/DashboardView.tsx:534:            <div key={i} className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:541:        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md space-y-3">
+client/src/components/views/DashboardView.tsx:555:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 z-20">
+client/src/components/views/DashboardView.tsx:561:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:571:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:592:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:602:          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+client/src/components/views/DashboardView.tsx:613:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:614:          <div className="p-3 border-b border-zinc-800">
+client/src/components/views/DashboardView.tsx:649:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:650:          <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+client/src/components/views/DashboardView.tsx:660:                    <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-deposit-chain">
+client/src/components/views/DashboardView.tsx:688:                      <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-deposit-token">
+client/src/components/views/DashboardView.tsx:712:                    <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/views/DashboardView.tsx:748:                    <div className="flex items-center justify-between bg-zinc-950 rounded p-2 border border-zinc-800">
+client/src/components/views/DashboardView.tsx:799:                  className="w-full text-xs border-zinc-700"
+client/src/components/views/DashboardView.tsx:834:        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:835:          <div className="p-3 border-b border-zinc-800 flex justify-between items-center gap-2">
+client/src/components/views/DashboardView.tsx:852:            <TabsList className="w-full justify-start rounded-none border-b border-zinc-800 bg-transparent h-auto p-0 gap-0 flex-wrap">
+client/src/components/views/DashboardView.tsx:879:                className="rounded-none border-b-2 border-transparent data-[state=active]:border-zinc-400 data-[state=active]:bg-transparent data-[state=active]:text-zinc-300 px-3 py-2 text-xs"
+client/src/components/views/DashboardView.tsx:906:                <div className="p-2 border-b border-zinc-800 bg-wild-scout/5 flex justify-between items-center gap-2">
+client/src/components/views/DashboardView.tsx:1196:          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+client/src/components/views/DashboardView.tsx:1197:            <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
+client/src/components/views/DashboardView.tsx:1205:                  <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-withdraw-chain">
+client/src/components/views/DashboardView.tsx:1233:                    <SelectTrigger className="w-full bg-zinc-950 border-zinc-800 text-sm" data-testid="select-withdraw-token">
+client/src/components/views/DashboardView.tsx:1276:                        className={`w-full bg-zinc-950 border rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none ${isAmountBelowMin ? 'border-rose-500 focus:border-rose-500' : 'border-zinc-800 focus:border-wild-gold'}`}
+client/src/components/views/DashboardView.tsx:1295:                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-wild-gold"
+client/src/components/views/DashboardView.tsx:1303:                    <div className="bg-zinc-950 border border-zinc-800 rounded p-2 space-y-1">
+client/src/components/views/DashboardView.tsx:1317:                      className="w-full text-xs border-zinc-700"
+client/src/components/views/DashboardView.tsx:1462:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/components/views/DashboardView.tsx:1529:                    <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
+client/src/components/views/DashboardView.tsx:1566:                  className="flex-1 border-zinc-700"
+client/src/components/views/PredictView.tsx:256:    <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
+client/src/components/views/PredictView.tsx:719:              ? "bg-zinc-600 border-zinc-500" 
+client/src/components/views/PredictView.tsx:720:              : "bg-zinc-800/60 border-zinc-700/50 hover:bg-zinc-700/50";
+client/src/components/views/PredictView.tsx:928:                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+client/src/components/views/PredictView.tsx:972:    <div className="border-t border-zinc-800 pt-3 mt-3">
+client/src/components/views/PredictView.tsx:1422:                      : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50"
+client/src/components/views/PredictView.tsx:1452:        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-800">
+client/src/components/views/PredictView.tsx:1880:        <div className="shrink-0 py-3 px-4 border-t border-zinc-800 bg-zinc-950 flex justify-center" data-testid="container-polymarket-attribution">
+client/src/components/views/ScoutView.tsx:28:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 flex justify-between items-center z-20">
+client/src/components/views/TradeView.tsx:43:      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 z-20">
+client/src/components/views/TradeView.tsx:72:        <div className="grid grid-cols-4 text-[9px] font-mono text-zinc-600 uppercase pb-1 border-b border-zinc-800/50">
+client/src/components/views/TradeView.tsx:86:                className="grid grid-cols-4 items-center p-3 border-b border-zinc-800/50"
+client/src/components/views/TradeView.tsx:143:          <div className="p-3 border-t border-zinc-800">
+client/src/components/views/TradeView.tsx:149:                  className="flex justify-between items-center text-xs bg-zinc-900/50 p-2 rounded border border-zinc-800/50"
+client/src/pages/home.tsx:738:      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-zinc-800/50 shadow-2xl pb-safe" style={{ backgroundColor: 'var(--header-bg, #09090b)', opacity: 0.95 }}>
+client/src/pages/home.tsx:912:                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+client/src/pages/home.tsx:979:                    <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
+client/src/pages/home.tsx:1016:                  className="flex-1 border-zinc-700"
+
+===========================================
+5. HARDCODED FEE VALUES
+===========================================
+
+Searching for fee-related hardcoded values...
+
+--- Fee percentages (0.001, 0.01, etc) ---
+client/src/components/terminal/BetSlip.tsx:37:// For amounts < $0.01, show up to 4 decimals to display small fees accurately.
+client/src/components/terminal/BetSlip.tsx:44:  if (amount > 0 && amount < 0.01) {
+client/src/components/views/DashboardView.tsx:1270:                        step="0.01"
+client/src/components/views/DashboardView.tsx:1465:                    step="0.01"
+client/src/components/views/TradeView.tsx:119:                  ${(player.stats?.marketCap ? player.stats.marketCap / 1000 : 0.01).toFixed(2)}
+client/src/hooks/usePolymarketClient.ts:41:type TickSize = "0.1" | "0.01" | "0.001" | "0.0001";
+client/src/hooks/usePolymarketClient.ts:409:          tickSize: params.tickSize || "0.01",
+client/src/pages/home.tsx:915:                    step="0.01"
+client/src/sdk/PolymarketSDK.ts:273:        tickSize: params.tickSize || "0.01",
+client/src/sdk/types.ts:18:export type TickSize = "0.1" | "0.01" | "0.001" | "0.0001";
+
+--- Fee constants (FEE_BPS, FEE_PERCENTAGE, etc) ---
+client/src/constants/config.ts:1:export const INTEGRATOR_FEE_ADDRESS = import.meta.env.VITE_INTEGRATOR_FEE_ADDRESS || "";
+client/src/constants/config.ts:3:export const INTEGRATOR_FEE_BPS = parseInt(
+
+===========================================
+6. HARDCODED ETHEREUM ADDRESSES
+===========================================
+
+Searching for 0x... addresses that should come from config...
+
+client/src/components/terminal/DepositInstructions.tsx:95:                    0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+client/src/components/views/DashboardView.tsx:166:        fromTokenAddress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",  // USDC.e on Polygon
+client/src/constants/tokens.ts:2:  "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as const;
+client/src/constants/tokens.ts:7:  "0x4d97dcd97ec945f40cf65f87097ace5ea0476045" as const;
+client/src/constants/tokens.ts:10:  "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E" as const;
+client/src/constants/tokens.ts:13:  "0xC5d563A36AE78145C45a50134d48A1215220f80a" as const;
+client/src/constants/tokens.ts:16:  "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296" as const;
+client/src/hooks/useClobOrder.ts:165:            taker: "0x0000000000000000000000000000000000000000",
+client/src/hooks/usePolymarketClient.ts:21:const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf" as `0x${string}`;
+client/src/hooks/usePolymarketClient.ts:105:const USDC_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as Address;
+client/src/hooks/usePolymarketClient.ts:106:const CTF_ADDRESS = "0x4d97dcd97ec945f40cf65f87097ace5ea0476045" as Address;
+client/src/hooks/usePolymarketClient.ts:107:const CTF_EXCHANGE = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E" as Address;
+client/src/hooks/usePolymarketClient.ts:110:const WRAPPED_COLLATERAL_ADDRESS = "0x3A3BD7bb9528E159577F7C2e685CC81A765002E2" as Address;
+client/src/hooks/usePolymarketClient.ts:199:const NEG_RISK_ADAPTER_ADDRESS = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296" as const;
+client/src/hooks/usePolymarketClient.ts:689:            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+client/src/hooks/usePolymarketClient.ts:835:          "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`;
+client/src/hooks/usePolymarketClient.ts:948:          "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`;
+client/src/lib/polygon.ts:4:const USDC_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as const;
+client/src/sdk/PolymarketSDK.ts:217:        "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+client/src/sdk/PolymarketSDK.ts:474:        "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`;
+client/src/sdk/constants.ts:8:export const USDC_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as const;
+client/src/sdk/constants.ts:11:export const CTF_ADDRESS = "0x4d97dcd97ec945f40cf65f87097ace5ea0476045" as const;
+client/src/sdk/constants.ts:12:export const CTF_EXCHANGE_ADDRESS = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E" as const;
+client/src/sdk/constants.ts:14:export const NEG_RISK_CTF_EXCHANGE_ADDRESS = "0xC5d563A36AE78145C45a50134d48A1215220f80a" as const;
+client/src/sdk/constants.ts:15:export const NEG_RISK_ADAPTER_ADDRESS = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296" as const;
+client/src/sdk/constants.ts:16:export const WRAPPED_COLLATERAL_ADDRESS = "0x3A3BD7bb9528E159577F7C2e685CC81A765002E2" as const;
+client/src/sdk/constants.ts:18:export const SAFE_INIT_CODE_HASH = "0x2bce2127ff07fb632d16c8347c4ebf501f4841168bed00d9e6ef715ddb6fcecf" as `0x${string}`;
+
+===========================================
+7. HARDCODED BRAND/APP NAMES
+===========================================
+
+Searching for hardcoded 'WILDCARDS' text...
+
+client/src/components/terminal/Header.tsx:26:        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>WILDCARD</span>
+client/src/pages/not-found.tsx:11:          <span className="font-black italic tracking-tighter text-2xl text-white">WILDCARD</span>
+
+Searching for hardcoded 'WILD' points name...
+
+client/src/components/terminal/BetSlip.tsx:21: *   - Configurable points name via pointsName prop (defaults to "WILD")
+client/src/components/terminal/BetSlip.tsx:188:  // New (merged): configurable points name (default "WILD")
+client/src/components/terminal/BetSlip.tsx:216:  pointsName = "WILD",
+client/src/pages/home.tsx:834:          pointsName="WILD"
+
+===========================================
+8. SUMMARY COUNTS
+===========================================
+
+bg-zinc-* in components/terminal:
+client/src/components/terminal/BetSlip.tsx:9
+client/src/components/terminal/DepositInstructions.tsx:7
+client/src/components/terminal/Header.tsx:2
+client/src/components/terminal/MarketCard.tsx:9
+client/src/components/terminal/PlayerCard.tsx:19
+client/src/components/terminal/SubTabs.tsx:3
+client/src/components/terminal/Toast.tsx:1
+client/src/components/terminal/WalletDrawer.tsx:10
+
+bg-zinc-* in components/views:
+client/src/components/views/DashboardView.tsx:34
+client/src/components/views/PredictView.tsx:11
+client/src/components/views/ScoutView.tsx:1
+client/src/components/views/TradeView.tsx:12
+
+bg-zinc-* in pages (excl admin):
+client/src/pages/home.tsx:5
+client/src/pages/not-found.tsx:1
+
+text-white in components:
+client/src/components/terminal/BetSlip.tsx:10
+client/src/components/terminal/DepositInstructions.tsx:7
+client/src/components/terminal/Header.tsx:2
+client/src/components/terminal/MarketCard.tsx:1
+client/src/components/terminal/PlayerCard.tsx:2
+client/src/components/terminal/SubTabs.tsx:1
+client/src/components/terminal/Toast.tsx:1
+client/src/components/terminal/WalletDrawer.tsx:10
+client/src/components/views/DashboardView.tsx:26
+client/src/components/views/PredictView.tsx:16
+client/src/components/views/ScoutView.tsx:2
+client/src/components/views/TradeView.tsx:5
+
+border-zinc-* in components:
+client/src/components/terminal/BetSlip.tsx:4
+client/src/components/terminal/BottomNav.tsx:1
+client/src/components/terminal/DepositInstructions.tsx:9
+client/src/components/terminal/Header.tsx:2
+client/src/components/terminal/MarketCard.tsx:2
+client/src/components/terminal/PlayerCard.tsx:5
+client/src/components/terminal/SubTabs.tsx:1
+client/src/components/terminal/WalletDrawer.tsx:10
+client/src/components/views/DashboardView.tsx:32
+client/src/components/views/PredictView.tsx:8
+client/src/components/views/ScoutView.tsx:1
+client/src/components/views/TradeView.tsx:5
+
+=========================================
+END OF REPORT
+=========================================
