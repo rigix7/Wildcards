@@ -831,7 +831,8 @@ export function BetSlip({
               submissionStatus === "pending"
             }
             size="lg"
-            className="w-full bg-wild-brand text-white font-bold text-lg"
+            className="w-full text-white font-bold text-lg"
+            style={{ backgroundColor: 'var(--betslip-primary, #f43f5e)' }}
             data-testid="button-confirm-bet"
           >
             {submissionStatus === "pending" || isPending ? (

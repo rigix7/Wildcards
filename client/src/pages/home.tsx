@@ -734,8 +734,8 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 bg-hud-grid bg-[size:30px_30px] font-sans selection:bg-wild-brand selection:text-black text-sm overflow-hidden">
-      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-zinc-800/50 bg-zinc-950/95 shadow-2xl pb-safe">
+    <div className="min-h-screen bg-hud-grid bg-[size:30px_30px] font-sans selection:bg-wild-brand selection:text-black text-sm overflow-hidden" style={{ backgroundColor: 'var(--header-bg, #09090b)' }}>
+      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-zinc-800/50 shadow-2xl pb-safe" style={{ backgroundColor: 'var(--header-bg, #09090b)', opacity: 0.95 }}>
         <Header
           usdcBalance={wallet.usdcBalance}
           wildBalance={wallet.wildBalance}

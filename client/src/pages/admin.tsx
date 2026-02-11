@@ -744,12 +744,100 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
   );
 }
 
+const PRESET_THEMES: Record<string, { name: string; description: string; icon: typeof Zap; theme: ThemeConfig }> = {
+  wildcards: {
+    name: "Wildcards",
+    description: "Original Wildcards theme - bold orange and gold",
+    icon: Flame,
+    theme: {
+      brand: { name: "WILDCARDS", primaryColor: "#f43f5e", accentColor: "#fbbf24" },
+      header: { backgroundColor: '#09090b', textColor: '#fafafa', accentColor: '#fbbf24' },
+      betSlip: { backgroundColor: '#18181b', cardColor: '#27272a', primaryButtonColor: '#f43f5e', successColor: '#10b981', textColor: '#fafafa' },
+      marketCards: { backgroundColor: '#18181b', hoverColor: '#27272a', borderColor: '#3f3f46', oddsBadgeColor: '#fbbf24', textColor: '#fafafa', moneylineAccent: '#f43f5e', totalsAccent: '#3b82f6', moreMarketsAccent: '#8b5cf6' },
+      sortingBar: { backgroundColor: '#09090b', activeTabColor: '#f43f5e', inactiveTabColor: '#71717a' },
+      bottomNav: { backgroundColor: '#09090b', activeColor: '#fbbf24', inactiveColor: '#71717a' },
+      global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+    },
+  },
+  professional: {
+    name: "Professional Blue",
+    description: "Clean corporate theme with blue accents",
+    icon: Shield,
+    theme: {
+      brand: { name: "PREDICT", primaryColor: "#3b82f6", accentColor: "#3b82f6" },
+      header: { backgroundColor: '#ffffff', textColor: '#111827', accentColor: '#3b82f6' },
+      betSlip: { backgroundColor: '#f9fafb', cardColor: '#ffffff', primaryButtonColor: '#3b82f6', successColor: '#10b981', textColor: '#111827' },
+      marketCards: { backgroundColor: '#ffffff', hoverColor: '#f3f4f6', borderColor: '#e5e7eb', oddsBadgeColor: '#3b82f6', textColor: '#111827', moneylineAccent: '#3b82f6', totalsAccent: '#8b5cf6', moreMarketsAccent: '#ec4899' },
+      sortingBar: { backgroundColor: '#ffffff', activeTabColor: '#3b82f6', inactiveTabColor: '#9ca3af' },
+      bottomNav: { backgroundColor: '#ffffff', activeColor: '#3b82f6', inactiveColor: '#9ca3af' },
+      global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+    },
+  },
+  neon: {
+    name: "Neon Nights",
+    description: "High-energy cyber aesthetic with neon green",
+    icon: Zap,
+    theme: {
+      brand: { name: "NEON BETS", primaryColor: "#00ff88", accentColor: "#00ff88" },
+      header: { backgroundColor: '#0a0a0f', textColor: '#00ff88', accentColor: '#00ff88' },
+      betSlip: { backgroundColor: '#0f0f1a', cardColor: '#1a1a2e', primaryButtonColor: '#00ff88', successColor: '#00ff88', textColor: '#ffffff' },
+      marketCards: { backgroundColor: '#1a1a2e', hoverColor: '#25254a', borderColor: '#2d2d5a', oddsBadgeColor: '#00ff88', textColor: '#ffffff', moneylineAccent: '#00ff88', totalsAccent: '#ff00ff', moreMarketsAccent: '#00d4ff' },
+      sortingBar: { backgroundColor: '#0a0a0f', activeTabColor: '#00ff88', inactiveTabColor: '#6b7280' },
+      bottomNav: { backgroundColor: '#0a0a0f', activeColor: '#00ff88', inactiveColor: '#6b7280' },
+      global: { successColor: '#00ff88', errorColor: '#ff0055', warningColor: '#ffaa00' },
+    },
+  },
+  luxury: {
+    name: "Luxury Gold",
+    description: "Premium dark theme with gold accents",
+    icon: Crown,
+    theme: {
+      brand: { name: "ELITE BETS", primaryColor: "#f59e0b", accentColor: "#f59e0b" },
+      header: { backgroundColor: '#1c1917', textColor: '#fafaf9', accentColor: '#f59e0b' },
+      betSlip: { backgroundColor: '#292524', cardColor: '#3c3836', primaryButtonColor: '#f59e0b', successColor: '#10b981', textColor: '#fafaf9' },
+      marketCards: { backgroundColor: '#292524', hoverColor: '#3c3836', borderColor: '#57534e', oddsBadgeColor: '#f59e0b', textColor: '#fafaf9', moneylineAccent: '#f59e0b', totalsAccent: '#fbbf24', moreMarketsAccent: '#fb923c' },
+      sortingBar: { backgroundColor: '#1c1917', activeTabColor: '#f59e0b', inactiveTabColor: '#78716c' },
+      bottomNav: { backgroundColor: '#1c1917', activeColor: '#f59e0b', inactiveColor: '#78716c' },
+      global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+    },
+  },
+  earth: {
+    name: "Earth Tones",
+    description: "Warm natural theme with green accents",
+    icon: Heart,
+    theme: {
+      brand: { name: "ORGANIC BETS", primaryColor: "#10b981", accentColor: "#10b981" },
+      header: { backgroundColor: '#fefce8', textColor: '#1f2937', accentColor: '#10b981' },
+      betSlip: { backgroundColor: '#fef9c3', cardColor: '#fef3c7', primaryButtonColor: '#10b981', successColor: '#10b981', textColor: '#1f2937' },
+      marketCards: { backgroundColor: '#fef3c7', hoverColor: '#fde68a', borderColor: '#fcd34d', oddsBadgeColor: '#10b981', textColor: '#1f2937', moneylineAccent: '#10b981', totalsAccent: '#059669', moreMarketsAccent: '#14b8a6' },
+      sortingBar: { backgroundColor: '#fefce8', activeTabColor: '#10b981', inactiveTabColor: '#6b7280' },
+      bottomNav: { backgroundColor: '#fefce8', activeColor: '#10b981', inactiveColor: '#6b7280' },
+      global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+    },
+  },
+  midnight: {
+    name: "Midnight Purple",
+    description: "Dark mysterious theme with purple accents",
+    icon: Sparkles,
+    theme: {
+      brand: { name: "MYSTIC BETS", primaryColor: "#a855f7", accentColor: "#a855f7" },
+      header: { backgroundColor: '#0f0a1f', textColor: '#e9d5ff', accentColor: '#a855f7' },
+      betSlip: { backgroundColor: '#1a1032', cardColor: '#251a3d', primaryButtonColor: '#a855f7', successColor: '#10b981', textColor: '#e9d5ff' },
+      marketCards: { backgroundColor: '#1a1032', hoverColor: '#251a3d', borderColor: '#3d2d5c', oddsBadgeColor: '#a855f7', textColor: '#e9d5ff', moneylineAccent: '#a855f7', totalsAccent: '#c084fc', moreMarketsAccent: '#e879f9' },
+      sortingBar: { backgroundColor: '#0f0a1f', activeTabColor: '#a855f7', inactiveTabColor: '#6b7280' },
+      bottomNav: { backgroundColor: '#0f0a1f', activeColor: '#a855f7', inactiveColor: '#6b7280' },
+      global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+    },
+  },
+};
+
 function WhiteLabelSection({
   localTheme,
   setLocalTheme,
   activeThemeTab,
   setActiveThemeTab,
   onSave,
+  onSaveTheme,
   isSaving,
 }: {
   localTheme: ThemeConfig;
@@ -757,8 +845,12 @@ function WhiteLabelSection({
   activeThemeTab: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav";
   setActiveThemeTab: (t: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav") => void;
   onSave: () => void;
+  onSaveTheme: (theme: ThemeConfig) => void;
   isSaving: boolean;
 }) {
+  const { toast } = useToast();
+  const [previewMode, setPreviewMode] = useState<'component' | 'fullPage'>('component');
+
   const ICON_OPTIONS: { name: string; icon: typeof Zap | null }[] = [
     { name: "none", icon: null },
     { name: "zap", icon: Zap },
@@ -788,26 +880,380 @@ function WhiteLabelSection({
         </p>
       </div>
 
-      {/* Sub-tab navigation */}
-      <div className="flex flex-wrap gap-2">
-        <Button variant={activeThemeTab === "brand" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("brand")}>
-          <Palette className="w-4 h-4 mr-2" /> Brand
-        </Button>
-        <Button variant={activeThemeTab === "header" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("header")}>
-          Header
-        </Button>
-        <Button variant={activeThemeTab === "betslip" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("betslip")}>
-          Bet Slip
-        </Button>
-        <Button variant={activeThemeTab === "marketCards" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("marketCards")}>
-          Market Cards
-        </Button>
-        <Button variant={activeThemeTab === "sortingBar" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("sortingBar")}>
-          Sorting Bar
-        </Button>
-        <Button variant={activeThemeTab === "bottomNav" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("bottomNav")}>
-          Bottom Nav
-        </Button>
+      {/* Preset Themes Section */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white">Quick Start - Choose a Preset</h3>
+            <p className="text-sm text-zinc-500">Select a ready-made theme or customize below</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {Object.entries(PRESET_THEMES).map(([id, preset]) => {
+            const Icon = preset.icon;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  setLocalTheme(preset.theme);
+                  toast({ title: `Applied ${preset.name} theme`, description: "Click Save to persist changes" });
+                }}
+                className="group relative p-4 rounded-lg border-2 border-zinc-800 hover:border-zinc-600 transition-all text-left"
+              >
+                <div
+                  className="h-24 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden"
+                  style={{ backgroundColor: preset.theme.header?.backgroundColor }}
+                >
+                  <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                      background: `linear-gradient(135deg, ${preset.theme.betSlip?.primaryButtonColor} 0%, ${preset.theme.header?.accentColor} 100%)`
+                    }}
+                  />
+                  <Icon className="w-8 h-8 relative z-10" style={{ color: preset.theme.header?.accentColor }} />
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <div className="font-bold text-white text-sm">{preset.name}</div>
+                    <div className="text-xs text-zinc-500 mt-1">{preset.description}</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocalTheme(preset.theme);
+                      onSaveTheme(preset.theme);
+                    }}
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 p-4 bg-zinc-900 rounded-lg border border-zinc-800">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-zinc-300">
+              <strong>Quick Apply:</strong> Click a theme card to preview it instantly.{" "}
+              <strong>Save:</strong> Click the checkmark to apply and save immediately, or customize details below first.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview Mode Toggle */}
+      <div className="border-t border-zinc-800 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-white">Preview</h3>
+            <p className="text-sm text-zinc-500">See how your theme looks</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={previewMode === 'component' ? 'default' : 'outline'}
+              onClick={() => setPreviewMode('component')}
+              size="sm"
+            >
+              Component View
+            </Button>
+            <Button
+              variant={previewMode === 'fullPage' ? 'default' : 'outline'}
+              onClick={() => setPreviewMode('fullPage')}
+              size="sm"
+            >
+              Full Page Preview
+            </Button>
+          </div>
+        </div>
+
+        {/* Full Page Preview Panel */}
+        {previewMode === 'fullPage' && (
+          <Card className="p-6 mb-6">
+            <h3 className="font-bold text-white mb-4">Live Full Page Preview</h3>
+            <div className="border-2 border-zinc-700 rounded-lg overflow-hidden">
+              <div
+                className="h-[600px] overflow-y-auto relative"
+                style={{ backgroundColor: localTheme.header?.backgroundColor || '#09090b' }}
+              >
+                {/* Header Preview */}
+                <div
+                  className="p-4 flex items-center justify-between"
+                  style={{ backgroundColor: localTheme.header?.backgroundColor }}
+                >
+                  <span
+                    className="text-xl font-bold italic tracking-tighter"
+                    style={{ color: localTheme.header?.textColor }}
+                  >
+                    {localTheme.brand?.name || "WILDCARDS"}
+                  </span>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: localTheme.header?.accentColor }}
+                  >
+                    <span className="text-sm font-bold" style={{ color: localTheme.header?.backgroundColor }}>W</span>
+                  </div>
+                </div>
+
+                {/* Sorting Bar Preview */}
+                <div
+                  className="p-3 flex gap-2 border-b"
+                  style={{
+                    backgroundColor: localTheme.sortingBar?.backgroundColor,
+                    borderColor: localTheme.marketCards?.borderColor,
+                  }}
+                >
+                  <button
+                    className="px-4 py-2 rounded text-sm font-medium"
+                    style={{
+                      backgroundColor: localTheme.sortingBar?.activeTabColor,
+                      color: '#ffffff',
+                    }}
+                  >
+                    All
+                  </button>
+                  <button className="px-4 py-2 rounded text-sm" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>
+                    Soccer
+                  </button>
+                  <button className="px-4 py-2 rounded text-sm" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>
+                    NBA
+                  </button>
+                </div>
+
+                {/* Market Cards Preview */}
+                <div className="p-4 grid grid-cols-1 gap-3">
+                  {/* Moneyline Market */}
+                  <div
+                    className="p-4 rounded-lg border"
+                    style={{
+                      backgroundColor: localTheme.marketCards?.backgroundColor,
+                      borderColor: localTheme.marketCards?.borderColor,
+                      borderLeftWidth: '4px',
+                      borderLeftColor: localTheme.marketCards?.moneylineAccent,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>NBA &middot; Moneyline</div>
+                        <div className="font-medium" style={{ color: localTheme.marketCards?.textColor }}>
+                          Lakers vs Celtics
+                        </div>
+                      </div>
+                      <span
+                        className="px-2 py-1 rounded text-xs font-bold"
+                        style={{ backgroundColor: localTheme.marketCards?.oddsBadgeColor, color: '#000' }}
+                      >
+                        2.5
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Lakers
+                      </button>
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Celtics
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Totals Market */}
+                  <div
+                    className="p-4 rounded-lg border"
+                    style={{
+                      backgroundColor: localTheme.marketCards?.backgroundColor,
+                      borderColor: localTheme.marketCards?.borderColor,
+                      borderLeftWidth: '4px',
+                      borderLeftColor: localTheme.marketCards?.totalsAccent,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>NBA &middot; Total Points</div>
+                        <div className="font-medium" style={{ color: localTheme.marketCards?.textColor }}>
+                          Over/Under 220.5
+                        </div>
+                      </div>
+                      <span
+                        className="px-2 py-1 rounded text-xs font-bold"
+                        style={{ backgroundColor: localTheme.marketCards?.oddsBadgeColor, color: '#000' }}
+                      >
+                        1.9
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Over
+                      </button>
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Under
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* More Markets */}
+                  <div
+                    className="p-4 rounded-lg border"
+                    style={{
+                      backgroundColor: localTheme.marketCards?.backgroundColor,
+                      borderColor: localTheme.marketCards?.borderColor,
+                      borderLeftWidth: '4px',
+                      borderLeftColor: localTheme.marketCards?.moreMarketsAccent,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>Soccer &middot; Match Result</div>
+                        <div className="font-medium" style={{ color: localTheme.marketCards?.textColor }}>
+                          Arsenal vs Chelsea
+                        </div>
+                      </div>
+                      <span
+                        className="px-2 py-1 rounded text-xs font-bold"
+                        style={{ backgroundColor: localTheme.marketCards?.oddsBadgeColor, color: '#000' }}
+                      >
+                        3.2
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Home
+                      </button>
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Draw
+                      </button>
+                      <button
+                        className="flex-1 py-2 rounded text-sm font-medium border"
+                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                      >
+                        Away
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* BetSlip Preview (inline at bottom of scroll) */}
+                <div className="p-4">
+                  <div
+                    className="rounded-lg p-4 shadow-xl"
+                    style={{ backgroundColor: localTheme.betSlip?.backgroundColor }}
+                  >
+                    <div className="font-bold mb-3" style={{ color: localTheme.betSlip?.textColor }}>
+                      Bet Slip
+                    </div>
+                    <div
+                      className="p-3 rounded mb-3"
+                      style={{ backgroundColor: localTheme.betSlip?.cardColor }}
+                    >
+                      <div className="text-sm" style={{ color: localTheme.betSlip?.textColor }}>
+                        Lakers to win
+                      </div>
+                      <div className="text-xs" style={{ color: localTheme.sortingBar?.inactiveTabColor }}>Odds: 2.50</div>
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm" style={{ color: localTheme.betSlip?.textColor }}>
+                        <span>Stake</span>
+                        <span>$10.00</span>
+                      </div>
+                      <div className="flex justify-between text-sm" style={{ color: localTheme.betSlip?.textColor }}>
+                        <span>Potential Win</span>
+                        <span style={{ color: localTheme.betSlip?.successColor }}>$25.00</span>
+                      </div>
+                    </div>
+                    <button
+                      className="w-full py-3 rounded font-bold text-white"
+                      style={{ backgroundColor: localTheme.betSlip?.primaryButtonColor }}
+                    >
+                      Place Bet
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom Nav Preview */}
+                <div
+                  className="sticky bottom-0 p-3 flex justify-around border-t"
+                  style={{
+                    backgroundColor: localTheme.bottomNav?.backgroundColor,
+                    borderColor: localTheme.marketCards?.borderColor,
+                  }}
+                >
+                  <div className="flex flex-col items-center">
+                    <Target className="w-5 h-5" style={{ color: localTheme.bottomNav?.activeColor }} />
+                    <span className="text-xs mt-1" style={{ color: localTheme.bottomNav?.activeColor }}>
+                      Predict
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <Trophy className="w-5 h-5" style={{ color: localTheme.bottomNav?.inactiveColor }} />
+                    <span className="text-xs mt-1" style={{ color: localTheme.bottomNav?.inactiveColor }}>
+                      Futures
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <Users className="w-5 h-5" style={{ color: localTheme.bottomNav?.inactiveColor }} />
+                    <span className="text-xs mt-1" style={{ color: localTheme.bottomNav?.inactiveColor }}>
+                      Dashboard
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-500 mt-3">
+              This preview shows how your theme will look across the entire app. Scroll to see all components.
+            </p>
+          </Card>
+        )}
+      </div>
+
+      {/* Advanced Customization */}
+      <div className="border-t border-zinc-800 pt-6">
+        <h3 className="text-lg font-bold text-white mb-2">Advanced Customization</h3>
+        <p className="text-sm text-zinc-500 mb-4">Fine-tune individual components</p>
+
+        {/* Sub-tab navigation */}
+        <div className="flex flex-wrap gap-2">
+          <Button variant={activeThemeTab === "brand" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("brand")}>
+            <Palette className="w-4 h-4 mr-2" /> Brand
+          </Button>
+          <Button variant={activeThemeTab === "header" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("header")}>
+            Header
+          </Button>
+          <Button variant={activeThemeTab === "betslip" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("betslip")}>
+            Bet Slip
+          </Button>
+          <Button variant={activeThemeTab === "marketCards" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("marketCards")}>
+            Market Cards
+          </Button>
+          <Button variant={activeThemeTab === "sortingBar" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("sortingBar")}>
+            Sorting Bar
+          </Button>
+          <Button variant={activeThemeTab === "bottomNav" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("bottomNav")}>
+            Bottom Nav
+          </Button>
+        </div>
       </div>
 
       {/* ---- Brand ---- */}
@@ -1939,6 +2385,25 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const handleSaveThemeWithData = async (theme: ThemeConfig) => {
+    setSavingTheme(true);
+    try {
+      const res = await adminFetch("/api/admin/white-label/theme", {
+        method: "PATCH",
+        body: JSON.stringify(theme),
+      });
+      if (res.ok) {
+        showStatus("success", "Theme saved and applied");
+      } else {
+        showStatus("error", "Failed to save theme");
+      }
+    } catch {
+      showStatus("error", "Failed to save theme");
+    } finally {
+      setSavingTheme(false);
+    }
+  };
+
   // =========================================================================
   // RENDER
   // =========================================================================
@@ -2915,6 +3380,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
               activeThemeTab={activeThemeTab}
               setActiveThemeTab={setActiveThemeTab}
               onSave={handleSaveTheme}
+              onSaveTheme={handleSaveThemeWithData}
               isSaving={savingTheme}
             />
           ))}

@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables - Applied by ThemeProvider */
+:root {
+  /* Header */
+  --header-bg: #09090b;
+  --header-text: #fafafa;
+  --header-accent: #fbbf24;
+
+  /* BetSlip */
+  --betslip-bg: #18181b;
+  --betslip-card: #27272a;
+  --betslip-primary: #f43f5e;
+  --betslip-success: #10b981;
+  --betslip-text: #fafafa;
+
+  /* Legacy BetSlip variables (backward compat) */
+  --wl-betslip-bg: #18181b;
+  --wl-betslip-text: #fafafa;
+
+  /* Market Cards */
+  --market-bg: #18181b;
+  --market-hover: #27272a;
+  --market-border: #3f3f46;
+  --market-odds-badge: #fbbf24;
+  --market-text: #fafafa;
+  --market-moneyline: #f43f5e;
+  --market-totals: #3b82f6;
+  --market-more: #8b5cf6;
+
+  /* Sorting Bar */
+  --sort-bg: #09090b;
+  --sort-active: #f43f5e;
+  --sort-inactive: #71717a;
+
+  /* Bottom Nav */
+  --nav-bg: #09090b;
+  --nav-active: #fbbf24;
+  --nav-inactive: #71717a;
+}
+
 /* WILDCARD TERMINAL - DARK MODE ONLY */
 :root {
   --button-outline: rgba(255,255,255, .10);

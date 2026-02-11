@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import WalletProvider from "@/providers/WalletProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { GeoblockBanner } from "@/components/GeoblockBanner";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
@@ -26,23 +27,27 @@ function App() {
     console.warn("VITE_PRIVY_APP_ID not configured");
     return (
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WalletProvider appId={privyAppId}>
-          <GeoblockBanner />
-          <Toaster />
-          <Router />
-        </WalletProvider>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <WalletProvider appId={privyAppId}>
+            <GeoblockBanner />
+            <Toaster />
+            <Router />
+          </WalletProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
