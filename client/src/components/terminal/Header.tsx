@@ -17,10 +17,13 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
   };
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between px-4 bg-zinc-900/80 backdrop-blur-lg border-b border-zinc-800/50 z-30">
-      <div className="flex items-center gap-2 text-wild-brand">
+    <header
+      className="h-14 shrink-0 flex items-center justify-between px-4 backdrop-blur-lg border-b border-zinc-800/50 z-30"
+      style={{ backgroundColor: 'var(--header-bg, #09090b)' }}
+    >
+      <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
         <Zap className="w-5 h-5 fill-current" />
-        <span className="font-black italic tracking-tighter text-lg text-white">WILDCARD</span>
+        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>WILDCARD</span>
       </div>
       {isConnected ? (
         <Button

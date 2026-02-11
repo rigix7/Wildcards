@@ -44,10 +44,14 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
 
   return (
     <div
-      className="bg-zinc-900 border border-zinc-800 relative group overflow-visible animate-fade-in"
+      className="border relative group overflow-visible animate-fade-in"
+      style={{
+        backgroundColor: 'var(--market-bg, #18181b)',
+        borderColor: 'var(--market-border, #27272a)',
+      }}
       data-testid={`card-market-${market.id}`}
     >
-      <div className="h-0.5 w-full bg-wild-brand absolute top-0 left-0" />
+      <div className="h-0.5 w-full absolute top-0 left-0" style={{ backgroundColor: 'var(--market-moneyline, #f43f5e)' }} />
       <div className="p-4">
         <div className="flex justify-between items-start mb-3 gap-2">
           <div>
@@ -63,7 +67,7 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
                 </span>
               )}
             </div>
-            <h3 className="font-black text-white text-base leading-tight">{market.title}</h3>
+            <h3 className="font-black text-base leading-tight" style={{ color: 'var(--market-text, #ffffff)' }}>{market.title}</h3>
           </div>
           <div className="text-right shrink-0">
             <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono">

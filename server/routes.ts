@@ -64,19 +64,50 @@ export async function registerRoutes(
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Public theme config endpoint for ThemeProvider (no auth required)
+  app.get("/api/config/theme", async (_req, res) => {
+    try {
+      const config = await storage.getWhiteLabelConfig();
+      if (config) {
+        return res.json({ themeConfig: config.themeConfig });
+      }
+      return res.json({ themeConfig: null });
+    } catch (err) {
+      console.error("[Public ThemeConfig] Error:", err);
+      return res.json({ themeConfig: null });
+    }
+  });
+
   // Fee configuration endpoint - returns runtime fee config for production
-  app.get("/api/config/fees", (req, res) => {
+  app.get("/api/config/fees", async (req, res) => {
+    try {
+      // Try loading fee config from database first (admin-configured)
+      const wlConfig = await storage.getWhiteLabelConfig();
+      const dbFeeConfig = wlConfig?.feeConfig as { feeBps?: number; feeAddress?: string; enabled?: boolean; wallets?: Array<{ address: string; percentage: number }> } | null;
+
+      if (dbFeeConfig && (dbFeeConfig.enabled || (dbFeeConfig.feeBps && dbFeeConfig.feeBps > 0))) {
+        // Determine the primary fee address from wallets or direct config
+        let feeAddress = dbFeeConfig.feeAddress || "";
+        if (!feeAddress && dbFeeConfig.wallets && dbFeeConfig.wallets.length > 0) {
+          feeAddress = dbFeeConfig.wallets[0].address;
+        }
+        const feeBps = dbFeeConfig.feeBps || 0;
+        const enabled = dbFeeConfig.enabled !== false && !!feeAddress && feeBps > 0;
+
+        console.log("[FeeConfig API] Returning DB fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled });
+        return res.json({ feeAddress, feeBps, enabled });
+      }
+    } catch (err) {
+      console.warn("[FeeConfig API] Failed to load from DB, falling back to env vars:", err);
+    }
+
+    // Fallback to environment variables
     const feeAddress = process.env.INTEGRATOR_FEE_ADDRESS || process.env.VITE_INTEGRATOR_FEE_ADDRESS || "";
     const feeBps = parseInt(process.env.INTEGRATOR_FEE_BPS || process.env.VITE_INTEGRATOR_FEE_BPS || "0", 10);
     const enabled = !!feeAddress && feeBps > 0;
-    
-    console.log("[FeeConfig API] Returning fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled });
-    
-    res.json({
-      feeAddress,
-      feeBps,
-      enabled,
-    });
+
+    console.log("[FeeConfig API] Returning env fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled });
+    res.json({ feeAddress, feeBps, enabled });
   });
 
   // ========== Polymarket Bridge API Proxy ==========
