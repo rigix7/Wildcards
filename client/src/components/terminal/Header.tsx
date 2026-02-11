@@ -1,5 +1,6 @@
 import { Zap, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/useTheme";
 
 interface HeaderProps {
   usdcBalance: number;
@@ -9,6 +10,7 @@ interface HeaderProps {
 }
 
 export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = false }: HeaderProps) {
+  const { brandName, pointsName } = useTheme();
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -18,28 +20,28 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
 
   return (
     <header
-      className="h-14 shrink-0 flex items-center justify-between px-4 backdrop-blur-lg border-b border-zinc-800/50 z-30"
+      className="h-14 shrink-0 flex items-center justify-between px-4 backdrop-blur-lg border-b border-[var(--border-primary)]/50 z-30"
       style={{ backgroundColor: 'var(--header-bg, #09090b)' }}
     >
       <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
         <Zap className="w-5 h-5 fill-current" />
-        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>WILDCARD</span>
+        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>{brandName}</span>
       </div>
       {isConnected ? (
         <Button
           variant="ghost"
           onClick={onWalletClick}
-          className="group flex items-center gap-3 bg-zinc-900/50 border border-zinc-800 px-3 py-1.5 rounded-full"
+          className="group flex items-center gap-3 bg-[var(--card-bg)]/50 border border-[var(--border-primary)] px-3 py-1.5 rounded-full"
           data-testid="button-wallet"
         >
-          <div className="text-[10px] font-mono text-right leading-tight text-zinc-400 group-hover:text-white">
+          <div className="text-[10px] font-mono text-right leading-tight text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
             <div data-testid="text-usdc-balance">${formatBalance(usdcBalance)}</div>
             <div className="text-wild-scout" data-testid="text-wild-balance">
-              {formatBalance(wildBalance)} WILD
+              {formatBalance(wildBalance)} {pointsName}
             </div>
           </div>
-          <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
-            <Wallet className="w-3 h-3 text-zinc-400 group-hover:text-white" />
+          <div className="w-6 h-6 rounded-full bg-[var(--card-bg-elevated)] flex items-center justify-center">
+            <Wallet className="w-3 h-3 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
           </div>
         </Button>
       ) : (

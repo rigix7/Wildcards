@@ -40,15 +40,15 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
     <div className="flex flex-col h-full relative animate-fade-in">
       <DemoBadge />
 
-      <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-3 z-20">
+      <div className="shrink-0 bg-[var(--page-bg)] border-b border-[var(--border-primary)] p-3 z-20">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xs font-bold text-zinc-400 tracking-wider">PLAYER MARKETS</h2>
+          <h2 className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">PLAYER MARKETS</h2>
           <div className="flex items-center gap-2 text-[10px] font-mono">
             <button
               onClick={() => setSortBy("recent")}
               className={cn(
                 "px-2 py-1 rounded transition-colors",
-                sortBy === "recent" ? "bg-zinc-800 text-white" : "text-zinc-500"
+                sortBy === "recent" ? "bg-[var(--card-bg-elevated)] text-[var(--text-primary)]" : "text-[var(--text-muted)]"
               )}
               data-testid="button-sort-recent"
             >
@@ -59,7 +59,7 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
               onClick={() => setSortBy("volume")}
               className={cn(
                 "px-2 py-1 rounded transition-colors",
-                sortBy === "volume" ? "bg-zinc-800 text-white" : "text-zinc-500"
+                sortBy === "volume" ? "bg-[var(--card-bg-elevated)] text-[var(--text-primary)]" : "text-[var(--text-muted)]"
               )}
               data-testid="button-sort-volume"
             >
@@ -69,7 +69,7 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 text-[9px] font-mono text-zinc-600 uppercase pb-1 border-b border-zinc-800/50">
+        <div className="grid grid-cols-4 text-[9px] font-mono text-[var(--text-muted)] uppercase pb-1 border-b border-[var(--border-primary)]/50">
           <span>PLAYER</span>
           <span className="text-right">PRICE</span>
           <span className="text-right">24H</span>
@@ -83,39 +83,39 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-4 items-center p-3 border-b border-zinc-800/50"
+                className="grid grid-cols-4 items-center p-3 border-b border-[var(--border-primary)]/50"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-zinc-850 rounded-full animate-pulse-skeleton" />
+                  <div className="w-8 h-8 bg-[var(--card-bg)] rounded-full animate-pulse-skeleton" />
                   <div className="space-y-1">
-                    <div className="w-16 h-3 bg-zinc-850 rounded animate-pulse-skeleton" />
-                    <div className="w-12 h-2 bg-zinc-850 rounded animate-pulse-skeleton" />
+                    <div className="w-16 h-3 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
+                    <div className="w-12 h-2 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
                   </div>
                 </div>
-                <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
-                <div className="w-10 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
-                <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton ml-auto" />
+                <div className="w-12 h-4 bg-[var(--card-bg)] rounded animate-pulse-skeleton ml-auto" />
+                <div className="w-10 h-4 bg-[var(--card-bg)] rounded animate-pulse-skeleton ml-auto" />
+                <div className="w-12 h-4 bg-[var(--card-bg)] rounded animate-pulse-skeleton ml-auto" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="divide-y divide-zinc-800/50">
+          <div className="divide-y divide-[var(--border-primary)]/50">
             {availablePlayers.map((player) => (
               <div
                 key={player.id}
-                className="grid grid-cols-4 items-center p-3 hover:bg-zinc-900/50 transition-colors"
+                className="grid grid-cols-4 items-center p-3 hover:bg-[var(--card-bg)]/50 transition-colors"
                 data-testid={`row-trade-${player.id}`}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] font-medium text-zinc-400">
+                  <div className="w-8 h-8 bg-[var(--card-bg-elevated)] rounded-full flex items-center justify-center text-[10px] font-medium text-[var(--text-secondary)]">
                     {player.avatarInitials}
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">{player.name}</div>
-                    <div className="text-[10px] font-mono text-zinc-500">${player.symbol}</div>
+                    <div className="text-xs font-bold text-[var(--text-primary)]">{player.name}</div>
+                    <div className="text-[10px] font-mono text-[var(--text-muted)]">${player.symbol}</div>
                   </div>
                 </div>
-                <div className="text-right font-mono text-xs text-white">
+                <div className="text-right font-mono text-xs text-[var(--text-primary)]">
                   ${(player.stats?.marketCap ? player.stats.marketCap / 1000 : 0.01).toFixed(2)}
                 </div>
                 <div
@@ -131,7 +131,7 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
                   )}
                   {Math.abs(player.stats?.change24h || 0).toFixed(1)}%
                 </div>
-                <div className="text-right font-mono text-xs text-zinc-400">
+                <div className="text-right font-mono text-xs text-[var(--text-secondary)]">
                   {formatNumber(player.stats?.marketCap || 0)}
                 </div>
               </div>
@@ -140,13 +140,13 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
         )}
 
         {!isLoading && trades.length > 0 && (
-          <div className="p-3 border-t border-zinc-800">
-            <h3 className="text-xs font-bold text-zinc-400 tracking-wider mb-3">RECENT TRADES</h3>
+          <div className="p-3 border-t border-[var(--border-primary)]">
+            <h3 className="text-xs font-bold text-[var(--text-secondary)] tracking-wider mb-3">RECENT TRADES</h3>
             <div className="space-y-2">
               {trades.slice(0, 5).map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex justify-between items-center text-xs bg-zinc-900/50 p-2 rounded border border-zinc-800/50"
+                  className="flex justify-between items-center text-xs bg-[var(--card-bg)]/50 p-2 rounded border border-[var(--border-primary)]/50"
                   data-testid={`trade-${trade.id}`}
                 >
                   <div className="flex items-center gap-2">
@@ -160,9 +160,9 @@ export function TradeView({ trades, players, isLoading }: TradeViewProps) {
                     >
                       {trade.type.toUpperCase()}
                     </span>
-                    <span className="text-white font-medium">{trade.playerName}</span>
+                    <span className="text-[var(--text-primary)] font-medium">{trade.playerName}</span>
                   </div>
-                  <div className="flex items-center gap-3 font-mono text-zinc-400">
+                  <div className="flex items-center gap-3 font-mono text-[var(--text-secondary)]">
                     <span>${trade.total.toFixed(2)}</span>
                     <span className="text-[10px]">{formatTime(trade.timestamp)}</span>
                   </div>

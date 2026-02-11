@@ -8,8 +8,8 @@ interface SubTabsProps<T extends string> {
 
 export function SubTabs<T extends string>({ tabs, activeTab, onTabChange }: SubTabsProps<T>) {
   return (
-    <div className="shrink-0 bg-zinc-950 border-b border-zinc-800 p-2 z-20">
-      <div className="grid gap-1 bg-zinc-900 p-1 rounded-lg font-mono text-[10px] font-bold" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+    <div className="shrink-0 bg-[var(--page-bg)] border-b border-[var(--border-primary)] p-2 z-20">
+      <div className="grid gap-1 bg-[var(--card-bg)] p-1 rounded-lg font-mono text-[10px] font-bold" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -19,8 +19,8 @@ export function SubTabs<T extends string>({ tabs, activeTab, onTabChange }: SubT
               className={cn(
                 "py-1.5 rounded transition-all",
                 isActive
-                  ? "bg-zinc-800 text-white shadow"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  ? "bg-[var(--card-bg-elevated)] text-[var(--text-primary)] shadow"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               )}
               data-testid={`tab-${tab.id}`}
             >

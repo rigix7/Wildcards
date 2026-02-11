@@ -57,12 +57,12 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
           <div>
             <div className="flex items-center gap-2 mb-1">
               {market.league && (
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
                   {market.league}
                 </span>
               )}
               {market.sport && (
-                <span className="text-[9px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">
+                <span className="text-[9px] bg-[var(--card-bg-elevated)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded">
                   {market.sport}
                 </span>
               )}
@@ -70,11 +70,11 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
             <h3 className="font-black text-base leading-tight" style={{ color: 'var(--market-text, #ffffff)' }}>{market.title}</h3>
           </div>
           <div className="text-right shrink-0">
-            <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono">
+            <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] font-mono">
               <Clock className="w-3 h-3" />
               <span>{formatDate(market.startTime)}</span>
             </div>
-            <div className="text-[10px] text-zinc-600 font-mono">{formatTime(market.startTime)}</div>
+            <div className="text-[10px] text-[var(--text-muted)] font-mono">{formatTime(market.startTime)}</div>
           </div>
         </div>
 
@@ -88,13 +88,13 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
                 className={cn(
                   "flex flex-col items-center justify-center py-3 px-2 rounded-md border transition-all",
                   isSelected
-                    ? "bg-wild-brand/20 border-wild-brand text-white shadow-[0_0_15px_rgba(251,113,133,0.3)]"
-                    : "bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-600"
+                    ? "bg-wild-brand/20 border-wild-brand text-[var(--text-primary)] shadow-[0_0_15px_rgba(251,113,133,0.3)]"
+                    : "bg-[var(--page-bg)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:border-[var(--border-secondary)]"
                 )}
                 data-testid={`button-outcome-${outcome.id}`}
               >
                 <span className="text-xl font-black font-mono">{outcome.odds.toFixed(2)}</span>
-                <span className="text-[10px] text-zinc-400 mt-1 truncate w-full text-center">
+                <span className="text-[10px] text-[var(--text-secondary)] mt-1 truncate w-full text-center">
                   {outcome.label}
                 </span>
               </button>
@@ -102,7 +102,7 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
           })}
         </div>
 
-        <div className="flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+        <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)] font-mono">
           <span>Vol: {formatVolume(market.volume)}</span>
           <span>Liq: {formatVolume(market.liquidity)}</span>
         </div>
@@ -113,16 +113,16 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
 
 export function MarketCardSkeleton() {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 p-4 relative overflow-hidden">
+    <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] p-4 relative overflow-hidden">
       <div className="flex justify-between mb-4">
-        <div className="w-24 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
-        <div className="w-12 h-4 bg-zinc-850 rounded animate-pulse-skeleton" />
+        <div className="w-24 h-4 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
+        <div className="w-12 h-4 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
       </div>
-      <div className="w-48 h-6 bg-zinc-850 rounded animate-pulse-skeleton mb-6" />
+      <div className="w-48 h-6 bg-[var(--card-bg)] rounded animate-pulse-skeleton mb-6" />
       <div className="grid grid-cols-3 gap-2">
-        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
-        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
-        <div className="h-16 bg-zinc-850 rounded animate-pulse-skeleton" />
+        <div className="h-16 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
+        <div className="h-16 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
+        <div className="h-16 bg-[var(--card-bg)] rounded animate-pulse-skeleton" />
       </div>
     </div>
   );

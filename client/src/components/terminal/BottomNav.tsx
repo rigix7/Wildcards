@@ -18,7 +18,7 @@ const tabs: { id: TabType; label: string; icon: typeof TrendingUp; color: string
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav
-      className="shrink-0 border-t border-zinc-800 z-30 bottom-nav-safe"
+      className="shrink-0 border-t border-[var(--border-primary)] z-30 bottom-nav-safe"
       style={{ backgroundColor: 'var(--nav-bg, #09090b)' }}
     >
       <div className="grid grid-cols-4 h-16">

@@ -42,7 +42,7 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
     <div
       className={cn(
         "fixed bottom-20 left-1/2 -translate-x-1/2 z-50 min-w-[250px] max-w-[90%]",
-        "bg-zinc-850 border rounded-lg p-3 shadow-2xl",
+        "bg-[var(--card-bg)] border rounded-lg p-3 shadow-2xl",
         "flex items-center gap-3 transition-opacity duration-300",
         colors[type],
         isVisible ? "opacity-100" : "opacity-0"
@@ -50,7 +50,7 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
       data-testid="toast"
     >
       <Icon className="w-4 h-4 shrink-0" />
-      <span className="text-xs text-white">{message}</span>
+      <span className="text-xs text-[var(--text-primary)]">{message}</span>
     </div>
   );
 }
