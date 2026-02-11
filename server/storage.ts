@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "./db";
 import {
   markets,
@@ -10,8 +10,6 @@ import {
   adminSettings,
   futures,
   futuresCategories,
-  sportFieldConfigs,
-  sportMarketConfigs,
   polymarketPositions,
   polymarketOrders,
   polymarketTags,
@@ -31,10 +29,6 @@ import {
   type InsertFutures,
   type FuturesCategory,
   type InsertFuturesCategory,
-  type SportFieldConfig,
-  type InsertSportFieldConfig,
-  type SportMarketConfig,
-  type InsertSportMarketConfig,
   type PolymarketPosition,
   type InsertPolymarketPosition,
   type PolymarketOrder,
@@ -90,17 +84,6 @@ export interface IStorage {
   createFuturesCategory(category: InsertFuturesCategory): Promise<FuturesCategory>;
   updateFuturesCategory2(id: number, updates: Partial<InsertFuturesCategory>): Promise<FuturesCategory | undefined>;
   deleteFuturesCategory(id: number): Promise<boolean>;
-
-  getSportFieldConfigs(): Promise<SportFieldConfig[]>;
-  getSportFieldConfig(sportSlug: string): Promise<SportFieldConfig | undefined>;
-  createOrUpdateSportFieldConfig(config: InsertSportFieldConfig): Promise<SportFieldConfig>;
-  deleteSportFieldConfig(sportSlug: string): Promise<boolean>;
-
-  getSportMarketConfigs(): Promise<SportMarketConfig[]>;
-  getSportMarketConfig(sportSlug: string, marketType: string): Promise<SportMarketConfig | undefined>;
-  getSportMarketConfigsBySport(sportSlug: string): Promise<SportMarketConfig[]>;
-  createOrUpdateSportMarketConfig(config: InsertSportMarketConfig): Promise<SportMarketConfig>;
-  deleteSportMarketConfig(sportSlug: string, marketType: string): Promise<boolean>;
 
   getPolymarketOrders(walletAddress: string): Promise<PolymarketOrder[]>;
   createPolymarketOrder(order: InsertPolymarketOrder): Promise<PolymarketOrder>;
@@ -443,134 +426,6 @@ export class DatabaseStorage implements IStorage {
     // Then delete the category
     await db.delete(futuresCategories).where(eq(futuresCategories.id, id));
     return true;
-  }
-
-  async getSportFieldConfigs(): Promise<SportFieldConfig[]> {
-    return await db.select().from(sportFieldConfigs);
-  }
-
-  async getSportFieldConfig(sportSlug: string): Promise<SportFieldConfig | undefined> {
-    const [config] = await db.select().from(sportFieldConfigs).where(eq(sportFieldConfigs.sportSlug, sportSlug));
-    return config || undefined;
-  }
-
-  async createOrUpdateSportFieldConfig(config: InsertSportFieldConfig): Promise<SportFieldConfig> {
-    const now = new Date().toISOString();
-    const existing = await this.getSportFieldConfig(config.sportSlug);
-    
-    if (existing) {
-      const [updated] = await db
-        .update(sportFieldConfigs)
-        .set({
-          sportLabel: config.sportLabel,
-          titleField: config.titleField,
-          buttonLabelField: config.buttonLabelField,
-          betSlipTitleField: config.betSlipTitleField,
-          useQuestionForTitle: config.useQuestionForTitle,
-          sampleData: config.sampleData as Record<string, unknown> | undefined,
-          updatedAt: now,
-        })
-        .where(eq(sportFieldConfigs.sportSlug, config.sportSlug))
-        .returning();
-      return updated;
-    }
-    
-    const [newConfig] = await db.insert(sportFieldConfigs).values({
-      sportSlug: config.sportSlug,
-      sportLabel: config.sportLabel,
-      titleField: config.titleField || "groupItemTitle",
-      buttonLabelField: config.buttonLabelField || "outcomes",
-      betSlipTitleField: config.betSlipTitleField || "question",
-      useQuestionForTitle: config.useQuestionForTitle || false,
-      sampleData: config.sampleData as Record<string, unknown> | undefined,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return newConfig;
-  }
-
-  async deleteSportFieldConfig(sportSlug: string): Promise<boolean> {
-    const result = await db.delete(sportFieldConfigs).where(eq(sportFieldConfigs.sportSlug, sportSlug)).returning();
-    return result.length > 0;
-  }
-
-  async getSportMarketConfigs(): Promise<SportMarketConfig[]> {
-    return await db.select().from(sportMarketConfigs);
-  }
-
-  async getSportMarketConfig(sportSlug: string, marketType: string): Promise<SportMarketConfig | undefined> {
-    const [config] = await db.select().from(sportMarketConfigs)
-      .where(and(
-        eq(sportMarketConfigs.sportSlug, sportSlug),
-        eq(sportMarketConfigs.marketType, marketType)
-      ));
-    return config || undefined;
-  }
-
-  async getSportMarketConfigsBySport(sportSlug: string): Promise<SportMarketConfig[]> {
-    return await db.select().from(sportMarketConfigs)
-      .where(eq(sportMarketConfigs.sportSlug, sportSlug));
-  }
-
-  async createOrUpdateSportMarketConfig(config: InsertSportMarketConfig): Promise<SportMarketConfig> {
-    const now = new Date().toISOString();
-    const existing = await this.getSportMarketConfig(config.sportSlug, config.marketType);
-    
-    if (existing) {
-      const [updated] = await db
-        .update(sportMarketConfigs)
-        .set({
-          sportLabel: config.sportLabel,
-          marketTypeLabel: config.marketTypeLabel,
-          titleField: config.titleField,
-          buttonLabelField: config.buttonLabelField,
-          betSlipTitleField: config.betSlipTitleField,
-          useQuestionForTitle: config.useQuestionForTitle,
-          showLine: config.showLine,
-          lineFieldPath: config.lineFieldPath,
-          lineFormatter: config.lineFormatter,
-          outcomeStrategy: config.outcomeStrategy as { type: string; fallback?: string; regex?: string; template?: string } | undefined,
-          sampleData: config.sampleData as Record<string, unknown> | undefined,
-          notes: config.notes,
-          updatedAt: now,
-        })
-        .where(and(
-          eq(sportMarketConfigs.sportSlug, config.sportSlug),
-          eq(sportMarketConfigs.marketType, config.marketType)
-        ))
-        .returning();
-      return updated;
-    }
-    
-    const [newConfig] = await db.insert(sportMarketConfigs).values({
-      sportSlug: config.sportSlug,
-      sportLabel: config.sportLabel,
-      marketType: config.marketType,
-      marketTypeLabel: config.marketTypeLabel,
-      titleField: config.titleField || "groupItemTitle",
-      buttonLabelField: config.buttonLabelField || "outcomes",
-      betSlipTitleField: config.betSlipTitleField || "question",
-      useQuestionForTitle: config.useQuestionForTitle || false,
-      showLine: config.showLine || false,
-      lineFieldPath: config.lineFieldPath || "line",
-      lineFormatter: config.lineFormatter || "default",
-      outcomeStrategy: config.outcomeStrategy as { type: string; fallback?: string; regex?: string; template?: string } | undefined,
-      sampleData: config.sampleData as Record<string, unknown> | undefined,
-      notes: config.notes,
-      createdAt: now,
-      updatedAt: now,
-    }).returning();
-    return newConfig;
-  }
-
-  async deleteSportMarketConfig(sportSlug: string, marketType: string): Promise<boolean> {
-    const result = await db.delete(sportMarketConfigs)
-      .where(and(
-        eq(sportMarketConfigs.sportSlug, sportSlug),
-        eq(sportMarketConfigs.marketType, marketType)
-      ))
-      .returning();
-    return result.length > 0;
   }
 
   async seedInitialData(): Promise<void> {

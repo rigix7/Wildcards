@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createContext, useContext, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Shield, Lock, Loader2, TrendingUp, Calendar, Radio, Clock, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { SubTabs } from "@/components/terminal/SubTabs";
@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/terminal/EmptyState";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Market, Futures, AdminSettings, SportMarketConfig, FuturesCategory } from "@shared/schema";
+import type { Market, Futures, AdminSettings, FuturesCategory } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
 import { prefetchTeams } from "@/lib/polymarket";
 import type { UseLivePricesResult } from "@/hooks/useLivePrices";
@@ -29,21 +29,6 @@ function getLivePrice(
   return staticPrice;
 }
 
-// Context for sport market configs
-const SportConfigContext = createContext<Map<string, SportMarketConfig>>(new Map());
-
-function useSportConfig(sportSlug: string, marketType: string): SportMarketConfig | undefined {
-  const configMap = useContext(SportConfigContext);
-  return configMap.get(`${sportSlug}:${marketType}`);
-}
-
-function buildConfigMap(configs: SportMarketConfig[]): Map<string, SportMarketConfig> {
-  const map = new Map<string, SportMarketConfig>();
-  for (const config of configs) {
-    map.set(`${config.sportSlug}:${config.marketType}`, config);
-  }
-  return map;
-}
 
 type PredictSubTab = "matchday" | "futures" | "fantasy";
 
@@ -1497,14 +1482,6 @@ export function PredictView({
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
   const [selectedFuturesCategory, setSelectedFuturesCategory] = useState<number | null>(null);
 
-  // Load sport market configs for dynamic formatting
-  const { data: sportConfigs = [] } = useQuery<SportMarketConfig[]>({
-    queryKey: ["/api/admin/sport-market-configs"],
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-  
-  const configMap = buildConfigMap(sportConfigs);
-  
   // Prefetch teams from Gamma API for team name → abbreviation lookup
   useEffect(() => {
     prefetchTeams();
@@ -1767,7 +1744,6 @@ export function PredictView({
   };
 
   return (
-    <SportConfigContext.Provider value={configMap}>
       <div className="flex flex-col h-full animate-fade-in">
         <PriceTicker events={displayEvents} />
         <SubTabs tabs={subTabs} activeTab={activeSubTab} onTabChange={setActiveSubTab} />
@@ -1926,6 +1902,5 @@ export function PredictView({
           </Button>
         </div>
       </div>
-    </SportConfigContext.Provider>
   );
 }

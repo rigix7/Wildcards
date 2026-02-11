@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, real, timestamp, jsonb, varchar, boolean, numeric, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, real, timestamp, jsonb, varchar, boolean, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -149,47 +149,6 @@ export const polymarketTags = pgTable("polymarket_tags", {
   updatedAt: text("updated_at").notNull(),
 });
 
-export const sportMarketConfigs = pgTable("sport_market_configs", {
-  id: serial("id").primaryKey(),
-  sportSlug: text("sport_slug").notNull(),
-  sportLabel: text("sport_label").notNull(),
-  marketType: text("market_type").notNull(),
-  marketTypeLabel: text("market_type_label"),
-  titleField: text("title_field").notNull().default("groupItemTitle"),
-  buttonLabelField: text("button_label_field").notNull().default("outcomes"),
-  betSlipTitleField: text("bet_slip_title_field").notNull().default("question"),
-  useQuestionForTitle: boolean("use_question_for_title").notNull().default(false),
-  showLine: boolean("show_line").notNull().default(false),
-  lineFieldPath: text("line_field_path").default("line"),
-  lineFormatter: text("line_formatter").default("default"),
-  outcomeStrategy: jsonb("outcome_strategy").$type<{
-    type: string;
-    fallback?: string;
-    regex?: string;
-    template?: string;
-  }>(),
-  sampleData: jsonb("sample_data").$type<Record<string, unknown>>(),
-  notes: text("notes"),
-  createdAt: text("created_at"),
-  updatedAt: text("updated_at"),
-}, (table) => [
-  // Composite unique index on sportSlug + marketType
-  uniqueIndex("sport_market_config_unique").on(table.sportSlug, table.marketType)
-]);
-
-export const sportFieldConfigs = pgTable("sport_field_configs", {
-  id: serial("id").primaryKey(),
-  sportSlug: text("sport_slug").notNull().unique(),
-  sportLabel: text("sport_label").notNull(),
-  titleField: text("title_field").notNull().default("groupItemTitle"),
-  buttonLabelField: text("button_label_field").notNull().default("outcomes"),
-  betSlipTitleField: text("bet_slip_title_field").notNull().default("question"),
-  useQuestionForTitle: boolean("use_question_for_title").notNull().default(false),
-  sampleData: jsonb("sample_data").$type<Record<string, unknown>>(),
-  createdAt: text("created_at"),
-  updatedAt: text("updated_at"),
-});
-
 // ============ ZOD SCHEMAS & TYPES ============
 
 export const insertMarketSchema = createInsertSchema(markets).omit({ id: true });
@@ -231,13 +190,57 @@ export const insertPolymarketTagSchema = createInsertSchema(polymarketTags).omit
 export type InsertPolymarketTag = z.infer<typeof insertPolymarketTagSchema>;
 export type PolymarketTagRecord = typeof polymarketTags.$inferSelect;
 
-export const insertSportFieldConfigSchema = createInsertSchema(sportFieldConfigs).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertSportFieldConfig = z.infer<typeof insertSportFieldConfigSchema>;
-export type SportFieldConfig = typeof sportFieldConfigs.$inferSelect;
 
-export const insertSportMarketConfigSchema = createInsertSchema(sportMarketConfigs).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertSportMarketConfig = z.infer<typeof insertSportMarketConfigSchema>;
-export type SportMarketConfig = typeof sportMarketConfigs.$inferSelect;
+// ============ WHITE-LABEL THEME CONFIGURATION ============
+
+export const themeConfigSchema = z.object({
+  brand: z.object({
+    name: z.string().default("WILDCARDS"),
+    logoUrl: z.string().optional(),
+    logoIcon: z.string().optional(),
+    primaryColor: z.string().default("#f43f5e"),
+    accentColor: z.string().default("#fbbf24"),
+  }).default({}),
+  header: z.object({
+    backgroundColor: z.string().default("#09090b"),
+    textColor: z.string().default("#fafafa"),
+    accentColor: z.string().default("#fbbf24"),
+  }).default({}),
+  betSlip: z.object({
+    backgroundColor: z.string().default("#18181b"),
+    cardColor: z.string().default("#27272a"),
+    primaryButtonColor: z.string().default("#f43f5e"),
+    successColor: z.string().default("#10b981"),
+    textColor: z.string().default("#fafafa"),
+  }).default({}),
+  marketCards: z.object({
+    backgroundColor: z.string().default("#18181b"),
+    hoverColor: z.string().default("#27272a"),
+    borderColor: z.string().default("#3f3f46"),
+    oddsBadgeColor: z.string().default("#fbbf24"),
+    textColor: z.string().default("#fafafa"),
+    moneylineAccent: z.string().default("#f43f5e"),
+    totalsAccent: z.string().default("#3b82f6"),
+    moreMarketsAccent: z.string().default("#8b5cf6"),
+  }).default({}),
+  sortingBar: z.object({
+    backgroundColor: z.string().default("#09090b"),
+    activeTabColor: z.string().default("#f43f5e"),
+    inactiveTabColor: z.string().default("#71717a"),
+  }).default({}),
+  bottomNav: z.object({
+    backgroundColor: z.string().default("#09090b"),
+    activeColor: z.string().default("#fbbf24"),
+    inactiveColor: z.string().default("#71717a"),
+  }).default({}),
+  global: z.object({
+    successColor: z.string().default("#10b981"),
+    errorColor: z.string().default("#ef4444"),
+    warningColor: z.string().default("#f59e0b"),
+  }).default({}),
+});
+
+export type ThemeConfig = z.infer<typeof themeConfigSchema>;
 
 // ============ LEGACY ZOD SCHEMAS (for API validation) ============
 
