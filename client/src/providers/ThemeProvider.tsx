@@ -31,6 +31,36 @@ function applyTheme(theme: ThemeConfig) {
     document.title = theme.brand.name;
   }
 
+  // General-purpose semantic variables (derived from theme sections)
+  // These map the widespread bg-zinc-*/text-zinc-*/border-zinc-* patterns
+  const pageBg = theme.sortingBar?.backgroundColor || '#09090b';       // zinc-950
+  const cardBg = theme.marketCards?.backgroundColor || '#18181b';       // zinc-900
+  const cardBgElevated = theme.marketCards?.hoverColor || '#27272a';    // zinc-800
+  const cardBgHover = theme.marketCards?.borderColor || '#3f3f46';      // zinc-700
+  const textPrimary = theme.marketCards?.textColor || '#fafafa';        // white
+  const textMuted = theme.sortingBar?.inactiveTabColor || '#71717a';    // zinc-500
+  const borderPrimary = theme.marketCards?.hoverColor || '#27272a';     // zinc-800
+  const borderSecondary = theme.marketCards?.borderColor || '#3f3f46';  // zinc-700
+  const primaryColor = theme.brand?.primaryColor || '#f43f5e';
+  const accentColor = theme.brand?.accentColor || '#fbbf24';
+
+  root.style.setProperty('--page-bg', pageBg);
+  root.style.setProperty('--card-bg', cardBg);
+  root.style.setProperty('--card-bg-elevated', cardBgElevated);
+  root.style.setProperty('--card-bg-hover', cardBgHover);
+  root.style.setProperty('--text-primary', textPrimary);
+  root.style.setProperty('--text-secondary', '#a1a1aa');
+  root.style.setProperty('--text-muted', textMuted);
+  root.style.setProperty('--border-primary', borderPrimary);
+  root.style.setProperty('--border-secondary', borderSecondary);
+  root.style.setProperty('--primary-color', primaryColor);
+  root.style.setProperty('--accent-color', accentColor);
+
+  // Global
+  root.style.setProperty('--success-color', theme.global?.successColor || '#10b981');
+  root.style.setProperty('--error-color', theme.global?.errorColor || '#ef4444');
+  root.style.setProperty('--warning-color', theme.global?.warningColor || '#f59e0b');
+
   // Header
   root.style.setProperty('--header-bg', theme.header?.backgroundColor || '#09090b');
   root.style.setProperty('--header-text', theme.header?.textColor || '#fafafa');
@@ -43,7 +73,7 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--betslip-success', theme.betSlip?.successColor || '#10b981');
   root.style.setProperty('--betslip-text', theme.betSlip?.textColor || '#fafafa');
 
-  // Also set the legacy --wl-betslip-* variables for backward compat with BetSlip
+  // Legacy --wl-betslip-* variables for backward compat
   root.style.setProperty('--wl-betslip-bg', theme.betSlip?.backgroundColor || '#18181b');
   root.style.setProperty('--wl-betslip-text', theme.betSlip?.textColor || '#fafafa');
 

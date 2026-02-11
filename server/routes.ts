@@ -69,12 +69,16 @@ export async function registerRoutes(
     try {
       const config = await storage.getWhiteLabelConfig();
       if (config) {
-        return res.json({ themeConfig: config.themeConfig });
+        return res.json({
+          themeConfig: config.themeConfig,
+          pointsConfig: config.pointsConfig || null,
+          brandName: config.themeConfig?.brand?.name || null,
+        });
       }
-      return res.json({ themeConfig: null });
+      return res.json({ themeConfig: null, pointsConfig: null, brandName: null });
     } catch (err) {
       console.error("[Public ThemeConfig] Error:", err);
-      return res.json({ themeConfig: null });
+      return res.json({ themeConfig: null, pointsConfig: null, brandName: null });
     }
   });
 

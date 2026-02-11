@@ -4,6 +4,24 @@
 
 /* Theme CSS Variables - Applied by ThemeProvider */
 :root {
+  /* General-purpose semantic variables */
+  --page-bg: #09090b;
+  --card-bg: #18181b;
+  --card-bg-elevated: #27272a;
+  --card-bg-hover: #3f3f46;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border-primary: #27272a;
+  --border-secondary: #3f3f46;
+  --primary-color: #f43f5e;
+  --accent-color: #fbbf24;
+
+  /* Global status colors */
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+
   /* Header */
   --header-bg: #09090b;
   --header-text: #fafafa;

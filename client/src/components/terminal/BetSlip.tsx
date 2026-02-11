@@ -465,23 +465,23 @@ export function BetSlip({
   if (submissionStatus === "success") {
     return (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-[430px] bg-zinc-900 border-t border-emerald-500/50 rounded-t-xl p-6 animate-slide-up">
+        <div className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-emerald-500/50 rounded-t-xl p-6 animate-slide-up">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">Bet Placed!</h3>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-1">Bet Placed!</h3>
               <p className="text-emerald-400 font-mono text-lg">
                 ${confirmedStake.toFixed(2)} on {outcomeLabel}
               </p>
-              <p className="text-zinc-400 text-sm mt-2">{marketTitle}</p>
+              <p className="text-[var(--text-secondary)] text-sm mt-2">{marketTitle}</p>
             </div>
             <div className="pt-2 space-y-3">
               <Button
                 onClick={onCancel}
                 size="lg"
-                className="w-full bg-emerald-600 text-white font-bold"
+                className="w-full bg-emerald-600 text-[var(--text-primary)] font-bold"
                 data-testid="button-success-done"
               >
                 Done
@@ -490,7 +490,7 @@ export function BetSlip({
                 onClick={onCancel}
                 variant="ghost"
                 size="sm"
-                className="w-full text-zinc-400"
+                className="w-full text-[var(--text-secondary)]"
                 data-testid="button-view-activity"
               >
                 View in Activity <ArrowRight className="w-4 h-4 ml-1" />
@@ -513,7 +513,7 @@ export function BetSlip({
 
     return (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-        <div className={`w-full max-w-[430px] bg-zinc-900 border-t ${borderColor} rounded-t-xl p-6 animate-slide-up`}>
+        <div className={`w-full max-w-[430px] bg-[var(--card-bg)] border-t ${borderColor} rounded-t-xl p-6 animate-slide-up`}>
           <div className="text-center space-y-4">
             <div className={`w-16 h-16 rounded-full ${iconBgColor} flex items-center justify-center mx-auto`}>
               {isWarning ? (
@@ -523,16 +523,16 @@ export function BetSlip({
               )}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-1">
                 {submissionError || "Bet Failed"}
               </h3>
               {errorDetails?.actionable && (
-                <p className="text-zinc-400 text-sm mt-2">{errorDetails.actionable}</p>
+                <p className="text-[var(--text-secondary)] text-sm mt-2">{errorDetails.actionable}</p>
               )}
               {errorDetails?.category && (
                 <div className="flex items-center justify-center gap-1 mt-3">
-                  <Info className="w-3 h-3 text-zinc-500" />
-                  <p className="text-zinc-500 text-xs font-mono">
+                  <Info className="w-3 h-3 text-[var(--text-muted)]" />
+                  <p className="text-[var(--text-muted)] text-xs font-mono">
                     {errorDetails.category.replace(/_/g, " ")}
                   </p>
                 </div>
@@ -542,7 +542,7 @@ export function BetSlip({
               <Button
                 onClick={handleRetry}
                 size="lg"
-                className="w-full bg-wild-brand text-white font-bold"
+                className="w-full bg-wild-brand text-[var(--text-primary)] font-bold"
                 data-testid="button-retry-bet"
               >
                 Try Again
@@ -551,7 +551,7 @@ export function BetSlip({
                 onClick={onCancel}
                 variant="ghost"
                 size="sm"
-                className="w-full text-zinc-400"
+                className="w-full text-[var(--text-secondary)]"
                 data-testid="button-cancel-bet"
               >
                 Cancel
@@ -570,7 +570,7 @@ export function BetSlip({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
       {/* From PolyHouse: CSS variable support for white-label theming */}
       <div
-        className="w-full max-w-[430px] bg-zinc-900 border-t border-zinc-700 rounded-t-xl p-4 animate-slide-up"
+        className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-[var(--border-secondary)] rounded-t-xl p-4 animate-slide-up"
         style={{ backgroundColor: "var(--wl-betslip-bg)" }}
       >
         <div className="flex justify-between items-start mb-4">
@@ -599,12 +599,12 @@ export function BetSlip({
               {marketTitle}
             </p>
             {question && (
-              <p className="text-xs text-zinc-500 mt-1 italic">{question}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1 italic">{question}</p>
             )}
           </div>
           <button
             onClick={onCancel}
-            className="text-zinc-400 hover:text-white p-1"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1"
             disabled={isPending || submissionStatus === "pending"}
             data-testid="button-close-betslip"
           >
@@ -620,8 +620,8 @@ export function BetSlip({
                 onClick={() => setBetDirection("yes")}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${
                   betDirection === "yes"
-                    ? "bg-wild-scout text-white border-2 border-wild-scout"
-                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+                    ? "bg-wild-scout text-[var(--text-primary)] border-2 border-wild-scout"
+                    : "bg-[var(--card-bg-elevated)] text-[var(--text-secondary)] border-2 border-[var(--border-secondary)] hover:border-[var(--border-secondary)]"
                 }`}
                 disabled={isPending || isLoadingBook || submissionStatus === "pending"}
                 data-testid="button-direction-yes"
@@ -632,8 +632,8 @@ export function BetSlip({
                 onClick={() => setBetDirection("no")}
                 className={`flex-1 py-3 rounded-lg font-bold text-sm transition-all ${
                   betDirection === "no"
-                    ? "bg-wild-brand text-white border-2 border-wild-brand"
-                    : "bg-zinc-800 text-zinc-400 border-2 border-zinc-700 hover:border-zinc-600"
+                    ? "bg-wild-brand text-[var(--text-primary)] border-2 border-wild-brand"
+                    : "bg-[var(--card-bg-elevated)] text-[var(--text-secondary)] border-2 border-[var(--border-secondary)] hover:border-[var(--border-secondary)]"
                 }`}
                 disabled={isPending || isLoadingBook || submissionStatus === "pending"}
                 data-testid="button-direction-no"
@@ -645,7 +645,7 @@ export function BetSlip({
 
           {/* Order Book Status */}
           {isLoadingBook && (
-            <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm py-2">
+            <div className="flex items-center justify-center gap-2 text-[var(--text-secondary)] text-sm py-2">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Fetching live prices...</span>
             </div>
@@ -698,13 +698,13 @@ export function BetSlip({
 
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <label className="text-xs text-zinc-500 mb-1 block">Stake (USDC)</label>
+              <label className="text-xs text-[var(--text-muted)] mb-1 block">Stake (USDC)</label>
               <Input
                 type="number"
                 value={stake}
                 onChange={(e) => setStake(e.target.value)}
                 placeholder="0.00"
-                className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+                className="bg-[var(--card-bg-elevated)] border-[var(--border-secondary)] text-[var(--text-primary)] text-lg font-mono h-12"
                 min="0"
                 step="1"
                 disabled={isPending || submissionStatus === "pending"}
@@ -714,7 +714,7 @@ export function BetSlip({
             <div className="text-right flex items-start gap-2">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <p className="text-xs text-zinc-500">Odds</p>
+                  <p className="text-xs text-[var(--text-muted)]">Odds</p>
                   {/* From PolyHouse: visual stale indicator */}
                   {isOddsStale && !isLoadingBook && (
                     <span className="text-[10px] text-amber-400 animate-pulse" title="Odds may be outdated">
@@ -730,7 +730,7 @@ export function BetSlip({
                   {displayedOdds.toFixed(2)}
                 </p>
                 {orderBook && (
-                  <p className="text-[10px] text-zinc-500">@ ${executionPrice.toFixed(2)}</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">@ ${executionPrice.toFixed(2)}</p>
                 )}
               </div>
               {/* From PolyHouse: refresh button highlighting when stale */}
@@ -740,7 +740,7 @@ export function BetSlip({
                 className={`mt-1 p-1.5 rounded transition-colors disabled:opacity-50 ${
                   isOddsStale
                     ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
-                    : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-wild-gold"
+                    : "bg-[var(--card-bg-elevated)] hover:bg-[var(--card-bg-hover)] text-[var(--text-secondary)] hover:text-wild-gold"
                 }`}
                 title={isOddsStale ? "Refresh stale odds" : "Refresh odds"}
                 data-testid="button-refresh-odds"
@@ -755,7 +755,7 @@ export function BetSlip({
               <button
                 key={amount}
                 onClick={() => setStake(amount.toString())}
-                className="flex-1 py-2 text-sm font-mono bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-300 transition-colors"
+                className="flex-1 py-2 text-sm font-mono bg-[var(--card-bg-elevated)] hover:bg-[var(--card-bg-hover)] rounded text-[var(--text-secondary)] transition-colors"
                 disabled={isPending || submissionStatus === "pending"}
                 data-testid={`button-quick-${amount}`}
               >
@@ -772,36 +772,36 @@ export function BetSlip({
             </button>
           </div>
 
-          <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+          <div className="bg-[var(--card-bg-elevated)]/50 rounded-lg p-3 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Potential Win</span>
-              <span className="font-mono font-bold text-white">${potentialWin.toFixed(2)}</span>
+              <span className="text-[var(--text-secondary)]">Potential Win</span>
+              <span className="font-mono font-bold text-[var(--text-primary)]">${potentialWin.toFixed(2)}</span>
             </div>
             {/* New (merged): configurable fee display via showFeeInUI prop */}
             {/* From Wildcards: fee breakdown with formatUSDC for small amounts */}
             {showFeeInUI && shouldApplyFee && feeAmount > 0 && (
               <>
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">
+                  <span className="text-[var(--text-muted)]">
                     Platform Fee ({(feeBps / 100).toFixed(2)}%)
                   </span>
-                  <span className="font-mono text-zinc-500">-${formatUSDC(feeAmount)}</span>
+                  <span className="font-mono text-[var(--text-muted)]">-${formatUSDC(feeAmount)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-zinc-500">Your Bet Amount</span>
-                  <span className="font-mono text-zinc-400">${formatUSDC(effectiveBetAmount)}</span>
+                  <span className="text-[var(--text-muted)]">Your Bet Amount</span>
+                  <span className="font-mono text-[var(--text-secondary)]">${formatUSDC(effectiveBetAmount)}</span>
                 </div>
               </>
             )}
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">{pointsName} Points Earned</span>
+              <span className="text-[var(--text-secondary)]">{pointsName} Points Earned</span>
               <span className="font-mono text-wild-gold">
                 +{earnedPoints} {pointsName}
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-zinc-500">Available Balance</span>
-              <span className="font-mono text-zinc-400">${maxBalance.toFixed(2)} USDC</span>
+              <span className="text-[var(--text-muted)]">Available Balance</span>
+              <span className="font-mono text-[var(--text-secondary)]">${maxBalance.toFixed(2)} USDC</span>
             </div>
           </div>
 
@@ -831,7 +831,7 @@ export function BetSlip({
               submissionStatus === "pending"
             }
             size="lg"
-            className="w-full text-white font-bold text-lg"
+            className="w-full text-[var(--text-primary)] font-bold text-lg"
             style={{ backgroundColor: 'var(--betslip-primary, #f43f5e)' }}
             data-testid="button-confirm-bet"
           >
@@ -850,7 +850,7 @@ export function BetSlip({
             )}
           </Button>
 
-          <p className="text-[10px] text-zinc-600 text-center">
+          <p className="text-[10px] text-[var(--text-muted)] text-center">
             Bets earn {pointsName} points. Orders submitted to Polymarket CLOB.
           </p>
         </div>

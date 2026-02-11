@@ -20,6 +20,7 @@ import useClobClient from "@/hooks/useClobClient";
 import useClobOrder from "@/hooks/useClobOrder";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import useFeeCollection from "@/hooks/useFeeCollection";
+import { useTheme } from "@/hooks/useTheme";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,7 @@ import { DollarSign, Loader2, CheckCircle2, X, AlertTriangle } from "lucide-reac
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures, PolymarketTagRecord, FuturesCategory } from "@shared/schema";
 
 export default function HomePage() {
+  const { pointsName } = useTheme();
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
   const { 
     tradingSession, 
@@ -398,7 +400,7 @@ export default function HomePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
-      showToast("Funded 500 WILD successfully!", "success");
+      showToast(`Funded 500 ${pointsName} successfully!`, "success");
     },
     onError: () => {
       showToast("Failed to fund player", "error");
@@ -735,7 +737,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-hud-grid bg-[size:30px_30px] font-sans selection:bg-wild-brand selection:text-black text-sm overflow-hidden" style={{ backgroundColor: 'var(--header-bg, #09090b)' }}>
-      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-zinc-800/50 shadow-2xl pb-safe" style={{ backgroundColor: 'var(--header-bg, #09090b)', opacity: 0.95 }}>
+      <div className="relative z-10 min-h-dvh h-dvh flex flex-col max-w-[430px] mx-auto border-x border-[var(--border-primary)]/50 shadow-2xl pb-safe" style={{ backgroundColor: 'var(--header-bg, #09090b)', opacity: 0.95 }}>
         <Header
           usdcBalance={wallet.usdcBalance}
           wildBalance={wallet.wildBalance}
@@ -831,7 +833,7 @@ export default function HomePage() {
           isSoccer3Way={selectedBet.isSoccer3Way}
           getOrderBook={clobClient ? getOrderBook : undefined}
           showFeeInUI={true}
-          pointsName="WILD"
+          pointsName={pointsName}
         />
       )}
 
@@ -840,25 +842,25 @@ export default function HomePage() {
       {/* Sell Position Panel - BetSlip Style (for PredictView) */}
       {sellModalOpen && sellPosition && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] bg-zinc-900 border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+          <div className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-wild-gold" />
                   Sell Position
                 </p>
-                <h3 className="font-bold text-white text-lg">
+                <h3 className="font-bold text-[var(--text-primary)] text-lg">
                   {sellPosition.outcomeLabel || "Yes"}
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">{sellPosition.marketQuestion || "Market Position"}</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  You have: <span className="text-white font-mono">{sellPosition.size.toFixed(2)} shares</span>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sellPosition.marketQuestion || "Market Position"}</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">
+                  You have: <span className="text-[var(--text-primary)] font-mono">{sellPosition.size.toFixed(2)} shares</span>
                 </p>
               </div>
               <button
                 onClick={() => setSellModalOpen(false)}
-                className="text-zinc-400 hover:text-white p-1"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-1"
                 disabled={isSelling}
                 data-testid="button-close-predict-sell"
               >
@@ -868,23 +870,23 @@ export default function HomePage() {
 
             <div className="space-y-4">
               {/* Cost Basis & Best Bid Section */}
-              <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+              <div className="bg-[var(--card-bg-elevated)]/50 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Amount spent</span>
-                  <span className="text-sm font-mono text-white">
+                  <span className="text-xs text-[var(--text-secondary)]">Amount spent</span>
+                  <span className="text-sm font-mono text-[var(--text-primary)]">
                     ${(sellPosition.size * sellPosition.avgPrice).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Avg cost / Breakeven</span>
-                  <span className="text-sm font-mono text-zinc-300">
+                  <span className="text-xs text-[var(--text-secondary)]">Avg cost / Breakeven</span>
+                  <span className="text-sm font-mono text-[var(--text-secondary)]">
                     ${sellPosition.avgPrice.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-zinc-400">Best bid (sell now)</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Best bid (sell now)</span>
                   {isLoadingSellBid ? (
-                    <span className="text-sm font-mono text-zinc-500 flex items-center gap-1">
+                    <span className="text-sm font-mono text-[var(--text-muted)] flex items-center gap-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Loading...
                     </span>
@@ -895,7 +897,7 @@ export default function HomePage() {
                       ${sellBestBid.toFixed(2)}
                     </span>
                   ) : (
-                    <span className="text-sm font-mono text-zinc-500">—</span>
+                    <span className="text-sm font-mono text-[var(--text-muted)]">—</span>
                   )}
                 </div>
               </div>
@@ -903,13 +905,13 @@ export default function HomePage() {
               {/* Shares Input with Best Bid Display */}
               <div className="flex items-center gap-3">
                 <div className="flex-1">
-                  <label className="text-xs text-zinc-500 mb-1 block">Shares to sell</label>
+                  <label className="text-xs text-[var(--text-muted)] mb-1 block">Shares to sell</label>
                   <Input
                     type="number"
                     value={sellAmount}
                     onChange={(e) => setSellAmount(e.target.value)}
                     placeholder="0.00"
-                    className="bg-zinc-800 border-zinc-700 text-white text-lg font-mono h-12"
+                    className="bg-[var(--card-bg-elevated)] border-[var(--border-secondary)] text-[var(--text-primary)] text-lg font-mono h-12"
                     min="0"
                     max={sellPosition.size}
                     step="0.01"
@@ -918,7 +920,7 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-zinc-500">Best Bid</p>
+                  <p className="text-xs text-[var(--text-muted)]">Best Bid</p>
                   <p className={cn("text-2xl font-black font-mono",
                     sellBestBid && sellBestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-gold"
                   )}>
@@ -937,7 +939,7 @@ export default function HomePage() {
                       "flex-1 py-2 text-sm font-mono rounded transition-colors",
                       sellAmount === (sellPosition.size * pct / 100).toFixed(2)
                         ? "bg-wild-gold/20 text-wild-gold border border-wild-gold/30"
-                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
+                        : "bg-[var(--card-bg-elevated)] hover:bg-[var(--card-bg-hover)] text-[var(--text-secondary)]"
                     )}
                     disabled={isSelling}
                     data-testid={`button-predict-sell-${pct}pct`}
@@ -962,22 +964,22 @@ export default function HomePage() {
 
               {/* Estimated Return Summary */}
               {sellAmount && parseFloat(sellAmount) > 0 && (
-                <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                <div className="bg-[var(--card-bg-elevated)]/50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Cost basis</span>
-                    <span className="font-mono text-zinc-300">
+                    <span className="text-[var(--text-secondary)]">Cost basis</span>
+                    <span className="font-mono text-[var(--text-secondary)]">
                       ${(parseFloat(sellAmount) * sellPosition.avgPrice).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-400">Estimated return</span>
+                    <span className="text-[var(--text-secondary)]">Estimated return</span>
                     <span className="font-mono font-bold text-wild-gold">
                       ~${(parseFloat(sellAmount) * (sellBestBid || sellPosition.avgPrice)).toFixed(2)}
                     </span>
                   </div>
                   {sellBestBid && (
-                    <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
-                      <span className="text-zinc-400">Estimated P&L</span>
+                    <div className="flex justify-between text-sm border-t border-[var(--border-secondary)] pt-2 mt-2">
+                      <span className="text-[var(--text-secondary)]">Estimated P&L</span>
                       <span className={cn("font-mono font-semibold",
                         (sellBestBid - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
                       )}>
@@ -986,7 +988,7 @@ export default function HomePage() {
                       </span>
                     </div>
                   )}
-                  <p className="text-[10px] text-zinc-500">
+                  <p className="text-[10px] text-[var(--text-muted)]">
                     Final value depends on market liquidity
                   </p>
                 </div>
@@ -1013,7 +1015,7 @@ export default function HomePage() {
                 <Button
                   variant="outline"
                   onClick={() => setSellModalOpen(false)}
-                  className="flex-1 border-zinc-700"
+                  className="flex-1 border-[var(--border-secondary)]"
                   disabled={isSelling}
                   data-testid="button-cancel-predict-sell"
                 >
@@ -1037,7 +1039,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              <p className="text-[10px] text-zinc-600 text-center">
+              <p className="text-[10px] text-[var(--text-muted)] text-center">
                 Orders submitted to Polymarket CLOB at best available price.
               </p>
             </div>

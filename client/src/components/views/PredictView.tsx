@@ -253,7 +253,7 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
   const animationDuration = Math.max(30, tickerItems.length * 4);
   
   return (
-    <div className="bg-zinc-900/80 border-b border-zinc-800 overflow-hidden">
+    <div className="bg-[var(--card-bg)]/80 border-b border-[var(--border-primary)] overflow-hidden">
       <style>
         {`
           @keyframes ticker-scroll {
@@ -274,15 +274,15 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
         {/* Duplicate the content for seamless loop */}
         {[...tickerItems, ...tickerItems].map((item, idx) => (
           <div key={idx} className="inline-flex items-center gap-2 text-xs mr-8">
-            <span className="text-zinc-500 text-[10px] font-medium">{item.league}</span>
-            <span className="text-zinc-400">{item.eventTitle}:</span>
+            <span className="text-[var(--text-muted)] text-[10px] font-medium">{item.league}</span>
+            <span className="text-[var(--text-secondary)]">{item.eventTitle}:</span>
             <span className="inline-flex items-center gap-1">
               {item.outcomes.map((o, i) => (
                 <span key={i} className="inline-flex items-center">
-                  <span className="text-zinc-300">{o.abbrev}</span>
+                  <span className="text-[var(--text-secondary)]">{o.abbrev}</span>
                   <span className="text-wild-gold font-mono font-bold ml-1">{o.price}¢</span>
                   {i < item.outcomes.length - 1 && (
-                    <span className="text-zinc-600 mx-1">|</span>
+                    <span className="text-[var(--text-muted)] mx-1">|</span>
                   )}
                 </span>
               ))}
@@ -306,7 +306,7 @@ function LeagueFilters({
   if (leagues.length === 0) return null;
   
   return (
-    <div className="sticky top-0 z-10 bg-zinc-950 pb-2 pt-1 -mx-3 px-3">
+    <div className="sticky top-0 z-10 bg-[var(--page-bg)] pb-2 pt-1 -mx-3 px-3">
       <div className="flex gap-2 overflow-x-auto pb-1 px-1">
         <Button
           size="sm"
@@ -362,7 +362,7 @@ function LineSelector({
     <div className="flex items-center gap-1 mt-2">
       <button 
         onClick={() => scroll("left")}
-        className="p-1 text-zinc-500 hover:text-zinc-300 shrink-0"
+        className="p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0"
         data-testid="line-scroll-left"
       >
         <ChevronLeft className="w-3 h-3" />
@@ -378,8 +378,8 @@ function LineSelector({
             onClick={() => onSelect(line)}
             className={`px-2.5 py-1 rounded text-xs font-mono shrink-0 transition-colors ${
               selectedLine === line
-                ? "bg-zinc-600 text-white font-bold"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                ? "bg-[var(--card-bg-hover)] text-[var(--text-primary)] font-bold"
+                : "bg-[var(--card-bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--card-bg-hover)]"
             }`}
             data-testid={`line-${line}`}
           >
@@ -389,7 +389,7 @@ function LineSelector({
       </div>
       <button 
         onClick={() => scroll("right")}
-        className="p-1 text-zinc-500 hover:text-zinc-300 shrink-0"
+        className="p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] shrink-0"
         data-testid="line-scroll-right"
       >
         <ChevronRight className="w-3 h-3" />
@@ -548,25 +548,25 @@ function SpreadMarketDisplay({
         onClick={() => onSelect(market, leftDirection, leftDisplayLabel)}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
           isLeftSelected 
-            ? "bg-teal-600 border border-teal-500 text-white" 
-            : "bg-teal-900/40 border border-teal-800/50 hover:bg-teal-800/50 text-zinc-100"
+            ? "bg-teal-600 border border-teal-500 text-[var(--text-primary)]" 
+            : "bg-teal-900/40 border border-teal-800/50 hover:bg-teal-800/50 text-[var(--text-secondary)]"
         }`}
         data-testid={`spread-left-${market.id}`}
       >
         <span className="font-bold truncate">{leftDisplayLabel}</span>
-        <span className="font-mono font-bold text-white shrink-0">{leftPrice}¢</span>
+        <span className="font-mono font-bold text-[var(--text-primary)] shrink-0">{leftPrice}¢</span>
       </button>
       <button
         onClick={() => onSelect(market, rightDirection, rightDisplayLabel)}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
           isRightSelected 
-            ? "bg-amber-600 border border-amber-500 text-white" 
-            : "bg-amber-900/40 border border-amber-800/50 hover:bg-amber-800/50 text-zinc-100"
+            ? "bg-amber-600 border border-amber-500 text-[var(--text-primary)]" 
+            : "bg-amber-900/40 border border-amber-800/50 hover:bg-amber-800/50 text-[var(--text-secondary)]"
         }`}
         data-testid={`spread-right-${market.id}`}
       >
         <span className="font-bold truncate">{rightDisplayLabel}</span>
-        <span className="font-mono font-bold text-white shrink-0">{rightPrice}¢</span>
+        <span className="font-mono font-bold text-[var(--text-primary)] shrink-0">{rightPrice}¢</span>
       </button>
     </div>
   );
@@ -605,25 +605,25 @@ function TotalsMarketDisplay({
         onClick={() => onSelect(market, "over")}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
           isOverSelected 
-            ? "bg-blue-600 border border-blue-500 text-white" 
-            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-zinc-100"
+            ? "bg-blue-600 border border-blue-500 text-[var(--text-primary)]" 
+            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-[var(--text-secondary)]"
         }`}
         data-testid={`total-over-${market.id}`}
       >
         <span className="font-bold">O {line}</span>
-        <span className="font-mono font-bold text-white">{overPrice}¢</span>
+        <span className="font-mono font-bold text-[var(--text-primary)]">{overPrice}¢</span>
       </button>
       <button
         onClick={() => onSelect(market, "under")}
         className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
           isUnderSelected 
-            ? "bg-blue-600 border border-blue-500 text-white" 
-            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-zinc-100"
+            ? "bg-blue-600 border border-blue-500 text-[var(--text-primary)]" 
+            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-[var(--text-secondary)]"
         }`}
         data-testid={`total-under-${market.id}`}
       >
         <span className="font-bold">U {line}</span>
-        <span className="font-mono font-bold text-white">{underPrice}¢</span>
+        <span className="font-mono font-bold text-[var(--text-primary)]">{underPrice}¢</span>
       </button>
     </div>
   );
@@ -716,8 +716,8 @@ function SoccerMoneylineDisplay({
           let colorClass: string;
           if (isDraw) {
             colorClass = isYesSelected 
-              ? "bg-zinc-600 border-zinc-500" 
-              : "bg-zinc-800/60 border-zinc-700/50 hover:bg-zinc-700/50";
+              ? "bg-[var(--card-bg-hover)] border-[var(--border-secondary)]" 
+              : "bg-[var(--card-bg-elevated)]/60 border-[var(--border-secondary)]/50 hover:bg-[var(--card-bg-hover)]/50";
           } else if (idx === 0) {
             colorClass = isYesSelected 
               ? "bg-teal-600 border-teal-500" 
@@ -732,7 +732,7 @@ function SoccerMoneylineDisplay({
             <button
               key={market.id}
               onClick={() => onSelect(market, "yes", fullLabel)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${colorClass} text-zinc-100`}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${colorClass} text-[var(--text-secondary)]`}
               data-testid={`soccer-moneyline-${market.id}`}
             >
               <div className="flex items-center gap-1.5">
@@ -743,7 +743,7 @@ function SoccerMoneylineDisplay({
                   </span>
                 )}
               </div>
-              <span className="font-mono font-bold text-sm text-white">{priceInCents}¢</span>
+              <span className="font-mono font-bold text-sm text-[var(--text-primary)]">{priceInCents}¢</span>
             </button>
           );
         })}
@@ -751,7 +751,7 @@ function SoccerMoneylineDisplay({
       
       {/* 3-segment odds differential bar */}
       {sortedMarkets.length === 3 && (
-        <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden flex">
+        <div className="relative h-1.5 bg-[var(--card-bg-elevated)] rounded-full overflow-hidden flex">
           <div 
             className="h-full bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-300"
             style={{ width: `${probabilities[0]}%` }}
@@ -817,11 +817,11 @@ function MoneylineMarketDisplay({
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${
                 isSelected 
                   ? idx === 0 
-                    ? "bg-teal-600 border-teal-500 text-white" 
-                    : "bg-amber-600 border-amber-500 text-white"
+                    ? "bg-teal-600 border-teal-500 text-[var(--text-primary)]" 
+                    : "bg-amber-600 border-amber-500 text-[var(--text-primary)]"
                   : idx === 0
-                    ? "bg-teal-900/40 border-teal-800/50 hover:bg-teal-800/50 text-zinc-100"
-                    : "bg-amber-900/40 border-amber-800/50 hover:bg-amber-800/50 text-zinc-100"
+                    ? "bg-teal-900/40 border-teal-800/50 hover:bg-teal-800/50 text-[var(--text-secondary)]"
+                    : "bg-amber-900/40 border-amber-800/50 hover:bg-amber-800/50 text-[var(--text-secondary)]"
               }`}
               data-testid={`moneyline-${market.id}-${idx}`}
             >
@@ -833,7 +833,7 @@ function MoneylineMarketDisplay({
                   </span>
                 )}
               </div>
-              <span className="font-mono font-bold text-sm text-white">
+              <span className="font-mono font-bold text-sm text-[var(--text-primary)]">
                 {priceInCents}¢
               </span>
             </button>
@@ -843,7 +843,7 @@ function MoneylineMarketDisplay({
       
       {/* Odds differential bar */}
       {outcomes.length === 2 && (
-        <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="relative h-1.5 bg-[var(--card-bg-elevated)] rounded-full overflow-hidden">
           <div 
             className="absolute left-0 top-0 h-full bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-300"
             style={{ width: `${probabilities[0]}%` }}
@@ -909,7 +909,7 @@ function SimplifiedMarketRow({
   
   return (
     <div className="space-y-1.5" data-testid={`simplified-market-${market.id}`}>
-      <div className="text-sm text-zinc-300 break-words">{market.question}</div>
+      <div className="text-sm text-[var(--text-secondary)] break-words">{market.question}</div>
       <div className="flex flex-wrap gap-2">
         {market.outcomes.map((outcome, idx) => {
           // Use live price from WebSocket if available, fall back to market.bestAsk from Gamma API
@@ -924,12 +924,12 @@ function SimplifiedMarketRow({
               onClick={() => onSelect(market, idx, outcome.label)}
               className={`flex-1 px-3 py-2 rounded-md border transition-all text-center ${
                 isSelected 
-                  ? "border-wild-brand bg-wild-brand/20 text-white" 
-                  : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800 text-zinc-200"
+                  ? "border-wild-brand bg-wild-brand/20 text-[var(--text-primary)]" 
+                  : "border-[var(--border-secondary)] bg-[var(--card-bg-elevated)]/50 hover:border-[var(--border-secondary)] hover:bg-[var(--card-bg-elevated)] text-[var(--text-secondary)]"
               }`}
               data-testid={`outcome-${market.id}-${idx}`}
             >
-              <div className="text-xs text-zinc-400 truncate">{outcome.label}</div>
+              <div className="text-xs text-[var(--text-secondary)] truncate">{outcome.label}</div>
               <div className={`font-mono font-bold ${isSelected ? "text-wild-brand" : "text-wild-gold"}`}>
                 {priceInCents}¢
               </div>
@@ -969,10 +969,10 @@ function AdditionalMarketsSection({
   };
   
   return (
-    <div className="border-t border-zinc-800 pt-3 mt-3">
+    <div className="border-t border-[var(--border-primary)] pt-3 mt-3">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
+        className="flex items-center justify-between w-full text-xs text-[var(--text-secondary)] hover:text-[var(--text-secondary)] transition-colors"
         data-testid="expand-more-markets"
       >
         <span className="font-medium uppercase tracking-wide">
@@ -990,10 +990,10 @@ function AdditionalMarketsSection({
           {marketGroups.map((group) => (
             <div key={group.type} className="space-y-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
                   {formatMarketTypeLabel(group.label)}
                 </span>
-                <span className="text-xs text-zinc-600">
+                <span className="text-xs text-[var(--text-muted)]">
                   {formatVolume(group.volume)} Vol.
                 </span>
               </div>
@@ -1093,10 +1093,10 @@ function MarketGroupDisplay({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={`text-xs font-medium text-zinc-400 ${isTennis ? "normal-case" : "uppercase"} tracking-wide truncate`}>
+        <span className={`text-xs font-medium text-[var(--text-secondary)] ${isTennis ? "normal-case" : "uppercase"} tracking-wide truncate`}>
           {displayLabel}
         </span>
-        <span className="text-xs text-zinc-600 shrink-0">
+        <span className="text-xs text-[var(--text-muted)] shrink-0">
           {formatVolume(group.volume)} Vol.
         </span>
       </div>
@@ -1241,20 +1241,20 @@ function EventCard({
             <div className="w-2 h-2 rounded-full bg-wild-trade animate-pulse" />
             <span className="text-[10px] font-bold text-wild-trade uppercase tracking-wider">Your Position</span>
           </div>
-          <div className="divide-y divide-zinc-800/50">
+          <div className="divide-y divide-[var(--border-primary)]/50">
             {eventPositions.map((pos, i) => (
               <div key={i} className="px-3 py-2" data-testid={`event-position-${i}`}>
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-white truncate">{pos.marketQuestion || event.title}</div>
+                    <div className="text-xs text-[var(--text-primary)] truncate">{pos.marketQuestion || event.title}</div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-mono text-zinc-500">{pos.outcomeLabel || "Yes"}</span>
+                      <span className="text-[10px] font-mono text-[var(--text-muted)]">{pos.outcomeLabel || "Yes"}</span>
                       <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
-                      <div className="text-xs font-mono text-white">{pos.size.toFixed(2)} shares</div>
+                      <div className="text-xs font-mono text-[var(--text-primary)]">{pos.size.toFixed(2)} shares</div>
                       {pos.unrealizedPnl !== undefined && (
                         <div className={`text-[10px] font-mono ${pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"}`}>
                           {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
@@ -1285,9 +1285,9 @@ function EventCard({
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-base leading-tight break-words">{event.title}</h3>
           {event.description && (
-            <p className="text-sm text-zinc-400 mt-1 line-clamp-2">{event.description}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">{event.description}</p>
           )}
-          <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1.5">
+          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1.5">
             <span className="font-medium">{event.league}</span>
             <span>•</span>
             <span>{formatVolume(event.volume)} vol</span>
@@ -1395,7 +1395,7 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-sm">{future.title}</h3>
           {future.description && (
-            <p className="text-xs text-zinc-500 line-clamp-2 mt-0.5">{future.description}</p>
+            <p className="text-xs text-[var(--text-muted)] line-clamp-2 mt-0.5">{future.description}</p>
           )}
         </div>
         <Badge variant="secondary" className="text-xs shrink-0">
@@ -1419,13 +1419,13 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
                   className={`flex items-center justify-between gap-2 px-3 py-2 rounded-md border transition-colors ${
                     isSelected 
                       ? "border-wild-brand bg-wild-brand/10" 
-                      : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50"
+                      : "border-[var(--border-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--card-bg)]/50"
                   }`}
                   data-testid={`futures-outcome-${future.id}-${index}`}
                 >
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-sm truncate font-medium">{getShortOutcomeLabel(outcome.label)}</span>
-                    <span className="text-xs text-zinc-500">{probability.toFixed(0)}%</span>
+                    <span className="text-xs text-[var(--text-muted)]">{probability.toFixed(0)}%</span>
                   </div>
                   <span className={`font-mono text-base font-bold shrink-0 ${
                     isSelected ? "text-wild-brand" : "text-wild-gold"
@@ -1449,7 +1449,7 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
       )}
       
       {future.marketData && (
-        <div className="flex items-center justify-between text-xs text-zinc-500 pt-2 border-t border-zinc-800">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border-primary)]">
           <div className="flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
             Vol: ${(future.marketData.volume / 1000).toFixed(1)}K
@@ -1791,7 +1791,7 @@ export function PredictView({
                 
                 {upcomingEvents.length > 0 && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-bold text-zinc-400">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
                       <Clock className="w-4 h-4" />
                       UPCOMING ({upcomingEvents.length})
                     </div>
@@ -1877,7 +1877,7 @@ export function PredictView({
         </div>
         
         {/* Powered by Polymarket attribution */}
-        <div className="shrink-0 py-3 px-4 border-t border-zinc-800 bg-zinc-950 flex justify-center" data-testid="container-polymarket-attribution">
+        <div className="shrink-0 py-3 px-4 border-t border-[var(--border-primary)] bg-[var(--page-bg)] flex justify-center" data-testid="container-polymarket-attribution">
           <Button
             variant="ghost"
             size="sm"
@@ -1887,7 +1887,7 @@ export function PredictView({
               href="https://polymarket.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-zinc-500"
+              className="flex items-center gap-2 text-[var(--text-muted)]"
               data-testid="link-polymarket-attribution"
             >
               <span className="text-xs font-medium">Powered by</span>
