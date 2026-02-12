@@ -440,6 +440,77 @@ export const polymarketOrderSchema = z.object({
   updatedAt: z.string(),
 });
 
+// ============ REFERRAL SYSTEM TABLES ============
+
+export const referralPeriods = pgTable("referral_periods", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  strategy: text("strategy").notNull(), // "growth_multiplier" | "revenue_share" | "milestone_quest" | "team_volume"
+  strategyConfig: jsonb("strategy_config").notNull().$type<Record<string, unknown>>(),
+  resetMode: text("reset_mode").notNull().default("manual"), // "manual" | "scheduled" | "rolling_expiry"
+  resetConfig: jsonb("reset_config").$type<Record<string, unknown>>().default({}),
+  refereeBenefits: jsonb("referee_benefits").$type<{ signupBonus: number; firstBetMultiplier: number; maxStake: number }>().default({ signupBonus: 100, firstBetMultiplier: 2.0, maxStake: 10 }),
+  status: text("status").notNull().default("draft"), // "draft" | "active" | "completed" | "cancelled"
+  startsAt: text("starts_at").notNull(),
+  endsAt: text("ends_at"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const referralLinks = pgTable("referral_links", {
+  id: serial("id").primaryKey(),
+  periodId: integer("period_id").notNull(),
+  referrerAddress: varchar("referrer_address", { length: 42 }).notNull(),
+  referredAddress: varchar("referred_address", { length: 42 }).notNull(),
+  referralCode: varchar("referral_code", { length: 20 }).notNull(),
+  status: text("status").notNull().default("pending"), // "pending" | "active" | "inactive"
+  linkedAt: text("linked_at").notNull(),
+  firstBetAt: text("first_bet_at"),
+  lastBetAt: text("last_bet_at"),
+  lifetimeVolume: real("lifetime_volume").notNull().default(0),
+});
+
+export const referralBonuses = pgTable("referral_bonuses", {
+  id: serial("id").primaryKey(),
+  periodId: integer("period_id").notNull(),
+  recipientAddress: varchar("recipient_address", { length: 42 }).notNull(),
+  sourceAddress: varchar("source_address", { length: 42 }),
+  bonusType: text("bonus_type").notNull(), // "growth_multiplier" | "revenue_share" | "milestone" | "team_volume" | "signup" | "first_bet"
+  points: real("points").notNull(),
+  reason: text("reason"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  awardedAt: text("awarded_at").notNull(),
+});
+
+export const leaderboardArchives = pgTable("leaderboard_archives", {
+  id: serial("id").primaryKey(),
+  periodId: integer("period_id").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  resetMode: text("reset_mode").notNull(),
+  rankings: jsonb("rankings").notNull().$type<Array<{ rank: number; address: string; points: number; referrals: number; bonusPoints: number }>>(),
+  stats: jsonb("stats").notNull().$type<{ totalUsers: number; totalReferrals: number; totalBonusAwarded: number; topReferrer?: string }>(),
+  createdAt: text("created_at").notNull(),
+});
+
+// Referral system Zod schemas and types
+export const insertReferralPeriodSchema = createInsertSchema(referralPeriods).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertReferralPeriod = z.infer<typeof insertReferralPeriodSchema>;
+export type ReferralPeriod = typeof referralPeriods.$inferSelect;
+
+export const insertReferralLinkSchema = createInsertSchema(referralLinks).omit({ id: true });
+export type InsertReferralLink = z.infer<typeof insertReferralLinkSchema>;
+export type ReferralLink = typeof referralLinks.$inferSelect;
+
+export const insertReferralBonusSchema = createInsertSchema(referralBonuses).omit({ id: true });
+export type InsertReferralBonus = z.infer<typeof insertReferralBonusSchema>;
+export type ReferralBonus = typeof referralBonuses.$inferSelect;
+
+export const insertLeaderboardArchiveSchema = createInsertSchema(leaderboardArchives).omit({ id: true, createdAt: true });
+export type InsertLeaderboardArchive = z.infer<typeof insertLeaderboardArchiveSchema>;
+export type LeaderboardArchive = typeof leaderboardArchives.$inferSelect;
+
 // ============ LEGACY USER SCHEMA (keep for compatibility) ============
 
 export const users = pgTable("users", {

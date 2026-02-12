@@ -79,6 +79,7 @@ import type {
   FuturesCategory,
 } from "@shared/schema";
 import { themeConfigSchema, type ThemeConfig } from "@shared/schema";
+import { ReferralAdminSection } from "@/components/admin/ReferralAdminSection";
 
 // ---------------------------------------------------------------------------
 // Types (mirror server-side white-label config)
@@ -1679,7 +1680,8 @@ type AdminTab =
   | "wild"
   | "points"
   | "fees"
-  | "whitelabel";
+  | "whitelabel"
+  | "referral";
 
 // ===========================================================================
 // Main Admin Page with Auth Wrapper
@@ -2526,6 +2528,14 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
           >
             <Palette className="w-4 h-4 mr-1" />
             White Label
+          </Button>
+          <Button
+            variant={activeSection === "referral" ? "default" : "secondary"}
+            onClick={() => setActiveSection("referral")}
+            data-testid="button-section-referral"
+          >
+            <Users className="w-4 h-4 mr-1" />
+            Referral System
           </Button>
         </div>
 
@@ -3403,6 +3413,8 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
               isSaving={savingTheme}
             />
           ))}
+
+        {activeSection === "referral" && <ReferralAdminSection />}
       </div>
     </div>
   );

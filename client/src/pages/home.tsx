@@ -95,6 +95,41 @@ export default function HomePage() {
   // Live prices from WebSocket
   const livePrices = useLivePrices();
 
+  // Capture referral code from URL (?ref=CODE)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get("ref");
+    if (refCode) {
+      localStorage.setItem("pendingReferralCode", refCode);
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ref");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
+  // Apply referral code after wallet connection
+  useEffect(() => {
+    const refCode = localStorage.getItem("pendingReferralCode");
+    if (refCode && isConnected && address) {
+      const walletAddr = (safeAddress || address).toLowerCase();
+      fetch("/api/referral/track-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referralCode: refCode, refereeAddress: walletAddr }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            localStorage.removeItem("pendingReferralCode");
+          }
+        })
+        .catch(() => {
+          // Silent failure
+        });
+    }
+  }, [isConnected, address, safeAddress]);
+
   const { data: demoMarkets = [], isLoading: demoMarketsLoading } = useQuery<Market[]>({
     queryKey: ["/api/markets"],
   });
@@ -761,6 +796,8 @@ export default function HomePage() {
               enabledTags={enabledTags}
               futuresCategories={futuresCategories}
               onSellPosition={handleOpenSellModal}
+              walletAddress={safeAddress || address}
+              isConnected={isConnected}
             />
           )}
           {activeTab === "scout" && (
