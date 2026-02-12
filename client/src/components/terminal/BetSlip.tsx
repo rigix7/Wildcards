@@ -341,12 +341,17 @@ export function BetSlip({
   const insufficientBalance = stakeNum > maxBalance;
 
   // Minimum order validation
+  // Accounts for: (1) Polymarket's share-based minimum, (2) $1 USDC hard floor, (3) platform fee
+  const POLYMARKET_MIN_USDC = 1;
   const minShares = orderMinSize ?? 5;
   const priceForMinCalc =
     orderBook?.bestAsk && orderBook.bestAsk > 0 && orderBook.bestAsk < 0.99
       ? orderBook.bestAsk
       : executionPrice;
-  const minOrderUSDC = minShares * priceForMinCalc;
+  const rawMinOrderUSDC = minShares * priceForMinCalc;
+  const minOrderAfterFloor = Math.max(rawMinOrderUSDC, POLYMARKET_MIN_USDC);
+  // Adjust for dynamic platform fee so the effective amount (after fee) still meets the minimum
+  const minOrderUSDC = feeMultiplier < 1 ? minOrderAfterFloor / feeMultiplier : minOrderAfterFloor;
   const isBelowMinimum = stakeNum > 0 && stakeNum < minOrderUSDC;
 
   // Smart liquidity analysis
@@ -821,7 +826,7 @@ export function BetSlip({
             <div className="flex items-center gap-2 text-wild-warning text-sm bg-wild-warning/10 rounded p-2">
               <AlertTriangle className="w-4 h-4" />
               <span>
-                Minimum bet is ${minOrderUSDC.toFixed(2)} USDC ({minShares} shares)
+                Minimum bet is ${minOrderUSDC.toFixed(2)} USDC
               </span>
             </div>
           )}
