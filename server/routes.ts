@@ -1559,6 +1559,9 @@ export async function registerRoutes(
         } else if (redeemable && curPrice <= 0.01) {
           // Market resolved BUT user's outcome lost → no claim available
           status = "lost";
+        } else if (redeemable) {
+          // Market cancelled/voided — shares redeemable at current price (refund)
+          status = "claimable";
         } else if (curPrice <= 0.01) {
           // Market resolved to NO but redeemable not set yet
           status = "lost";

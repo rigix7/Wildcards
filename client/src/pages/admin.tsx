@@ -2381,6 +2381,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
       });
       if (res.ok) {
         showStatus("success", "Points settings saved");
+        queryClient.invalidateQueries({ queryKey: ["/api/config/theme"] });
       } else {
         showStatus("error", "Failed to save points settings");
       }
@@ -2400,6 +2401,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
       });
       if (res.ok) {
         showStatus("success", "Theme settings saved");
+        queryClient.invalidateQueries({ queryKey: ["/api/config/theme"] });
       } else {
         showStatus("error", "Failed to save theme settings");
       }
@@ -2419,6 +2421,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
       });
       if (res.ok) {
         showStatus("success", "Theme saved and applied");
+        queryClient.invalidateQueries({ queryKey: ["/api/config/theme"] });
       } else {
         showStatus("error", "Failed to save theme");
       }
