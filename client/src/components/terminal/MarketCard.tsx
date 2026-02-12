@@ -44,11 +44,13 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
 
   return (
     <div
-      className="border relative group overflow-visible animate-fade-in"
+      className="border relative group overflow-visible animate-fade-in transition-colors"
       style={{
         backgroundColor: 'var(--market-bg, #18181b)',
         borderColor: 'var(--market-border, #27272a)',
       }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--market-hover, #27272a)'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--market-bg, #18181b)'}
       data-testid={`card-market-${market.id}`}
     >
       <div className="h-0.5 w-full absolute top-0 left-0" style={{ backgroundColor: 'var(--market-moneyline, #f43f5e)' }} />
@@ -93,7 +95,7 @@ export function MarketCard({ market, onPlaceBet, selectedOutcome }: MarketCardPr
                 )}
                 data-testid={`button-outcome-${outcome.id}`}
               >
-                <span className="text-xl font-black font-mono">{outcome.odds.toFixed(2)}</span>
+                <span className="text-xl font-black font-mono" style={isSelected ? { color: 'var(--market-odds-badge, inherit)' } : undefined}>{outcome.odds.toFixed(2)}</span>
                 <span className="text-[10px] text-[var(--text-secondary)] mt-1 truncate w-full text-center">
                   {outcome.label}
                 </span>

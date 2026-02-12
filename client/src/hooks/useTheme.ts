@@ -15,12 +15,14 @@ export function useTheme() {
 
   const brandName = data?.themeConfig?.brand?.name || data?.brandName || "WILDCARD";
   const pointsName = data?.pointsConfig?.name || "WILD";
+  const pointsEnabled = data?.pointsConfig?.enabled ?? true;
   const logoUrl = data?.themeConfig?.brand?.logoUrl;
   const logoIcon = data?.themeConfig?.brand?.logoIcon;
 
   return {
     brandName,
     pointsName,
+    pointsEnabled,
     logoUrl,
     logoIcon,
     themeConfig: data?.themeConfig ?? null,

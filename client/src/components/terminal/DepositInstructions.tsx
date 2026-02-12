@@ -104,12 +104,12 @@ export function DepositInstructions({ safeAddress }: DepositInstructionsProps) {
             </div>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+          <div className="bg-wild-warning/10 border border-wild-warning/30 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-wild-warning mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-xs font-medium text-amber-400">Important: Polygon Network Only</p>
-                <p className="text-[10px] text-amber-400/80 mt-1">
+                <p className="text-xs font-medium text-wild-warning">Important: Polygon Network Only</p>
+                <p className="text-[10px] text-wild-warning/80 mt-1">
                   Only send USDC.e on the Polygon network. Funds sent on other networks cannot be recovered.
                 </p>
               </div>
@@ -222,12 +222,12 @@ export function DepositInstructions({ safeAddress }: DepositInstructionsProps) {
         </TabsContent>
       </Tabs>
 
-      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+      <div className="bg-wild-error/10 border border-wild-error/30 rounded-lg p-3">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-wild-error mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-xs font-medium text-red-400">Important Warnings</p>
-            <ul className="text-[10px] text-red-400/80 mt-1 space-y-0.5 list-disc list-inside">
+            <p className="text-xs font-medium text-wild-error">Important Warnings</p>
+            <ul className="text-[10px] text-wild-error/80 mt-1 space-y-0.5 list-disc list-inside">
               <li>Only send supported tokens on their correct networks</li>
               <li>Verify the network before sending - funds sent to wrong networks cannot be recovered</li>
               <li>We cannot recover lost or misdirected funds</li>
