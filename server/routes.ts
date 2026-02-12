@@ -72,7 +72,7 @@ export async function registerRoutes(
         return res.json({
           themeConfig: config.themeConfig,
           pointsConfig: config.pointsConfig || null,
-          brandName: config.themeConfig?.brand?.name || null,
+          brandName: (config.themeConfig as any)?.brand?.name || null,
         });
       }
       return res.json({ themeConfig: null, pointsConfig: null, brandName: null });
