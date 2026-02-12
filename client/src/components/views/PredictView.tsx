@@ -297,41 +297,50 @@ function PriceTicker({ events }: { events: DisplayEvent[] }) {
   );
 }
 
-function LeagueFilters({ 
-  leagues, 
-  selectedLeagues, 
-  onToggle 
-}: { 
-  leagues: string[]; 
-  selectedLeagues: Set<string>; 
+function LeagueFilters({
+  leagues,
+  selectedLeagues,
+  onToggle
+}: {
+  leagues: string[];
+  selectedLeagues: Set<string>;
   onToggle: (league: string) => void;
 }) {
   if (leagues.length === 0) return null;
-  
+
+  const isAllActive = selectedLeagues.size === 0;
+
   return (
-    <div className="sticky top-0 z-10 bg-[var(--page-bg)] pb-2 pt-1 -mx-3 px-3">
+    <div className="sticky top-0 z-10 pb-2 pt-1 -mx-3 px-3" style={{ backgroundColor: 'var(--sort-bg, var(--page-bg))' }}>
       <div className="flex gap-2 overflow-x-auto pb-1 px-1">
-        <Button
-          size="sm"
-          variant={selectedLeagues.size === 0 ? "default" : "outline"}
+        <button
           onClick={() => onToggle("ALL")}
-          className="shrink-0 text-xs h-7"
+          className="shrink-0 text-xs h-7 px-3 rounded-md font-medium transition-all"
+          style={isAllActive
+            ? { backgroundColor: 'var(--sort-active)', color: 'var(--text-primary)' }
+            : { color: 'var(--sort-inactive)', backgroundColor: 'transparent' }
+          }
           data-testid="filter-all"
         >
           All
-        </Button>
-        {leagues.map((league) => (
-          <Button
-            key={league}
-            size="sm"
-            variant={selectedLeagues.has(league) ? "default" : "outline"}
-            onClick={() => onToggle(league)}
-            className="shrink-0 text-xs h-7"
-            data-testid={`filter-${league.toLowerCase()}`}
-          >
-            {league}
-          </Button>
-        ))}
+        </button>
+        {leagues.map((league) => {
+          const isActive = selectedLeagues.has(league);
+          return (
+            <button
+              key={league}
+              onClick={() => onToggle(league)}
+              className="shrink-0 text-xs h-7 px-3 rounded-md font-medium transition-all"
+              style={isActive
+                ? { backgroundColor: 'var(--sort-active)', color: 'var(--text-primary)' }
+                : { color: 'var(--sort-inactive)', backgroundColor: 'transparent' }
+              }
+              data-testid={`filter-${league.toLowerCase()}`}
+            >
+              {league}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -723,27 +732,23 @@ function SoccerMoneylineDisplay({
           const isYesSelected = isSelected && selectedDirection === "yes";
           const isFavorite = idx === favoriteIndex && isFavoriteStrong;
           
-          // Color: Home (teal), Draw (zinc), Away (amber)
-          let colorClass: string;
-          if (isDraw) {
-            colorClass = isYesSelected 
-              ? "bg-[var(--card-bg-hover)] border-[var(--border-secondary)]" 
-              : "bg-[var(--card-bg-elevated)]/60 border-[var(--border-secondary)]/50 hover:bg-[var(--card-bg-hover)]/50";
-          } else if (idx === 0) {
-            colorClass = isYesSelected 
-              ? "bg-teal-600 border-teal-500" 
-              : "bg-teal-900/40 border-teal-800/50 hover:bg-teal-800/50";
-          } else {
-            colorClass = isYesSelected 
-              ? "bg-amber-600 border-amber-500" 
-              : "bg-amber-900/40 border-amber-800/50 hover:bg-amber-800/50";
-          }
-          
+          // Color via CSS vars: Home (--market-moneyline), Draw (--market-moneyline-draw), Away (--market-moneyline-away)
+          const accentVar = isDraw
+            ? '--market-moneyline-draw'
+            : idx === 0
+              ? '--market-moneyline'
+              : '--market-moneyline-away';
+
+          const colorStyle: React.CSSProperties = isYesSelected
+            ? { backgroundColor: `var(${accentVar})`, borderColor: `var(${accentVar})` }
+            : { backgroundColor: `color-mix(in srgb, var(${accentVar}) 20%, transparent)`, borderColor: `color-mix(in srgb, var(${accentVar}) 30%, transparent)` };
+
           return (
             <button
               key={market.id}
               onClick={() => onSelect(market, "yes", fullLabel)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${colorClass} text-[var(--text-secondary)]`}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all text-[var(--text-secondary)]"
+              style={colorStyle}
               data-testid={`soccer-moneyline-${market.id}`}
             >
               <div className="flex items-center gap-1.5">
@@ -763,17 +768,17 @@ function SoccerMoneylineDisplay({
       {/* 3-segment odds differential bar */}
       {sortedMarkets.length === 3 && (
         <div className="relative h-1.5 bg-[var(--card-bg-elevated)] rounded-full overflow-hidden flex">
-          <div 
-            className="h-full bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-300"
-            style={{ width: `${probabilities[0]}%` }}
+          <div
+            className="h-full transition-all duration-300"
+            style={{ width: `${probabilities[0]}%`, backgroundColor: 'var(--market-moneyline)' }}
           />
-          <div 
-            className="h-full bg-gradient-to-r from-zinc-500 to-zinc-400 transition-all duration-300"
-            style={{ width: `${probabilities[1]}%` }}
+          <div
+            className="h-full transition-all duration-300"
+            style={{ width: `${probabilities[1]}%`, backgroundColor: 'var(--market-moneyline-draw)' }}
           />
-          <div 
-            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-300"
-            style={{ width: `${probabilities[2]}%` }}
+          <div
+            className="h-full transition-all duration-300"
+            style={{ width: `${probabilities[2]}%`, backgroundColor: 'var(--market-moneyline-away)' }}
           />
         </div>
       )}
@@ -821,19 +826,19 @@ function MoneylineMarketDisplay({
           const isSelected = selectedOutcomeIndex === idx;
           const isFavorite = idx === favoriteIndex && isFavoriteStrong;
           
+          const accentVar = idx === 0 ? '--market-moneyline' : '--market-moneyline-away';
+          const btnStyle: React.CSSProperties = isSelected
+            ? { backgroundColor: `var(${accentVar})`, borderColor: `var(${accentVar})` }
+            : { backgroundColor: `color-mix(in srgb, var(${accentVar}) 20%, transparent)`, borderColor: `color-mix(in srgb, var(${accentVar}) 30%, transparent)` };
+
           return (
             <button
               key={idx}
               onClick={() => onSelect(market, idx)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border text-sm transition-all ${
-                isSelected 
-                  ? idx === 0 
-                    ? "bg-teal-600 border-teal-500 text-[var(--text-primary)]" 
-                    : "bg-amber-600 border-amber-500 text-[var(--text-primary)]"
-                  : idx === 0
-                    ? "bg-teal-900/40 border-teal-800/50 hover:bg-teal-800/50 text-[var(--text-secondary)]"
-                    : "bg-amber-900/40 border-amber-800/50 hover:bg-amber-800/50 text-[var(--text-secondary)]"
+                isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
               }`}
+              style={btnStyle}
               data-testid={`moneyline-${market.id}-${idx}`}
             >
               <div className="flex items-center gap-1.5">
@@ -855,13 +860,13 @@ function MoneylineMarketDisplay({
       {/* Odds differential bar */}
       {outcomes.length === 2 && (
         <div className="relative h-1.5 bg-[var(--card-bg-elevated)] rounded-full overflow-hidden">
-          <div 
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-300"
-            style={{ width: `${probabilities[0]}%` }}
+          <div
+            className="absolute left-0 top-0 h-full transition-all duration-300"
+            style={{ width: `${probabilities[0]}%`, backgroundColor: 'var(--market-moneyline)' }}
           />
-          <div 
-            className="absolute right-0 top-0 h-full bg-gradient-to-l from-amber-500 to-amber-400 transition-all duration-300"
-            style={{ width: `${probabilities[1]}%` }}
+          <div
+            className="absolute right-0 top-0 h-full transition-all duration-300"
+            style={{ width: `${probabilities[1]}%`, backgroundColor: 'var(--market-moneyline-away)' }}
           />
         </div>
       )}

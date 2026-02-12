@@ -773,7 +773,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "WILDCARDS", primaryColor: "#f43f5e", accentColor: "#fbbf24" },
       header: { backgroundColor: '#09090b', textColor: '#fafafa', accentColor: '#fbbf24' },
       betSlip: { backgroundColor: '#18181b', cardColor: '#27272a', primaryButtonColor: '#f43f5e', successColor: '#10b981', textColor: '#fafafa' },
-      marketCards: { backgroundColor: '#18181b', hoverColor: '#27272a', borderColor: '#3f3f46', oddsBadgeColor: '#fbbf24', textColor: '#fafafa', moneylineAccent: '#f43f5e', totalsAccent: '#3b82f6', moreMarketsAccent: '#8b5cf6' },
+      marketCards: { backgroundColor: '#18181b', hoverColor: '#27272a', borderColor: '#3f3f46', oddsBadgeColor: '#fbbf24', textColor: '#fafafa', moneylineAccent: '#f43f5e', moneylineAwayAccent: '#3b82f6', moneylineDrawAccent: '#71717a', totalsAccent: '#3b82f6', moreMarketsAccent: '#8b5cf6' },
       sortingBar: { backgroundColor: '#09090b', activeTabColor: '#f43f5e', inactiveTabColor: '#71717a' },
       bottomNav: { backgroundColor: '#09090b', activeColor: '#fbbf24', inactiveColor: '#71717a' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
@@ -787,7 +787,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "PREDICT", primaryColor: "#3b82f6", accentColor: "#3b82f6" },
       header: { backgroundColor: '#ffffff', textColor: '#111827', accentColor: '#3b82f6' },
       betSlip: { backgroundColor: '#f9fafb', cardColor: '#ffffff', primaryButtonColor: '#3b82f6', successColor: '#10b981', textColor: '#111827' },
-      marketCards: { backgroundColor: '#ffffff', hoverColor: '#f3f4f6', borderColor: '#e5e7eb', oddsBadgeColor: '#3b82f6', textColor: '#111827', moneylineAccent: '#3b82f6', totalsAccent: '#8b5cf6', moreMarketsAccent: '#ec4899' },
+      marketCards: { backgroundColor: '#ffffff', hoverColor: '#f3f4f6', borderColor: '#e5e7eb', oddsBadgeColor: '#3b82f6', textColor: '#111827', moneylineAccent: '#3b82f6', moneylineAwayAccent: '#ec4899', moneylineDrawAccent: '#9ca3af', totalsAccent: '#8b5cf6', moreMarketsAccent: '#ec4899' },
       sortingBar: { backgroundColor: '#ffffff', activeTabColor: '#3b82f6', inactiveTabColor: '#9ca3af' },
       bottomNav: { backgroundColor: '#ffffff', activeColor: '#3b82f6', inactiveColor: '#9ca3af' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
@@ -801,7 +801,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "NEON BETS", primaryColor: "#00ff88", accentColor: "#00ff88" },
       header: { backgroundColor: '#0a0a0f', textColor: '#00ff88', accentColor: '#00ff88' },
       betSlip: { backgroundColor: '#0f0f1a', cardColor: '#1a1a2e', primaryButtonColor: '#00ff88', successColor: '#00ff88', textColor: '#ffffff' },
-      marketCards: { backgroundColor: '#1a1a2e', hoverColor: '#25254a', borderColor: '#2d2d5a', oddsBadgeColor: '#00ff88', textColor: '#ffffff', moneylineAccent: '#00ff88', totalsAccent: '#ff00ff', moreMarketsAccent: '#00d4ff' },
+      marketCards: { backgroundColor: '#1a1a2e', hoverColor: '#25254a', borderColor: '#2d2d5a', oddsBadgeColor: '#00ff88', textColor: '#ffffff', moneylineAccent: '#00ff88', moneylineAwayAccent: '#ff00ff', moneylineDrawAccent: '#555577', totalsAccent: '#ff00ff', moreMarketsAccent: '#00d4ff' },
       sortingBar: { backgroundColor: '#0a0a0f', activeTabColor: '#00ff88', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#0a0a0f', activeColor: '#00ff88', inactiveColor: '#6b7280' },
       global: { successColor: '#00ff88', errorColor: '#ff0055', warningColor: '#ffaa00' },
@@ -815,7 +815,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "ELITE BETS", primaryColor: "#f59e0b", accentColor: "#f59e0b" },
       header: { backgroundColor: '#1c1917', textColor: '#fafaf9', accentColor: '#f59e0b' },
       betSlip: { backgroundColor: '#292524', cardColor: '#3c3836', primaryButtonColor: '#f59e0b', successColor: '#10b981', textColor: '#fafaf9' },
-      marketCards: { backgroundColor: '#292524', hoverColor: '#3c3836', borderColor: '#57534e', oddsBadgeColor: '#f59e0b', textColor: '#fafaf9', moneylineAccent: '#f59e0b', totalsAccent: '#fbbf24', moreMarketsAccent: '#fb923c' },
+      marketCards: { backgroundColor: '#292524', hoverColor: '#3c3836', borderColor: '#57534e', oddsBadgeColor: '#f59e0b', textColor: '#fafaf9', moneylineAccent: '#f59e0b', moneylineAwayAccent: '#fbbf24', moneylineDrawAccent: '#78716c', totalsAccent: '#fbbf24', moreMarketsAccent: '#fb923c' },
       sortingBar: { backgroundColor: '#1c1917', activeTabColor: '#f59e0b', inactiveTabColor: '#78716c' },
       bottomNav: { backgroundColor: '#1c1917', activeColor: '#f59e0b', inactiveColor: '#78716c' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
@@ -829,7 +829,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "ORGANIC BETS", primaryColor: "#10b981", accentColor: "#10b981" },
       header: { backgroundColor: '#fefce8', textColor: '#1f2937', accentColor: '#10b981' },
       betSlip: { backgroundColor: '#fef9c3', cardColor: '#fef3c7', primaryButtonColor: '#10b981', successColor: '#10b981', textColor: '#1f2937' },
-      marketCards: { backgroundColor: '#fef3c7', hoverColor: '#fde68a', borderColor: '#fcd34d', oddsBadgeColor: '#10b981', textColor: '#1f2937', moneylineAccent: '#10b981', totalsAccent: '#059669', moreMarketsAccent: '#14b8a6' },
+      marketCards: { backgroundColor: '#fef3c7', hoverColor: '#fde68a', borderColor: '#fcd34d', oddsBadgeColor: '#10b981', textColor: '#1f2937', moneylineAccent: '#10b981', moneylineAwayAccent: '#059669', moneylineDrawAccent: '#6b7280', totalsAccent: '#059669', moreMarketsAccent: '#14b8a6' },
       sortingBar: { backgroundColor: '#fefce8', activeTabColor: '#10b981', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#fefce8', activeColor: '#10b981', inactiveColor: '#6b7280' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
@@ -843,7 +843,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       brand: { name: "MYSTIC BETS", primaryColor: "#a855f7", accentColor: "#a855f7" },
       header: { backgroundColor: '#0f0a1f', textColor: '#e9d5ff', accentColor: '#a855f7' },
       betSlip: { backgroundColor: '#1a1032', cardColor: '#251a3d', primaryButtonColor: '#a855f7', successColor: '#10b981', textColor: '#e9d5ff' },
-      marketCards: { backgroundColor: '#1a1032', hoverColor: '#251a3d', borderColor: '#3d2d5c', oddsBadgeColor: '#a855f7', textColor: '#e9d5ff', moneylineAccent: '#a855f7', totalsAccent: '#c084fc', moreMarketsAccent: '#e879f9' },
+      marketCards: { backgroundColor: '#1a1032', hoverColor: '#251a3d', borderColor: '#3d2d5c', oddsBadgeColor: '#a855f7', textColor: '#e9d5ff', moneylineAccent: '#a855f7', moneylineAwayAccent: '#c084fc', moneylineDrawAccent: '#6b7280', totalsAccent: '#c084fc', moreMarketsAccent: '#e879f9' },
       sortingBar: { backgroundColor: '#0f0a1f', activeTabColor: '#a855f7', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#0f0a1f', activeColor: '#a855f7', inactiveColor: '#6b7280' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
@@ -1075,13 +1075,13 @@ function WhiteLabelSection({
                     <div className="flex gap-2">
                       <button
                         className="flex-1 py-2 rounded text-sm font-medium border"
-                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                        style={{ backgroundColor: localTheme.marketCards?.moneylineAccent, borderColor: localTheme.marketCards?.moneylineAccent, color: '#fff' }}
                       >
                         Lakers
                       </button>
                       <button
                         className="flex-1 py-2 rounded text-sm font-medium border"
-                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                        style={{ backgroundColor: localTheme.marketCards?.moneylineAwayAccent, borderColor: localTheme.marketCards?.moneylineAwayAccent, color: '#fff' }}
                       >
                         Celtics
                       </button>
@@ -1155,19 +1155,19 @@ function WhiteLabelSection({
                     <div className="flex gap-2">
                       <button
                         className="flex-1 py-2 rounded text-sm font-medium border"
-                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                        style={{ backgroundColor: localTheme.marketCards?.moneylineAccent, borderColor: localTheme.marketCards?.moneylineAccent, color: '#fff' }}
                       >
                         Home
                       </button>
                       <button
                         className="flex-1 py-2 rounded text-sm font-medium border"
-                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                        style={{ backgroundColor: localTheme.marketCards?.moneylineDrawAccent, borderColor: localTheme.marketCards?.moneylineDrawAccent, color: '#fff' }}
                       >
                         Draw
                       </button>
                       <button
                         className="flex-1 py-2 rounded text-sm font-medium border"
-                        style={{ borderColor: localTheme.marketCards?.borderColor, color: localTheme.marketCards?.textColor }}
+                        style={{ backgroundColor: localTheme.marketCards?.moneylineAwayAccent, borderColor: localTheme.marketCards?.moneylineAwayAccent, color: '#fff' }}
                       >
                         Away
                       </button>
@@ -1456,7 +1456,11 @@ function WhiteLabelSection({
             <h4 className="text-sm font-medium mb-3">Market Type Accent Colors</h4>
             <p className="text-xs text-zinc-500 mb-3">These colors are used as accent stripes for different market types</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ColorPicker label="Moneyline Accent" value={localTheme.marketCards?.moneylineAccent || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moneylineAccent: v } })} />
+              <ColorPicker label="Moneyline Home" value={localTheme.marketCards?.moneylineAccent || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moneylineAccent: v } })} />
+              <ColorPicker label="Moneyline Away" value={localTheme.marketCards?.moneylineAwayAccent || "#3b82f6"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moneylineAwayAccent: v } })} />
+              <ColorPicker label="Moneyline Draw" value={localTheme.marketCards?.moneylineDrawAccent || "#71717a"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moneylineDrawAccent: v } })} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
               <ColorPicker label="Totals (O/U) Accent" value={localTheme.marketCards?.totalsAccent || "#3b82f6"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, totalsAccent: v } })} />
               <ColorPicker label="More Markets Accent" value={localTheme.marketCards?.moreMarketsAccent || "#8b5cf6"} onChange={(v) => setLocalTheme({ ...localTheme, marketCards: { ...localTheme.marketCards, moreMarketsAccent: v } })} />
             </div>

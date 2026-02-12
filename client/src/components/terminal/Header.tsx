@@ -1,6 +1,11 @@
-import { Zap, Wallet } from "lucide-react";
+import { Zap, Wallet, Flame, Target, Trophy, Crown, Shield, Rocket, Gem, Heart, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/useTheme";
+
+const IconMap: Record<string, typeof Zap> = {
+  zap: Zap, flame: Flame, target: Target, trophy: Trophy, crown: Crown,
+  shield: Shield, rocket: Rocket, gem: Gem, heart: Heart, sparkles: Sparkles, star: Star,
+};
 
 interface HeaderProps {
   usdcBalance: number;
@@ -26,8 +31,8 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
       <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
         {logoUrl ? (
           <img src={logoUrl} alt={brandName} className="h-6 w-auto" />
-        ) : logoIcon ? (
-          <span className="text-xl">{logoIcon}</span>
+        ) : logoIcon && logoIcon !== "none" && IconMap[logoIcon] ? (
+          (() => { const Icon = IconMap[logoIcon]; return <Icon className="w-5 h-5 fill-current" />; })()
         ) : (
           <Zap className="w-5 h-5 fill-current" />
         )}

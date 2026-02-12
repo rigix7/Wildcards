@@ -220,6 +220,8 @@ export const themeConfigSchema = z.object({
     oddsBadgeColor: z.string().default("#fbbf24"),
     textColor: z.string().default("#fafafa"),
     moneylineAccent: z.string().default("#f43f5e"),
+    moneylineAwayAccent: z.string().default("#3b82f6"),
+    moneylineDrawAccent: z.string().default("#71717a"),
     totalsAccent: z.string().default("#3b82f6"),
     moreMarketsAccent: z.string().default("#8b5cf6"),
   }).default({}),
