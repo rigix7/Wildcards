@@ -121,9 +121,11 @@ export default function useFeeCollection() {
 
         if (feeConfig.wallets && feeConfig.wallets.length > 0) {
           // Multi-wallet distribution
-          console.log("[FeeCollection] Building multi-wallet transfers for", feeConfig.wallets.length, "wallets");
+          console.log("[FeeCollection] Multi-wallet config:", JSON.stringify(feeConfig.wallets));
+          console.log("[FeeCollection] Total fee amount:", feeAmount.toString(), "wei (", (Number(feeAmount) / Math.pow(10, USDC_E_DECIMALS)).toFixed(6), "USDC)");
           for (const wallet of feeConfig.wallets) {
             const walletFee = BigInt(Math.floor(Number(feeAmount) * (wallet.percentage / 100)));
+            console.log(`[FeeCollection] Wallet ${wallet.address}: ${wallet.percentage}% = ${walletFee.toString()} wei (${(Number(walletFee) / Math.pow(10, USDC_E_DECIMALS)).toFixed(6)} USDC)`);
             if (walletFee > BigInt(0)) {
               const transferData = encodeFunctionData({
                 abi: ERC20_TRANSFER_ABI,
@@ -131,9 +133,11 @@ export default function useFeeCollection() {
                 args: [wallet.address as `0x${string}`, walletFee],
               });
               transactions.push({ to: USDC_E_CONTRACT_ADDRESS, value: "0", data: transferData });
-              console.log(`[FeeCollection] Wallet ${wallet.address}: ${wallet.percentage}% = ${walletFee.toString()} wei`);
+            } else {
+              console.warn(`[FeeCollection] Skipping wallet ${wallet.address} — fee is zero`);
             }
           }
+          console.log("[FeeCollection] Total transactions to batch:", transactions.length);
         } else {
           // Single wallet fallback
           console.log("[FeeCollection] Building single transfer to:", feeConfig.feeAddress);

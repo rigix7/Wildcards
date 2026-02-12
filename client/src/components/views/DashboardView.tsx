@@ -639,7 +639,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </div>
                   <div>
                     <div className="text-sm font-medium text-[var(--text-primary)]">{pointsName}</div>
-                    <div className="text-[10px] text-[var(--text-muted)] font-mono">Wildcard Token</div>
+                    <div className="text-[10px] text-[var(--text-muted)] font-mono">{pointsName} Points</div>
                   </div>
                 </div>
                 <span className="font-mono font-bold text-[var(--text-primary)]" data-testid="text-dash-wild">

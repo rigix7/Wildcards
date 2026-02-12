@@ -2356,9 +2356,16 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
   const handleSaveFees = async () => {
     setSavingFees(true);
     try {
+      // Derive enabled + feeAddress so the DB config is self-contained
+      const hasValidWallet = feeConfig.wallets?.some(w => w.address?.trim()) ?? false;
+      const configToSave = {
+        ...feeConfig,
+        enabled: feeConfig.feeBps > 0 && hasValidWallet,
+        feeAddress: feeConfig.wallets?.find(w => w.address?.trim())?.address || feeConfig.feeAddress || "",
+      };
       const res = await adminFetch("/api/admin/white-label/fees", {
         method: "PATCH",
-        body: JSON.stringify(feeConfig),
+        body: JSON.stringify(configToSave),
       });
       if (res.ok) {
         showStatus("success", "Fee settings saved");
