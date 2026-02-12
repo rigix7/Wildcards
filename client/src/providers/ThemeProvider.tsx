@@ -121,6 +121,8 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--market-odds-badge', theme.marketCards?.oddsBadgeColor || '#fbbf24');
   root.style.setProperty('--market-text', theme.marketCards?.textColor || '#fafafa');
   root.style.setProperty('--market-moneyline', theme.marketCards?.moneylineAccent || '#f43f5e');
+  root.style.setProperty('--market-moneyline-away', theme.marketCards?.moneylineAwayAccent || '#3b82f6');
+  root.style.setProperty('--market-moneyline-draw', theme.marketCards?.moneylineDrawAccent || '#71717a');
   root.style.setProperty('--market-totals', theme.marketCards?.totalsAccent || '#3b82f6');
   root.style.setProperty('--market-more', theme.marketCards?.moreMarketsAccent || '#8b5cf6');
 
@@ -165,6 +167,8 @@ function applyDefaultTheme() {
       oddsBadgeColor: '#fbbf24',
       textColor: '#fafafa',
       moneylineAccent: '#f43f5e',
+      moneylineAwayAccent: '#3b82f6',
+      moneylineDrawAccent: '#71717a',
       totalsAccent: '#3b82f6',
       moreMarketsAccent: '#8b5cf6',
     },
