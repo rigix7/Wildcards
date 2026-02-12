@@ -87,7 +87,7 @@ export async function registerRoutes(
     try {
       // Try loading fee config from database first (admin-configured)
       const wlConfig = await storage.getWhiteLabelConfig();
-      const dbFeeConfig = wlConfig?.feeConfig as { feeBps?: number; feeAddress?: string; enabled?: boolean; wallets?: Array<{ address: string; percentage: number }> } | null;
+      const dbFeeConfig = wlConfig?.feeConfig as { feeBps?: number; feeAddress?: string; enabled?: boolean; showFeeInUI?: boolean; wallets?: Array<{ address: string; percentage: number }> } | null;
 
       if (dbFeeConfig && (dbFeeConfig.enabled || (dbFeeConfig.feeBps && dbFeeConfig.feeBps > 0))) {
         // Determine the primary fee address from wallets or direct config
@@ -98,8 +98,10 @@ export async function registerRoutes(
         const feeBps = dbFeeConfig.feeBps || 0;
         const enabled = dbFeeConfig.enabled !== false && !!feeAddress && feeBps > 0;
 
-        console.log("[FeeConfig API] Returning DB fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled });
-        return res.json({ feeAddress, feeBps, enabled });
+        const showFeeInUI = dbFeeConfig.showFeeInUI ?? true;
+        const wallets = dbFeeConfig.wallets || [];
+        console.log("[FeeConfig API] Returning DB fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled, showFeeInUI, wallets: wallets.length });
+        return res.json({ feeAddress, feeBps, enabled, showFeeInUI, wallets });
       }
     } catch (err) {
       console.warn("[FeeConfig API] Failed to load from DB, falling back to env vars:", err);
@@ -111,7 +113,7 @@ export async function registerRoutes(
     const enabled = !!feeAddress && feeBps > 0;
 
     console.log("[FeeConfig API] Returning env fee config:", { feeAddress: feeAddress || "(not set)", feeBps, enabled });
-    res.json({ feeAddress, feeBps, enabled });
+    res.json({ feeAddress, feeBps, enabled, showFeeInUI: true, wallets: [] });
   });
 
   // ========== Polymarket Bridge API Proxy ==========

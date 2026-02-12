@@ -81,10 +81,12 @@ export default {
           offline: "rgb(156 163 175)",
         },
         wild: {
-          brand: "#fb7185",
-          scout: "#34d399",
-          trade: "#3b82f6",
-          gold: "#fbbf24",
+          brand: "rgb(var(--wild-brand-rgb, 251 113 133) / <alpha-value>)",
+          scout: "rgb(var(--wild-scout-rgb, 52 211 153) / <alpha-value>)",
+          gold: "rgb(var(--wild-gold-rgb, 251 191 36) / <alpha-value>)",
+          trade: "rgb(var(--wild-trade-rgb, 59 130 246) / <alpha-value>)",
+          error: "rgb(var(--wild-error-rgb, 239 68 68) / <alpha-value>)",
+          warning: "rgb(var(--wild-warning-rgb, 245 158 11) / <alpha-value>)",
         },
         zinc: {
           850: "#1c1c1f",

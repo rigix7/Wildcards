@@ -29,7 +29,7 @@ import { DollarSign, Loader2, CheckCircle2, X, AlertTriangle } from "lucide-reac
 import type { Market, Player, Trade, Bet, Wallet, AdminSettings, WalletRecord, Futures, PolymarketTagRecord, FuturesCategory } from "@shared/schema";
 
 export default function HomePage() {
-  const { pointsName } = useTheme();
+  const { pointsName, pointsEnabled } = useTheme();
   const { authenticated: isConnected, eoaAddress: address, login, logout, isReady } = useWallet();
   const { 
     tradingSession, 
@@ -47,7 +47,7 @@ export default function HomePage() {
   
   const { clobClient } = useClobClient(tradingSession, isTradingSessionComplete, safeAddress);
   const { submitOrder, isSubmitting: isPolymarketSubmitting, error: polymarketError } = useClobOrder(clobClient, safeAddress);
-  const { collectFee, isFeeCollectionEnabled } = useFeeCollection();
+  const { collectFee, isFeeCollectionEnabled, showFeeInUI } = useFeeCollection();
   
   const walletLoading = !isReady;
   const isSafeDeployed = tradingSession?.isSafeDeployed ?? false;
@@ -832,8 +832,9 @@ export default function HomePage() {
           question={selectedBet.question}
           isSoccer3Way={selectedBet.isSoccer3Way}
           getOrderBook={clobClient ? getOrderBook : undefined}
-          showFeeInUI={true}
+          showFeeInUI={showFeeInUI}
           pointsName={pointsName}
+          pointsEnabled={pointsEnabled}
         />
       )}
 

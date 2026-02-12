@@ -26,6 +26,7 @@ interface FeeConfig {
   feeAddress: string;
   feeBps: number;
   enabled: boolean;
+  wallets: Array<{ address: string; percentage: number }>;
 }
 
 export default function useFeeCollection() {
@@ -35,7 +36,9 @@ export default function useFeeCollection() {
     feeAddress: "",
     feeBps: 0,
     enabled: false,
+    wallets: [],
   });
+  const [showFeeInUI, setShowFeeInUI] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
@@ -49,7 +52,9 @@ export default function useFeeCollection() {
             feeAddress: config.feeAddress || "",
             feeBps: config.feeBps || 0,
             enabled: config.enabled || false,
+            wallets: config.wallets || [],
           });
+          setShowFeeInUI(config.showFeeInUI ?? true);
         } else {
           console.warn("[FeeCollection] Failed to load fee config from API, using defaults");
         }
@@ -112,22 +117,37 @@ export default function useFeeCollection() {
       setFeeError(null);
 
       try {
-        console.log("[FeeCollection] Building transfer transaction to:", feeConfig.feeAddress);
-        const transferData = encodeFunctionData({
-          abi: ERC20_TRANSFER_ABI,
-          functionName: "transfer",
-          args: [feeConfig.feeAddress as `0x${string}`, feeAmount],
-        });
+        const transactions: Array<{ to: string; value: string; data: string }> = [];
 
-        const feeTransferTx = {
-          to: USDC_E_CONTRACT_ADDRESS,
-          value: "0",
-          data: transferData,
-        };
+        if (feeConfig.wallets && feeConfig.wallets.length > 0) {
+          // Multi-wallet distribution
+          console.log("[FeeCollection] Building multi-wallet transfers for", feeConfig.wallets.length, "wallets");
+          for (const wallet of feeConfig.wallets) {
+            const walletFee = BigInt(Math.floor(Number(feeAmount) * (wallet.percentage / 100)));
+            if (walletFee > BigInt(0)) {
+              const transferData = encodeFunctionData({
+                abi: ERC20_TRANSFER_ABI,
+                functionName: "transfer",
+                args: [wallet.address as `0x${string}`, walletFee],
+              });
+              transactions.push({ to: USDC_E_CONTRACT_ADDRESS, value: "0", data: transferData });
+              console.log(`[FeeCollection] Wallet ${wallet.address}: ${wallet.percentage}% = ${walletFee.toString()} wei`);
+            }
+          }
+        } else {
+          // Single wallet fallback
+          console.log("[FeeCollection] Building single transfer to:", feeConfig.feeAddress);
+          const transferData = encodeFunctionData({
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [feeConfig.feeAddress as `0x${string}`, feeAmount],
+          });
+          transactions.push({ to: USDC_E_CONTRACT_ADDRESS, value: "0", data: transferData });
+        }
 
-        console.log("[FeeCollection] Executing relay transaction...");
+        console.log("[FeeCollection] Executing", transactions.length, "relay transaction(s)...");
         const response = await relayClient.execute(
-          [feeTransferTx],
+          transactions,
           `Collect integrator fee: ${(Number(feeAmount) / Math.pow(10, USDC_E_DECIMALS)).toFixed(2)} USDC`
         );
         console.log("[FeeCollection] Relay response received, waiting for confirmation...");
@@ -150,7 +170,7 @@ export default function useFeeCollection() {
         setIsCollectingFee(false);
       }
     },
-    [feeConfig.enabled, feeConfig.feeAddress, feeConfig.feeBps, configLoaded, calculateFeeAmount]
+    [feeConfig, configLoaded, calculateFeeAmount]
   );
 
   return {
@@ -158,6 +178,7 @@ export default function useFeeCollection() {
     calculateFeeAmount,
     isCollectingFee,
     feeError,
+    showFeeInUI,
     isFeeCollectionEnabled: feeConfig.enabled,
     feeAddressConfigured: !!feeConfig.feeAddress,
     feeBps: feeConfig.feeBps,

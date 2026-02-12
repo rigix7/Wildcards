@@ -94,6 +94,7 @@ interface FeeConfig {
   feeBps: number;
   feeAddress?: string;
   enabled?: boolean;
+  showFeeInUI?: boolean;
   wallets?: FeeWallet[];
 }
 
@@ -316,6 +317,24 @@ function FeeSection({
         <p className="text-xs text-zinc-500 mt-1">
           100 bps = 1%. Max 1000 bps (10%)
         </p>
+      </div>
+
+      {/* Show fee in UI toggle */}
+      <div className="flex items-center justify-between bg-zinc-800/50 rounded-lg p-3">
+        <div>
+          <div className="text-sm text-white">Show Fee in UI</div>
+          <div className="text-xs text-zinc-500">Display fee breakdown to users in the bet slip</div>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={feeConfig.showFeeInUI ?? true}
+            onChange={(e) => setFeeConfig({ ...feeConfig, showFeeInUI: e.target.checked })}
+            className="sr-only peer"
+            data-testid="toggle-show-fee"
+          />
+          <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:bg-emerald-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
+        </label>
       </div>
 
       {/* Multi-wallet */}

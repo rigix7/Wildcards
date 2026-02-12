@@ -35,7 +35,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, safeAddress, isSafeDeployed, submitOrder, clobClient }: DashboardViewProps) {
-  const { pointsName } = useTheme();
+  const { pointsName, pointsEnabled } = useTheme();
   const [positions, setPositions] = useState<PolymarketPosition[]>([]);
   const [activity, setActivity] = useState<PolymarketActivity[]>([]);
   const [positionsLoading, setPositionsLoading] = useState(false);
@@ -631,20 +631,22 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 ${formatBalance(wallet?.usdcBalance || 0)}
               </span>
             </div>
-            <div className="flex justify-between items-center p-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
-                  W
+            {pointsEnabled && (
+              <div className="flex justify-between items-center p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+                    W
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{pointsName}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] font-mono">Wildcard Token</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-[var(--text-primary)]">{pointsName}</div>
-                  <div className="text-[10px] text-[var(--text-muted)] font-mono">Wildcard Token</div>
-                </div>
+                <span className="font-mono font-bold text-[var(--text-primary)]" data-testid="text-dash-wild">
+                  {formatBalance(wallet?.wildBalance || 0)}
+                </span>
               </div>
-              <span className="font-mono font-bold text-[var(--text-primary)]" data-testid="text-dash-wild">
-                {formatBalance(wallet?.wildBalance || 0)}
-              </span>
-            </div>
+            )}
           </div>
         </div>
 
@@ -736,7 +738,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         )}
                       </Button>
                     </div>
-                    <p className="text-[10px] text-amber-400">
+                    <p className="text-[10px] text-wild-warning">
                       Send USDC.e only. Other tokens will be lost.
                     </p>
                   </>
@@ -1350,7 +1352,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 )}
               </Button>
               {withdrawMutation.isSuccess && (
-                <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-4 h-4 text-wild-scout" />
                     <p className="text-xs text-wild-scout font-medium">

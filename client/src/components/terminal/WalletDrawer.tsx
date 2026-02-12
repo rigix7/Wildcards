@@ -93,7 +93,7 @@ export function WalletDrawer({
   const [isLoadingDepositAddresses, setIsLoadingDepositAddresses] = useState(false);
   const [depositAddressCopied, setDepositAddressCopied] = useState(false);
 
-  const { pointsName } = useTheme();
+  const { pointsName, pointsEnabled } = useTheme();
   const { createDeposit, getChainOptions } = useBridgeApi();
   const chainOptions = getChainOptions();
 
@@ -233,17 +233,19 @@ export function WalletDrawer({
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center p-3 bg-[var(--page-bg)] rounded-lg border border-[var(--border-primary)]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
-                        W
+                  {pointsEnabled && (
+                    <div className="flex justify-between items-center p-3 bg-[var(--page-bg)] rounded-lg border border-[var(--border-primary)]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+                          W
+                        </div>
+                        <span className="text-sm text-[var(--text-secondary)]">{pointsName}</span>
                       </div>
-                      <span className="text-sm text-[var(--text-secondary)]">{pointsName}</span>
+                      <span className="font-mono font-bold text-[var(--text-primary)]" data-testid="text-drawer-wild">
+                        {formatBalance(wallet.wildBalance)}
+                      </span>
                     </div>
-                    <span className="font-mono font-bold text-[var(--text-primary)]" data-testid="text-drawer-wild">
-                      {formatBalance(wallet.wildBalance)}
-                    </span>
-                  </div>
+                  )}
 
                   <div className="flex justify-between items-center p-3 bg-gradient-to-r from-wild-brand/10 to-wild-trade/10 rounded-lg border border-[var(--border-primary)]">
                     <span className="text-sm text-[var(--text-secondary)]">Total Value</span>
@@ -263,7 +265,7 @@ export function WalletDrawer({
                           Active
                         </span>
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-wild-warning/20 text-wild-warning font-medium">
                           Activation Required
                         </span>
                       )}

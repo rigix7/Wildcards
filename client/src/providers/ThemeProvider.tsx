@@ -23,6 +23,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Convert "#fb7185" -> "251 113 133" for Tailwind's rgb() alpha syntax */
+function hexToRgb(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '';
+  return `${r} ${g} ${b}`;
+}
+
 function applyTheme(theme: ThemeConfig) {
   const root = document.documentElement;
 
@@ -61,6 +71,18 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--error-color', theme.global?.errorColor || '#ef4444');
   root.style.setProperty('--warning-color', theme.global?.warningColor || '#f59e0b');
 
+  // Wild color system — RGB triplets driving all wild-* Tailwind classes site-wide
+  const brandRgb = hexToRgb(theme.brand?.primaryColor || '#fb7185');
+  const scoutRgb = hexToRgb(theme.global?.successColor || '#34d399');
+  const goldRgb = hexToRgb(theme.brand?.accentColor || '#fbbf24');
+  const errorRgb = hexToRgb(theme.global?.errorColor || '#ef4444');
+  const warningRgb = hexToRgb(theme.global?.warningColor || '#f59e0b');
+  if (brandRgb) root.style.setProperty('--wild-brand-rgb', brandRgb);
+  if (scoutRgb) root.style.setProperty('--wild-scout-rgb', scoutRgb);
+  if (goldRgb) root.style.setProperty('--wild-gold-rgb', goldRgb);
+  if (errorRgb) root.style.setProperty('--wild-error-rgb', errorRgb);
+  if (warningRgb) root.style.setProperty('--wild-warning-rgb', warningRgb);
+
   // Header
   root.style.setProperty('--header-bg', theme.header?.backgroundColor || '#09090b');
   root.style.setProperty('--header-text', theme.header?.textColor || '#fafafa');
@@ -72,10 +94,6 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--betslip-primary', theme.betSlip?.primaryButtonColor || '#f43f5e');
   root.style.setProperty('--betslip-success', theme.betSlip?.successColor || '#10b981');
   root.style.setProperty('--betslip-text', theme.betSlip?.textColor || '#fafafa');
-
-  // Legacy --wl-betslip-* variables for backward compat
-  root.style.setProperty('--wl-betslip-bg', theme.betSlip?.backgroundColor || '#18181b');
-  root.style.setProperty('--wl-betslip-text', theme.betSlip?.textColor || '#fafafa');
 
   // Market Cards
   root.style.setProperty('--market-bg', theme.marketCards?.backgroundColor || '#18181b');

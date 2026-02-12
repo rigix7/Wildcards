@@ -22,6 +22,14 @@
   --error-color: #ef4444;
   --warning-color: #f59e0b;
 
+  /* Wild color system (RGB triplets for Tailwind alpha support) */
+  --wild-brand-rgb: 251 113 133;
+  --wild-scout-rgb: 52 211 153;
+  --wild-gold-rgb: 251 191 36;
+  --wild-trade-rgb: 59 130 246;
+  --wild-error-rgb: 239 68 68;
+  --wild-warning-rgb: 245 158 11;
+
   /* Header */
   --header-bg: #09090b;
   --header-text: #fafafa;

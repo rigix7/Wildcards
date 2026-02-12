@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = false }: HeaderProps) {
-  const { brandName, pointsName } = useTheme();
+  const { brandName, pointsName, pointsEnabled, logoUrl, logoIcon } = useTheme();
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -24,7 +24,13 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
       style={{ backgroundColor: 'var(--header-bg, #09090b)' }}
     >
       <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
-        <Zap className="w-5 h-5 fill-current" />
+        {logoUrl ? (
+          <img src={logoUrl} alt={brandName} className="h-6 w-auto" />
+        ) : logoIcon ? (
+          <span className="text-xl">{logoIcon}</span>
+        ) : (
+          <Zap className="w-5 h-5 fill-current" />
+        )}
         <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>{brandName}</span>
       </div>
       {isConnected ? (
@@ -36,9 +42,11 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
         >
           <div className="text-[10px] font-mono text-right leading-tight text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
             <div data-testid="text-usdc-balance">${formatBalance(usdcBalance)}</div>
-            <div className="text-wild-scout" data-testid="text-wild-balance">
-              {formatBalance(wildBalance)} {pointsName}
-            </div>
+            {pointsEnabled && (
+              <div className="text-wild-scout" data-testid="text-wild-balance">
+                {formatBalance(wildBalance)} {pointsName}
+              </div>
+            )}
           </div>
           <div className="w-6 h-6 rounded-full bg-[var(--card-bg-elevated)] flex items-center justify-center">
             <Wallet className="w-3 h-3 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />

@@ -187,6 +187,8 @@ interface BetSlipProps {
   showFeeInUI?: boolean;
   // New (merged): configurable points name (default "WILD")
   pointsName?: string;
+  // Points system toggle
+  pointsEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +216,7 @@ export function BetSlip({
   isSoccer3Way = false,
   showFeeInUI = true,
   pointsName = "WILD",
+  pointsEnabled = true,
 }: BetSlipProps) {
   const [stake, setStake] = useState<string>("10");
   const [betDirection, setBetDirection] = useState<"yes" | "no">(initialDirection);
@@ -465,14 +468,14 @@ export function BetSlip({
   if (submissionStatus === "success") {
     return (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-emerald-500/50 rounded-t-xl p-6 animate-slide-up">
+        <div className="w-full max-w-[430px] border-t rounded-t-xl p-6 animate-slide-up" style={{ backgroundColor: 'var(--betslip-bg, var(--card-bg))', borderColor: 'var(--betslip-success, #10b981)' }}>
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+            <div className="w-16 h-16 rounded-full bg-wild-scout/20 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-10 h-10 text-wild-scout" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-1">Bet Placed!</h3>
-              <p className="text-emerald-400 font-mono text-lg">
+              <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--betslip-text, var(--text-primary))' }}>Bet Placed!</h3>
+              <p className="text-wild-scout font-mono text-lg">
                 ${confirmedStake.toFixed(2)} on {outcomeLabel}
               </p>
               <p className="text-[var(--text-secondary)] text-sm mt-2">{marketTitle}</p>
@@ -481,7 +484,7 @@ export function BetSlip({
               <Button
                 onClick={onCancel}
                 size="lg"
-                className="w-full bg-emerald-600 text-[var(--text-primary)] font-bold"
+                className="w-full bg-wild-scout text-[var(--text-primary)] font-bold"
                 data-testid="button-success-done"
               >
                 Done
@@ -507,9 +510,9 @@ export function BetSlip({
   // -------------------------------------------------------------------------
   if (submissionStatus === "error") {
     const isWarning = errorDetails?.severity === "warning";
-    const borderColor = isWarning ? "border-amber-500/50" : "border-red-500/50";
-    const iconBgColor = isWarning ? "bg-amber-500/20" : "bg-red-500/20";
-    const iconColor = isWarning ? "text-amber-400" : "text-red-400";
+    const borderColor = isWarning ? "border-wild-warning/50" : "border-wild-error/50";
+    const iconBgColor = isWarning ? "bg-wild-warning/20" : "bg-wild-error/20";
+    const iconColor = isWarning ? "text-wild-warning" : "text-wild-error";
 
     return (
       <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
@@ -570,20 +573,20 @@ export function BetSlip({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
       {/* From PolyHouse: CSS variable support for white-label theming */}
       <div
-        className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-[var(--border-secondary)] rounded-t-xl p-4 animate-slide-up"
-        style={{ backgroundColor: "var(--wl-betslip-bg)" }}
+        className="w-full max-w-[430px] border-t border-[var(--border-secondary)] rounded-t-xl p-4 animate-slide-up"
+        style={{ backgroundColor: "var(--betslip-bg, var(--card-bg))" }}
       >
         <div className="flex justify-between items-start mb-4">
           <div>
             <p
               className="text-xs uppercase tracking-wider"
-              style={{ color: "var(--wl-betslip-text, #71717a)" }}
+              style={{ color: "var(--betslip-text, #71717a)" }}
             >
               Bet Slip
             </p>
             <h3
               className="font-bold text-lg"
-              style={{ color: "var(--wl-betslip-text, #ffffff)" }}
+              style={{ color: "var(--betslip-text, #ffffff)" }}
             >
               {outcomeLabel}{" "}
               {isSoccer3Way && (
@@ -594,7 +597,7 @@ export function BetSlip({
             </h3>
             <p
               className="text-xs mt-0.5"
-              style={{ color: "var(--wl-betslip-text, #a1a1aa)" }}
+              style={{ color: "var(--betslip-text, #a1a1aa)" }}
             >
               {marketTitle}
             </p>
@@ -653,12 +656,12 @@ export function BetSlip({
 
           {/* Smart Liquidity Warning */}
           {hasLiquidityWarning && !isLoadingBook && (
-            <div className="rounded-lg p-3 space-y-1 bg-amber-500/10 border border-amber-500/30">
-              <div className="flex items-center gap-2 text-amber-400 text-sm font-medium">
+            <div className="rounded-lg p-3 space-y-1 bg-wild-warning/10 border border-wild-warning/30">
+              <div className="flex items-center gap-2 text-wild-warning text-sm font-medium">
                 <AlertTriangle className="w-4 h-4" />
                 <span>{fillSimulation.noOrderBook ? "No Order Book" : "Liquidity Warning"}</span>
               </div>
-              <div className="text-xs text-amber-400/80 space-y-0.5">
+              <div className="text-xs text-wild-warning/80 space-y-0.5">
                 {fillSimulation.noOrderBook ? (
                   <p>Order book data unavailable – order may not fill at expected price</p>
                 ) : !fillSimulation.canFill ? (
@@ -681,14 +684,14 @@ export function BetSlip({
           )}
 
           {bookError && !isLoadingBook && (
-            <div className="flex items-center justify-between text-amber-400 text-sm bg-amber-400/10 rounded p-2">
+            <div className="flex items-center justify-between text-wild-warning text-sm bg-wild-warning/10 rounded p-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
                 <span>{bookError}</span>
               </div>
               <button
                 onClick={retryOrderBook}
-                className="p-1 hover:bg-amber-400/20 rounded"
+                className="p-1 hover:bg-wild-warning/20 rounded"
                 data-testid="button-refresh-book"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -717,7 +720,7 @@ export function BetSlip({
                   <p className="text-xs text-[var(--text-muted)]">Odds</p>
                   {/* From PolyHouse: visual stale indicator */}
                   {isOddsStale && !isLoadingBook && (
-                    <span className="text-[10px] text-amber-400 animate-pulse" title="Odds may be outdated">
+                    <span className="text-[10px] text-wild-warning animate-pulse" title="Odds may be outdated">
                       stale
                     </span>
                   )}
@@ -739,7 +742,7 @@ export function BetSlip({
                 disabled={isLoadingBook || submissionStatus === "pending"}
                 className={`mt-1 p-1.5 rounded transition-colors disabled:opacity-50 ${
                   isOddsStale
-                    ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
+                    ? "bg-wild-warning/20 hover:bg-wild-warning/30 text-wild-warning border border-wild-warning/30"
                     : "bg-[var(--card-bg-elevated)] hover:bg-[var(--card-bg-hover)] text-[var(--text-secondary)] hover:text-wild-gold"
                 }`}
                 title={isOddsStale ? "Refresh stale odds" : "Refresh odds"}
@@ -772,7 +775,7 @@ export function BetSlip({
             </button>
           </div>
 
-          <div className="bg-[var(--card-bg-elevated)]/50 rounded-lg p-3 space-y-2">
+          <div className="rounded-lg p-3 space-y-2" style={{ backgroundColor: 'var(--betslip-card, var(--card-bg-elevated))' }}>
             <div className="flex justify-between text-sm">
               <span className="text-[var(--text-secondary)]">Potential Win</span>
               <span className="font-mono font-bold text-[var(--text-primary)]">${potentialWin.toFixed(2)}</span>
@@ -793,12 +796,14 @@ export function BetSlip({
                 </div>
               </>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">{pointsName} Points Earned</span>
-              <span className="font-mono text-wild-gold">
-                +{earnedPoints} {pointsName}
-              </span>
-            </div>
+            {pointsEnabled && (
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">{pointsName} Points Earned</span>
+                <span className="font-mono text-wild-gold">
+                  +{earnedPoints} {pointsName}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-xs">
               <span className="text-[var(--text-muted)]">Available Balance</span>
               <span className="font-mono text-[var(--text-secondary)]">${maxBalance.toFixed(2)} USDC</span>
@@ -806,14 +811,14 @@ export function BetSlip({
           </div>
 
           {insufficientBalance && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 rounded p-2">
+            <div className="flex items-center gap-2 text-wild-error text-sm bg-wild-error/10 rounded p-2">
               <AlertTriangle className="w-4 h-4" />
               <span>Insufficient USDC balance</span>
             </div>
           )}
 
           {isBelowMinimum && !insufficientBalance && (
-            <div className="flex items-center gap-2 text-amber-400 text-sm bg-amber-400/10 rounded p-2">
+            <div className="flex items-center gap-2 text-wild-warning text-sm bg-wild-warning/10 rounded p-2">
               <AlertTriangle className="w-4 h-4" />
               <span>
                 Minimum bet is ${minOrderUSDC.toFixed(2)} USDC ({minShares} shares)
@@ -851,7 +856,7 @@ export function BetSlip({
           </Button>
 
           <p className="text-[10px] text-[var(--text-muted)] text-center">
-            Bets earn {pointsName} points. Orders submitted to Polymarket CLOB.
+            {pointsEnabled ? `Bets earn ${pointsName} points. ` : ''}Orders submitted to Polymarket CLOB.
           </p>
         </div>
       </div>

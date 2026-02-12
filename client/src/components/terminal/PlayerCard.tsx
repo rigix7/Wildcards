@@ -12,7 +12,7 @@ interface PlayerCardProps {
 }
 
 export function PlayerCard({ player, variant, onFund, onTrade }: PlayerCardProps) {
-  const { pointsName } = useTheme();
+  const { pointsName, pointsEnabled } = useTheme();
   const formatNumber = (value: number) => {
     if (value >= 1000000) {
       return `${(value / 1000000).toFixed(1)}M`;
@@ -61,7 +61,7 @@ export function PlayerCard({ player, variant, onFund, onTrade }: PlayerCardProps
               />
             </div>
             <p className="text-[9px] text-[var(--text-muted)] mt-2 font-mono text-right">
-              Target: {formatNumber(player.fundingTarget)} {pointsName}
+              Target: {formatNumber(player.fundingTarget)}{pointsEnabled ? ` ${pointsName}` : ' USDC'}
             </p>
           </div>
 
