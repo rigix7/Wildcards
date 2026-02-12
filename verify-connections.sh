@@ -87,8 +87,6 @@ check_css_var "--header-accent" "header.accentColor"
 echo ""
 
 echo "  BetSlip:"
-check_css_var "--wl-betslip-bg"   "betSlip.backgroundColor (legacy)"
-check_css_var "--wl-betslip-text" "betSlip.textColor (legacy)"
 check_css_var "--betslip-bg"      "betSlip.backgroundColor"
 check_css_var "--betslip-card"    "betSlip.cardColor"
 check_css_var "--betslip-primary" "betSlip.primaryButtonColor"
@@ -129,14 +127,29 @@ check_css_var "--text-secondary"   "general.textSecondary"
 check_css_var "--text-muted"       "general.textMuted"
 check_css_var "--border-primary"   "general.borderPrimary"
 check_css_var "--border-secondary" "general.borderSecondary"
-check_css_var "--primary-color"    "brand.primaryColor"
-check_css_var "--accent-color"     "brand.accentColor"
 echo ""
 
-echo "  Global Status Colors:"
-check_css_var "--success-color" "global.successColor"
-check_css_var "--error-color"   "global.errorColor"
-check_css_var "--warning-color" "global.warningColor"
+echo "  Brand & Status Colors (via Tailwind wild-* bridge → --wild-*-rgb):"
+# These colors are connected via ThemeProvider → --wild-*-rgb CSS vars → tailwind.config wild-* classes
+# Check for Tailwind class usage in components (not admin)
+check_tailwind_color() {
+  local class_pattern="$1"
+  local description="$2"
+  local matches
+  matches=$(grep -rl "$class_pattern" "$COMPONENTS_DIR" "$PAGES_DIR" 2>/dev/null | grep -v "admin" || true)
+  if [ -n "$matches" ]; then
+    local file_list
+    file_list=$(echo "$matches" | xargs -I{} basename {} | sort -u | tr '\n' ', ' | sed 's/,$//')
+    pass "$description → $class_pattern used in: ${file_list}"
+  else
+    fail "$description → $class_pattern class NOT found in any component"
+  fi
+}
+check_tailwind_color "wild-brand"   "brand.primaryColor (via --wild-brand-rgb)"
+check_tailwind_color "wild-gold"    "brand.accentColor (via --wild-gold-rgb)"
+check_tailwind_color "wild-scout"   "global.successColor (via --wild-scout-rgb)"
+check_tailwind_color "wild-error"   "global.errorColor (via --wild-error-rgb)"
+check_tailwind_color "wild-warning" "global.warningColor (via --wild-warning-rgb)"
 echo ""
 
 # ─────────────────────────────────────────────
@@ -198,7 +211,7 @@ else
 fi
 
 # Check multi-wallet support
-MULTI_WALLET=$(grep -c "wallets\[" "$HOOKS_DIR/useFeeCollection.ts" 2>/dev/null | tr -d '[:space:]' || echo "0")
+MULTI_WALLET=$(grep -c "\.wallets" "$HOOKS_DIR/useFeeCollection.ts" 2>/dev/null | tr -d '[:space:]' || echo "0")
 if [ "${MULTI_WALLET:-0}" -gt 0 ] 2>/dev/null; then
   pass "Multi-wallet distribution → useFeeCollection supports multiple wallets"
 else

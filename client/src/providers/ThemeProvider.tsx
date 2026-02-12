@@ -95,10 +95,6 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--betslip-success', theme.betSlip?.successColor || '#10b981');
   root.style.setProperty('--betslip-text', theme.betSlip?.textColor || '#fafafa');
 
-  // Legacy --wl-betslip-* variables for backward compat
-  root.style.setProperty('--wl-betslip-bg', theme.betSlip?.backgroundColor || '#18181b');
-  root.style.setProperty('--wl-betslip-text', theme.betSlip?.textColor || '#fafafa');
-
   // Market Cards
   root.style.setProperty('--market-bg', theme.marketCards?.backgroundColor || '#18181b');
   root.style.setProperty('--market-hover', theme.marketCards?.hoverColor || '#27272a');
