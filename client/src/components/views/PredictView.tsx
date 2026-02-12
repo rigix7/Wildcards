@@ -603,11 +603,15 @@ function TotalsMarketDisplay({
     <div className="flex gap-2">
       <button
         onClick={() => onSelect(market, "over")}
-        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-          isOverSelected 
-            ? "bg-blue-600 border border-blue-500 text-[var(--text-primary)]" 
-            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-[var(--text-secondary)]"
+        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md border text-sm transition-all ${
+          isOverSelected
+            ? "text-[var(--text-primary)]"
+            : "hover:brightness-125 text-[var(--text-secondary)]"
         }`}
+        style={isOverSelected
+          ? { backgroundColor: 'var(--market-totals, #3b82f6)', borderColor: 'var(--market-totals, #3b82f6)' }
+          : { backgroundColor: 'color-mix(in srgb, var(--market-totals, #3b82f6) 25%, transparent)', borderColor: 'color-mix(in srgb, var(--market-totals, #3b82f6) 30%, transparent)' }
+        }
         data-testid={`total-over-${market.id}`}
       >
         <span className="font-bold">O {line}</span>
@@ -615,11 +619,15 @@ function TotalsMarketDisplay({
       </button>
       <button
         onClick={() => onSelect(market, "under")}
-        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-          isUnderSelected 
-            ? "bg-blue-600 border border-blue-500 text-[var(--text-primary)]" 
-            : "bg-blue-900/40 border border-blue-800/50 hover:bg-blue-800/50 text-[var(--text-secondary)]"
+        className={`flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-md border text-sm transition-all ${
+          isUnderSelected
+            ? "text-[var(--text-primary)]"
+            : "hover:brightness-125 text-[var(--text-secondary)]"
         }`}
+        style={isUnderSelected
+          ? { backgroundColor: 'var(--market-totals, #3b82f6)', borderColor: 'var(--market-totals, #3b82f6)' }
+          : { backgroundColor: 'color-mix(in srgb, var(--market-totals, #3b82f6) 25%, transparent)', borderColor: 'color-mix(in srgb, var(--market-totals, #3b82f6) 30%, transparent)' }
+        }
         data-testid={`total-under-${market.id}`}
       >
         <span className="font-bold">U {line}</span>
@@ -972,7 +980,8 @@ function AdditionalMarketsSection({
     <div className="border-t border-[var(--border-primary)] pt-3 mt-3">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between w-full text-xs text-[var(--text-secondary)] hover:text-[var(--text-secondary)] transition-colors"
+        className="flex items-center justify-between w-full text-xs transition-colors"
+        style={{ color: 'var(--market-more, var(--text-secondary))' }}
         data-testid="expand-more-markets"
       >
         <span className="font-medium uppercase tracking-wide">

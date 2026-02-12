@@ -23,6 +23,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Convert "#18181b" -> "240 6% 10%" for shadcn's HSL CSS variable format */
+function hexToHsl(hex: string): string {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16) / 255;
+  const g = parseInt(c.substring(2, 4), 16) / 255;
+  const b = parseInt(c.substring(4, 6), 16) / 255;
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '';
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return `0 0% ${Math.round(l * 100)}%`;
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
 /** Convert "#fb7185" -> "251 113 133" for Tailwind's rgb() alpha syntax */
 function hexToRgb(hex: string): string {
   const c = hex.replace('#', '');
@@ -104,6 +123,14 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--market-moneyline', theme.marketCards?.moneylineAccent || '#f43f5e');
   root.style.setProperty('--market-totals', theme.marketCards?.totalsAccent || '#3b82f6');
   root.style.setProperty('--market-more', theme.marketCards?.moreMarketsAccent || '#8b5cf6');
+
+  // Sync shadcn Card tokens (HSL format) so <Card> wrapper matches inner elements
+  const cardHsl = hexToHsl(theme.marketCards?.backgroundColor || '#18181b');
+  const cardFgHsl = hexToHsl(theme.marketCards?.textColor || '#fafafa');
+  const cardBorderHsl = hexToHsl(theme.marketCards?.borderColor || '#3f3f46');
+  if (cardHsl) root.style.setProperty('--card', cardHsl);
+  if (cardFgHsl) root.style.setProperty('--card-foreground', cardFgHsl);
+  if (cardBorderHsl) root.style.setProperty('--card-border', cardBorderHsl);
 
   // Sorting Bar
   root.style.setProperty('--sort-bg', theme.sortingBar?.backgroundColor || '#09090b');
