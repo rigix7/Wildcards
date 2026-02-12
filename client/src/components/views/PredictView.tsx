@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Shield, Lock, Loader2, TrendingUp, Calendar, Radio, Clock, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Trophy, Lock, Loader2, TrendingUp, Calendar, Radio, Clock, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { LeaderboardPanel } from "./LeaderboardPanel";
 import { SubTabs } from "@/components/terminal/SubTabs";
 import { MarketCardSkeleton } from "@/components/terminal/MarketCard";
 import { EmptyState } from "@/components/terminal/EmptyState";
@@ -30,12 +31,12 @@ function getLivePrice(
 }
 
 
-type PredictSubTab = "matchday" | "futures" | "fantasy";
+type PredictSubTab = "matchday" | "futures" | "leaderboard";
 
 const subTabs = [
   { id: "matchday" as const, label: "MATCH DAY" },
   { id: "futures" as const, label: "FUTURES" },
-  { id: "fantasy" as const, label: "FANTASY" },
+  { id: "leaderboard" as const, label: "LEADERBOARD" },
 ];
 
 interface PredictViewProps {
@@ -52,6 +53,8 @@ interface PredictViewProps {
   enabledTags?: { id: string; label: string; slug: string }[];
   futuresCategories?: FuturesCategory[];
   onSellPosition?: (position: { tokenId: string; size: number; avgPrice: number; outcomeLabel?: string; marketQuestion?: string; negRisk?: boolean }) => void;
+  walletAddress?: string;
+  isConnected?: boolean;
 }
 
 function formatVolume(vol: number): string {
@@ -1486,6 +1489,8 @@ export function PredictView({
   enabledTags = [],
   futuresCategories = [],
   onSellPosition,
+  walletAddress,
+  isConnected = false,
 }: PredictViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
@@ -1876,11 +1881,10 @@ export function PredictView({
           </div>
         )}
 
-        {activeSubTab === "fantasy" && (
-          <EmptyState
-            icon={Shield}
-            title="Fantasy Squads"
-            description="Coming Q3 2026"
+        {activeSubTab === "leaderboard" && (
+          <LeaderboardPanel
+            walletAddress={walletAddress}
+            isConnected={isConnected}
           />
         )}
         </div>

@@ -139,17 +139,39 @@ export function registerPointsRoutes(app: Express): void {
           }
         }
 
-        // Referral bonus
+        // Referral bonus (legacy simple percentage system)
         const referralStats = await pointsService.getReferralStats(
           address.toLowerCase(),
         );
         const referralBonus =
           config.referralEnabled ? referralStats.pointsEarned : 0;
 
+        // Strategy bonus (new referral system - additive)
+        let strategyBonus = 0;
+        try {
+          const { ReferralPeriodService } = await import(
+            "../services/referral/ReferralPeriodService"
+          );
+          const { ReferralStorage } = await import("./ReferralStorage");
+          const referralStorage = new ReferralStorage();
+          const periodService = new ReferralPeriodService(referralStorage);
+          const activePeriod = await referralStorage.getActivePeriod();
+          if (activePeriod) {
+            const bonusResult = await periodService.calculateBonusForUser(
+              address.toLowerCase(),
+              activePeriod.id,
+            );
+            strategyBonus = bonusResult.totalBonus;
+          }
+        } catch (err) {
+          console.warn("[PointsRoutes] Failed to calculate strategy bonus:", err);
+        }
+
         res.json({
           tradingPoints,
           referralBonus,
-          total: tradingPoints + referralBonus,
+          strategyBonus,
+          total: tradingPoints + referralBonus + strategyBonus,
           referralsCount: referralStats.referralsCount,
           activityCount: activityResult.activityCount,
           partial: activityResult.partial,

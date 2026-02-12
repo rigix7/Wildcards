@@ -522,6 +522,14 @@ export async function registerRoutes(
       // Award WILD points: 1 WILD per $1 bet
       if (walletAddress) {
         await storage.addWildPoints(walletAddress, amount);
+
+        // Track bet for referral system (non-blocking)
+        try {
+          const { ReferralPeriodService } = await import("../services/referral/ReferralPeriodService");
+          await new ReferralPeriodService().trackBet(walletAddress, amount);
+        } catch (err) {
+          // Silent failure - never break the bet flow
+        }
       }
 
       res.status(201).json(bet);
@@ -1448,6 +1456,14 @@ export async function registerRoutes(
         const stakeAmount = Math.floor(orderAmount);
         await storage.addWildPoints(walletAddress, stakeAmount);
         console.log(`[Orders] Awarded ${stakeAmount} WILD points to ${walletAddress} (status: ${status} -> ${normalizedStatus})`);
+
+        // Track bet for referral system (non-blocking)
+        try {
+          const { ReferralPeriodService } = await import("../services/referral/ReferralPeriodService");
+          await new ReferralPeriodService().trackBet(walletAddress, stakeAmount);
+        } catch (err) {
+          // Silent failure - never break the order flow
+        }
       } else {
         console.log(`[Orders] No WILD points awarded - status: "${status}" normalized to "${normalizedStatus}" (accepted: filled/matched/executed/completed/success)`);
       }
