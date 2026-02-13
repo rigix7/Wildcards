@@ -240,6 +240,12 @@ export const themeConfigSchema = z.object({
     errorColor: z.string().default("#ef4444"),
     warningColor: z.string().default("#f59e0b"),
   }).default({}),
+  dashboard: z.object({
+    accentColor: z.string().default("#3b82f6"),
+    actionColor: z.string().default("#fbbf24"),
+    positiveColor: z.string().default("#34d399"),
+    negativeColor: z.string().default("#f43f5e"),
+  }).default({}),
 });
 
 export type ThemeConfig = z.infer<typeof themeConfigSchema>;

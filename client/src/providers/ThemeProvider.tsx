@@ -143,6 +143,24 @@ function applyTheme(theme: ThemeConfig) {
   root.style.setProperty('--nav-bg', theme.bottomNav?.backgroundColor || '#09090b');
   root.style.setProperty('--nav-active', theme.bottomNav?.activeColor || '#fbbf24');
   root.style.setProperty('--nav-inactive', theme.bottomNav?.inactiveColor || '#71717a');
+
+  // Dashboard
+  const dashAccent = theme.dashboard?.accentColor || '#3b82f6';
+  const dashAction = theme.dashboard?.actionColor || '#fbbf24';
+  const dashPositive = theme.dashboard?.positiveColor || '#34d399';
+  const dashNegative = theme.dashboard?.negativeColor || '#f43f5e';
+  root.style.setProperty('--dash-accent', dashAccent);
+  root.style.setProperty('--dash-action', dashAction);
+  root.style.setProperty('--dash-positive', dashPositive);
+  root.style.setProperty('--dash-negative', dashNegative);
+  const daRgb = hexToRgb(dashAccent);
+  const dActRgb = hexToRgb(dashAction);
+  const dPosRgb = hexToRgb(dashPositive);
+  const dNegRgb = hexToRgb(dashNegative);
+  if (daRgb) root.style.setProperty('--dash-accent-rgb', daRgb);
+  if (dActRgb) root.style.setProperty('--dash-action-rgb', dActRgb);
+  if (dPosRgb) root.style.setProperty('--dash-positive-rgb', dPosRgb);
+  if (dNegRgb) root.style.setProperty('--dash-negative-rgb', dNegRgb);
 }
 
 function applyDefaultTheme() {
@@ -186,6 +204,12 @@ function applyDefaultTheme() {
       successColor: '#10b981',
       errorColor: '#ef4444',
       warningColor: '#f59e0b',
+    },
+    dashboard: {
+      accentColor: '#3b82f6',
+      actionColor: '#fbbf24',
+      positiveColor: '#34d399',
+      negativeColor: '#f43f5e',
     },
   });
 }
