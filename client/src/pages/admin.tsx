@@ -777,6 +777,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#09090b', activeTabColor: '#f43f5e', inactiveTabColor: '#71717a' },
       bottomNav: { backgroundColor: '#09090b', activeColor: '#fbbf24', inactiveColor: '#71717a' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+      dashboard: { accentColor: '#3b82f6', actionColor: '#fbbf24', positiveColor: '#34d399', negativeColor: '#f43f5e' },
     },
   },
   professional: {
@@ -791,6 +792,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#ffffff', activeTabColor: '#3b82f6', inactiveTabColor: '#9ca3af' },
       bottomNav: { backgroundColor: '#ffffff', activeColor: '#3b82f6', inactiveColor: '#9ca3af' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+      dashboard: { accentColor: '#3b82f6', actionColor: '#3b82f6', positiveColor: '#10b981', negativeColor: '#ef4444' },
     },
   },
   neon: {
@@ -805,6 +807,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#0a0a0f', activeTabColor: '#00ff88', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#0a0a0f', activeColor: '#00ff88', inactiveColor: '#6b7280' },
       global: { successColor: '#00ff88', errorColor: '#ff0055', warningColor: '#ffaa00' },
+      dashboard: { accentColor: '#00d4ff', actionColor: '#00ff88', positiveColor: '#00ff88', negativeColor: '#ff0055' },
     },
   },
   luxury: {
@@ -819,6 +822,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#1c1917', activeTabColor: '#f59e0b', inactiveTabColor: '#78716c' },
       bottomNav: { backgroundColor: '#1c1917', activeColor: '#f59e0b', inactiveColor: '#78716c' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+      dashboard: { accentColor: '#fbbf24', actionColor: '#f59e0b', positiveColor: '#10b981', negativeColor: '#ef4444' },
     },
   },
   earth: {
@@ -833,6 +837,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#fefce8', activeTabColor: '#10b981', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#fefce8', activeColor: '#10b981', inactiveColor: '#6b7280' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+      dashboard: { accentColor: '#059669', actionColor: '#10b981', positiveColor: '#10b981', negativeColor: '#ef4444' },
     },
   },
   midnight: {
@@ -847,6 +852,7 @@ const PRESET_THEMES: Record<string, { name: string; description: string; icon: t
       sortingBar: { backgroundColor: '#0f0a1f', activeTabColor: '#a855f7', inactiveTabColor: '#6b7280' },
       bottomNav: { backgroundColor: '#0f0a1f', activeColor: '#a855f7', inactiveColor: '#6b7280' },
       global: { successColor: '#10b981', errorColor: '#ef4444', warningColor: '#f59e0b' },
+      dashboard: { accentColor: '#c084fc', actionColor: '#a855f7', positiveColor: '#10b981', negativeColor: '#ef4444' },
     },
   },
 };
@@ -862,8 +868,8 @@ function WhiteLabelSection({
 }: {
   localTheme: ThemeConfig;
   setLocalTheme: (t: ThemeConfig) => void;
-  activeThemeTab: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav";
-  setActiveThemeTab: (t: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav") => void;
+  activeThemeTab: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav" | "dashboard";
+  setActiveThemeTab: (t: "brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav" | "dashboard") => void;
   onSave: () => void;
   onSaveTheme: (theme: ThemeConfig) => void;
   isSaving: boolean;
@@ -1273,6 +1279,9 @@ function WhiteLabelSection({
           <Button variant={activeThemeTab === "bottomNav" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("bottomNav")}>
             Bottom Nav
           </Button>
+          <Button variant={activeThemeTab === "dashboard" ? "default" : "outline"} size="sm" onClick={() => setActiveThemeTab("dashboard")}>
+            Dashboard
+          </Button>
         </div>
       </div>
 
@@ -1539,6 +1548,46 @@ function WhiteLabelSection({
           </Button>
         </Card>
       )}
+
+      {/* ---- Dashboard ---- */}
+      {activeThemeTab === "dashboard" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">Dashboard Customization</h3>
+              <p className="text-sm text-zinc-500">Customize the wallet dashboard accent colors</p>
+            </div>
+            <div className="bg-zinc-900 rounded-lg p-3 min-w-[200px] border border-zinc-700">
+              <div className="text-xs text-zinc-500 mb-2">Preview</div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: localTheme.dashboard?.accentColor }} />
+                  <span className="text-[10px]" style={{ color: localTheme.dashboard?.accentColor }}>Activity</span>
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: localTheme.dashboard?.positiveColor }} />
+                  <span className="text-[10px]" style={{ color: localTheme.dashboard?.positiveColor }}>Won</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: localTheme.dashboard?.negativeColor }} />
+                  <span className="text-[10px]" style={{ color: localTheme.dashboard?.negativeColor }}>Lost</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold text-zinc-950" style={{ backgroundColor: localTheme.dashboard?.actionColor }}>Withdraw</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ColorPicker label="Info Accent (Activity, links)" value={localTheme.dashboard?.accentColor || "#3b82f6"} onChange={(v) => setLocalTheme({ ...localTheme, dashboard: { ...localTheme.dashboard, accentColor: v } })} />
+            <ColorPicker label="Action Button (Withdraw, Sell)" value={localTheme.dashboard?.actionColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, dashboard: { ...localTheme.dashboard, actionColor: v } })} />
+            <ColorPicker label="Positive (Won, Profit)" value={localTheme.dashboard?.positiveColor || "#34d399"} onChange={(v) => setLocalTheme({ ...localTheme, dashboard: { ...localTheme.dashboard, positiveColor: v } })} />
+            <ColorPicker label="Negative (Lost, Error)" value={localTheme.dashboard?.negativeColor || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, dashboard: { ...localTheme.dashboard, negativeColor: v } })} />
+          </div>
+
+          <Button onClick={onSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save Dashboard Settings
+          </Button>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1802,7 +1851,7 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
   const [savingFees, setSavingFees] = useState(false);
   const [savingPoints, setSavingPoints] = useState(false);
   const [localTheme, setLocalTheme] = useState<ThemeConfig>(themeConfigSchema.parse({}));
-  const [activeThemeTab, setActiveThemeTab] = useState<"brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav">("brand");
+  const [activeThemeTab, setActiveThemeTab] = useState<"brand" | "header" | "betslip" | "marketCards" | "sortingBar" | "bottomNav" | "dashboard">("brand");
   const [savingTheme, setSavingTheme] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";

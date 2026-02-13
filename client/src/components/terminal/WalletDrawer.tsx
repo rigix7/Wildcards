@@ -39,7 +39,7 @@ function SafeAddressDisplay({ address }: { address: string }) {
           data-testid="button-copy-safe-address"
         >
           {copied ? (
-            <Check className="w-3 h-3 text-wild-scout" />
+            <Check className="w-3 h-3 text-dash-positive" />
           ) : (
             <Copy className="w-3 h-3 text-[var(--text-secondary)]" />
           )}
@@ -193,7 +193,7 @@ export function WalletDrawer({
               <>
                 <div className="flex items-center justify-between bg-[var(--page-bg)] rounded-lg p-3 border border-[var(--border-primary)]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-wild-brand to-wild-trade flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-dash-negative to-dash-accent flex items-center justify-center">
                       <Wallet className="w-5 h-5 text-[var(--text-primary)]" />
                     </div>
                     <div>
@@ -203,7 +203,7 @@ export function WalletDrawer({
                       </div>
                     </div>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-wild-scout animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-dash-positive animate-pulse" />
                 </div>
 
                 <div className="space-y-3">
@@ -236,7 +236,7 @@ export function WalletDrawer({
                   {pointsEnabled && (
                     <div className="flex justify-between items-center p-3 bg-[var(--page-bg)] rounded-lg border border-[var(--border-primary)]">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+                        <div className="w-6 h-6 rounded-full bg-dash-positive flex items-center justify-center text-[10px] font-bold text-zinc-950">
                           W
                         </div>
                         <span className="text-sm text-[var(--text-secondary)]">{pointsName}</span>
@@ -247,7 +247,7 @@ export function WalletDrawer({
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-wild-brand/10 to-wild-trade/10 rounded-lg border border-[var(--border-primary)]">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-dash-negative/10 to-dash-accent/10 rounded-lg border border-[var(--border-primary)]">
                     <span className="text-sm text-[var(--text-secondary)]">Total Value</span>
                     <span className="font-mono font-bold text-lg text-[var(--text-primary)]" data-testid="text-drawer-total">
                       ${formatBalance(wallet.totalValue)}
@@ -257,11 +257,11 @@ export function WalletDrawer({
                   <div className="p-3 bg-[var(--page-bg)] rounded-lg border border-[var(--border-primary)]">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-wild-trade" />
+                        <Shield className="w-4 h-4 text-dash-accent" />
                         <span className="text-sm font-medium text-[var(--text-primary)]">Prediction Wallet</span>
                       </div>
                       {isSafeDeployed ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-wild-scout/20 text-wild-scout font-medium">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-dash-positive/20 text-dash-positive font-medium">
                           Active
                         </span>
                       ) : (
@@ -293,7 +293,7 @@ export function WalletDrawer({
                           <SafeAddressDisplay address={safeAddress} />
                         ) : isLoadingDepositAddresses ? (
                           <div className="flex items-center justify-center py-3">
-                            <Loader2 className="w-4 h-4 animate-spin text-wild-trade" />
+                            <Loader2 className="w-4 h-4 animate-spin text-dash-accent" />
                             <span className="text-[10px] text-[var(--text-secondary)] ml-2">Loading...</span>
                           </div>
                         ) : getBridgeDepositAddress() ? (
@@ -320,13 +320,13 @@ export function WalletDrawer({
                                 data-testid="button-copy-drawer-bridge-address"
                               >
                                 {depositAddressCopied ? (
-                                  <Check className="w-3 h-3 text-wild-scout" />
+                                  <Check className="w-3 h-3 text-dash-positive" />
                                 ) : (
                                   <Copy className="w-3 h-3 text-[var(--text-secondary)]" />
                                 )}
                               </Button>
                             </div>
-                            <p className="text-[10px] text-wild-scout">
+                            <p className="text-[10px] text-dash-positive">
                               Funds bridged automatically to Polygon.
                             </p>
                             <p className="text-[10px] text-[var(--text-muted)]">
@@ -350,7 +350,7 @@ export function WalletDrawer({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full mt-2 text-xs border-wild-trade/30 text-wild-trade"
+                        className="w-full mt-2 text-xs border-dash-accent/30 text-dash-accent"
                         onClick={onDeploySafe}
                         disabled={isSafeDeploying}
                         data-testid="button-activate-wallet"
@@ -392,7 +392,7 @@ export function WalletDrawer({
                   Connect your wallet to start predicting
                 </p>
                 <Button
-                  className="w-full bg-wild-brand text-zinc-950 font-bold"
+                  className="w-full bg-dash-negative text-zinc-950 font-bold"
                   onClick={onConnect}
                   data-testid="button-connect-wallet"
                 >

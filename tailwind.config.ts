@@ -88,6 +88,12 @@ export default {
           error: "rgb(var(--wild-error-rgb, 239 68 68) / <alpha-value>)",
           warning: "rgb(var(--wild-warning-rgb, 245 158 11) / <alpha-value>)",
         },
+        dash: {
+          accent: "rgb(var(--dash-accent-rgb, 59 130 246) / <alpha-value>)",
+          action: "rgb(var(--dash-action-rgb, 251 191 36) / <alpha-value>)",
+          positive: "rgb(var(--dash-positive-rgb, 52 211 153) / <alpha-value>)",
+          negative: "rgb(var(--dash-negative-rgb, 244 63 94) / <alpha-value>)",
+        },
         zinc: {
           850: "#1c1c1f",
           950: "#050505",

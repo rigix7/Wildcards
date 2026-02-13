@@ -561,8 +561,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       <div className="p-3 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] p-4 rounded-md">
-            <div className="w-8 h-8 rounded-full bg-wild-gold/20 flex items-center justify-center mb-3">
-              <Wallet className="w-4 h-4 text-wild-gold" />
+            <div className="w-8 h-8 rounded-full bg-dash-action/20 flex items-center justify-center mb-3">
+              <Wallet className="w-4 h-4 text-dash-action" />
             </div>
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-1">Total Value</div>
             <div className="text-xl font-black font-mono text-[var(--text-primary)]" data-testid="text-total-value">
@@ -571,14 +571,14 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           </div>
 
           <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] p-4 rounded-md">
-            <div className="w-8 h-8 rounded-full bg-wild-trade/20 flex items-center justify-center mb-3">
-              <Activity className="w-4 h-4 text-wild-trade" />
+            <div className="w-8 h-8 rounded-full bg-dash-accent/20 flex items-center justify-center mb-3">
+              <Activity className="w-4 h-4 text-dash-accent" />
             </div>
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-1">P&L</div>
             <div
               className={cn(
                 "text-xl font-black font-mono flex items-center gap-1",
-                totalPnL >= 0 ? "text-wild-scout" : "text-wild-brand"
+                totalPnL >= 0 ? "text-dash-positive" : "text-dash-negative"
               )}
               data-testid="text-pnl"
             >
@@ -592,8 +592,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           </div>
 
           <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] p-4 rounded-md">
-            <div className="w-8 h-8 rounded-full bg-wild-scout/20 flex items-center justify-center mb-3">
-              <Award className="w-4 h-4 text-wild-scout" />
+            <div className="w-8 h-8 rounded-full bg-dash-positive/20 flex items-center justify-center mb-3">
+              <Award className="w-4 h-4 text-dash-positive" />
             </div>
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-1">Won / Total</div>
             <div className="text-xl font-black font-mono text-[var(--text-primary)]" data-testid="text-win-ratio">
@@ -602,8 +602,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
           </div>
 
           <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] p-4 rounded-md">
-            <div className="w-8 h-8 rounded-full bg-wild-brand/20 flex items-center justify-center mb-3">
-              <History className="w-4 h-4 text-wild-brand" />
+            <div className="w-8 h-8 rounded-full bg-dash-negative/20 flex items-center justify-center mb-3">
+              <History className="w-4 h-4 text-dash-negative" />
             </div>
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase mb-1">Open Bets</div>
             <div className="text-xl font-black font-mono text-[var(--text-primary)]" data-testid="text-pending">
@@ -634,7 +634,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             {pointsEnabled && (
               <div className="flex justify-between items-center p-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-wild-scout flex items-center justify-center text-[10px] font-bold text-zinc-950">
+                  <div className="w-8 h-8 rounded-full bg-dash-positive flex items-center justify-center text-[10px] font-bold text-zinc-950">
                     W
                   </div>
                   <div>
@@ -652,7 +652,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
         <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] rounded-md overflow-hidden">
           <div className="p-3 border-b border-[var(--border-primary)] flex items-center gap-2">
-            <ArrowUpFromLine className="w-4 h-4 text-wild-trade" />
+            <ArrowUpFromLine className="w-4 h-4 text-dash-accent" />
             <h3 className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">DEPOSIT</h3>
           </div>
           <div className="p-3 space-y-3">
@@ -732,7 +732,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         data-testid="button-copy-address"
                       >
                         {copied ? (
-                          <Check className="w-3 h-3 text-wild-scout" />
+                          <Check className="w-3 h-3 text-dash-positive" />
                         ) : (
                           <Copy className="w-3 h-3 text-[var(--text-secondary)]" />
                         )}
@@ -744,7 +744,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </>
                 ) : isLoadingDepositAddresses ? (
                   <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-wild-trade" />
+                    <Loader2 className="w-5 h-5 animate-spin text-dash-accent" />
                     <span className="text-xs text-[var(--text-secondary)] ml-2">Loading deposit address...</span>
                   </div>
                 ) : getBridgeDepositAddress() ? (
@@ -771,14 +771,14 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         data-testid="button-copy-bridge-address"
                       >
                         {copied ? (
-                          <Check className="w-3 h-3 text-wild-scout" />
+                          <Check className="w-3 h-3 text-dash-positive" />
                         ) : (
                           <Copy className="w-3 h-3 text-[var(--text-secondary)]" />
                         )}
                       </Button>
                     </div>
-                    <div className="bg-wild-scout/10 border border-wild-scout/30 rounded p-2">
-                      <p className="text-[10px] text-wild-scout">
+                    <div className="bg-dash-positive/10 border border-dash-positive/30 rounded p-2">
+                      <p className="text-[10px] text-dash-positive">
                         Funds will be automatically bridged to USDC.e on Polygon and credited to your Prediction Wallet.
                       </p>
                     </div>
@@ -838,7 +838,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] rounded-md overflow-hidden">
           <div className="p-3 border-b border-[var(--border-primary)] flex justify-between items-center gap-2">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-wild-trade" />
+              <Activity className="w-4 h-4 text-dash-accent" />
               <h3 className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">ACTIVITY</h3>
             </div>
             <Button 
@@ -856,24 +856,24 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             <TabsList className="w-full justify-start rounded-none border-b border-[var(--border-primary)] bg-transparent h-auto p-0 gap-0 flex-wrap">
               <TabsTrigger 
                 value="resolved" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-scout data-[state=active]:bg-transparent data-[state=active]:text-wild-scout px-3 py-2 text-xs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-dash-positive data-[state=active]:bg-transparent data-[state=active]:text-dash-positive px-3 py-2 text-xs"
                 data-testid="tab-resolved"
               >
                 Resolved
                 {resolvedPositions.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-scout/20 text-wild-scout">
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-dash-positive/20 text-dash-positive">
                     {resolvedPositions.length}
                   </span>
                 )}
               </TabsTrigger>
               <TabsTrigger 
                 value="open" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-trade data-[state=active]:bg-transparent data-[state=active]:text-wild-trade px-3 py-2 text-xs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-dash-accent data-[state=active]:bg-transparent data-[state=active]:text-dash-accent px-3 py-2 text-xs"
                 data-testid="tab-open"
               >
                 Open
                 {openPositions.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-trade/20 text-wild-trade">
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-dash-accent/20 text-dash-accent">
                     {openPositions.length}
                   </span>
                 )}
@@ -892,12 +892,12 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
               </TabsTrigger>
               <TabsTrigger 
                 value="bridge" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-wild-gold data-[state=active]:bg-transparent data-[state=active]:text-wild-gold px-3 py-2 text-xs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-dash-action data-[state=active]:bg-transparent data-[state=active]:text-dash-action px-3 py-2 text-xs"
                 data-testid="tab-bridge"
               >
                 Bridge
                 {bridgeTransactions.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-wild-gold/20 text-wild-gold">
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-dash-action/20 text-dash-action">
                     {bridgeTransactions.length}
                   </span>
                 )}
@@ -907,12 +907,12 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
             {/* Resolved Tab - Shows actionable positions (pending wins and claimable wins) */}
             <TabsContent value="resolved" className="mt-0">
               {claimablePositions.length > 0 && (
-                <div className="p-2 border-b border-[var(--border-primary)] bg-wild-scout/5 flex justify-between items-center gap-2">
-                  <span className="text-xs font-mono text-wild-scout">${formatBalance(totalClaimable)} to claim</span>
+                <div className="p-2 border-b border-[var(--border-primary)] bg-dash-positive/5 flex justify-between items-center gap-2">
+                  <span className="text-xs font-mono text-dash-positive">${formatBalance(totalClaimable)} to claim</span>
                   <Button
                     size="sm"
                     variant="default"
-                    className="bg-wild-scout border-wild-scout text-zinc-950 text-xs shrink-0"
+                    className="bg-dash-positive border-dash-positive text-zinc-950 text-xs shrink-0"
                     onClick={handleClaimAll}
                     disabled={claimingAll || claimablePositions.length === 0}
                     data-testid="button-claim-all"
@@ -944,9 +944,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                             <div className="flex items-start gap-2">
                               <span className={cn(
                                 "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
-                                isClaimable ? "bg-wild-scout/20 text-wild-scout" 
-                                  : isPending ? "bg-wild-gold/20 text-wild-gold"
-                                  : "bg-wild-brand/20 text-wild-brand"
+                                isClaimable ? "bg-dash-positive/20 text-dash-positive" 
+                                  : isPending ? "bg-dash-action/20 text-dash-action"
+                                  : "bg-dash-negative/20 text-dash-negative"
                               )}>
                                 {isClaimable ? "WON" : isPending ? "PENDING" : "LOST"}
                               </span>
@@ -956,7 +956,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                           </div>
                           <div className="text-right shrink-0 ml-2">
                             {isWin ? (
-                              <div className="text-sm font-mono text-wild-scout font-bold">${pos.size.toFixed(2)}</div>
+                              <div className="text-sm font-mono text-dash-positive font-bold">${pos.size.toFixed(2)}</div>
                             ) : (
                               <div className="text-sm font-mono text-[var(--text-muted)]">-${(pos.size * pos.avgPrice).toFixed(2)}</div>
                             )}
@@ -985,7 +985,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                           <div className="text-xs text-[var(--text-primary)] leading-tight">{pos.marketQuestion || "Unknown Market"}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[10px] font-mono text-[var(--text-muted)]">{pos.outcomeLabel || pos.side}</span>
-                            <span className="text-[10px] font-mono text-wild-trade">@{pos.avgPrice.toFixed(2)}</span>
+                            <span className="text-[10px] font-mono text-dash-accent">@{pos.avgPrice.toFixed(2)}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -994,7 +994,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                             {pos.unrealizedPnl !== undefined && (
                               <div className={cn(
                                 "text-[10px] font-mono",
-                                pos.unrealizedPnl >= 0 ? "text-wild-scout" : "text-wild-brand"
+                                pos.unrealizedPnl >= 0 ? "text-dash-positive" : "text-dash-negative"
                               )}>
                                 {pos.unrealizedPnl >= 0 ? "+" : ""}{pos.unrealizedPnl.toFixed(2)}
                               </div>
@@ -1003,7 +1003,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-[10px] h-7 px-2 border-wild-gold/50 text-wild-gold hover:bg-wild-gold/10"
+                            className="text-[10px] h-7 px-2 border-dash-action/50 text-dash-action hover:bg-dash-action/10"
                             onClick={() => handleOpenSellModal(pos)}
                             data-testid={`button-sell-position-${i}`}
                           >
@@ -1041,7 +1041,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                             <div className="flex justify-between items-start gap-2">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start gap-2">
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-wild-brand/20 text-wild-brand">
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 bg-dash-negative/20 text-dash-negative">
                                     LOST
                                   </span>
                                   <div className="text-xs text-[var(--text-primary)] leading-tight">{pos.marketQuestion || "Resolved Position"}</div>
@@ -1049,7 +1049,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                                 <div className="text-[10px] font-mono text-[var(--text-muted)] mt-1 ml-10">{pos.outcomeLabel || pos.side}</div>
                               </div>
                               <div className="text-right shrink-0 ml-2">
-                                <div className="text-sm font-mono font-bold text-wild-brand">
+                                <div className="text-sm font-mono font-bold text-dash-negative">
                                   -${(pos.size * pos.avgPrice).toFixed(2)}
                                 </div>
                               </div>
@@ -1070,10 +1070,10 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                                   <span className={cn(
                                     "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0",
                                     act.type === "REDEEM" 
-                                      ? "bg-wild-scout/20 text-wild-scout"
+                                      ? "bg-dash-positive/20 text-dash-positive"
                                       : act.side === "SELL"
-                                      ? "bg-wild-gold/20 text-wild-gold"
-                                      : "bg-wild-trade/20 text-wild-trade"
+                                      ? "bg-dash-action/20 text-dash-action"
+                                      : "bg-dash-accent/20 text-dash-accent"
                                   )}>
                                     {act.type === "REDEEM" ? "CLAIMED" : act.side === "SELL" ? "SOLD" : "BOUGHT"}
                                   </span>
@@ -1087,9 +1087,9 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                                 <div className={cn(
                                   "text-sm font-mono font-bold",
                                   act.type === "REDEEM" 
-                                    ? "text-wild-scout" 
+                                    ? "text-dash-positive" 
                                     : act.side === "SELL" 
-                                    ? "text-wild-gold" 
+                                    ? "text-dash-action" 
                                     : "text-[var(--text-primary)]"
                                 )}>
                                   {act.type === "REDEEM" ? "+" : act.side === "SELL" ? "+" : "-"}${act.usdcSize.toFixed(2)}
@@ -1128,8 +1128,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     const fromChainName = chainOptions.find(c => c.chainId === tx.fromChainId)?.chainName || tx.fromChainId;
                     const toChainName = chainOptions.find(c => c.chainId === tx.toChainId)?.chainName || (tx.toChainId === "137" ? "Polygon" : tx.toChainId);
                     const amount = parseFloat(tx.fromAmountBaseUnit) / 1e6;
-                    const statusColor = tx.status === "COMPLETED" ? "text-wild-scout" : tx.status === "PROCESSING" ? "text-wild-gold" : "text-wild-trade";
-                    const statusBg = tx.status === "COMPLETED" ? "bg-wild-scout/20" : tx.status === "PROCESSING" ? "bg-wild-gold/20" : "bg-wild-trade/20";
+                    const statusColor = tx.status === "COMPLETED" ? "text-dash-positive" : tx.status === "PROCESSING" ? "text-dash-action" : "text-dash-accent";
+                    const statusBg = tx.status === "COMPLETED" ? "bg-dash-positive/20" : tx.status === "PROCESSING" ? "bg-dash-action/20" : "bg-dash-accent/20";
                     
                     return (
                       <div 
@@ -1148,7 +1148,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                               </span>
                               <span className={cn(
                                 "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
-                                isDeposit ? "bg-wild-scout/20 text-wild-scout" : "bg-wild-gold/20 text-wild-gold"
+                                isDeposit ? "bg-dash-positive/20 text-dash-positive" : "bg-dash-action/20 text-dash-action"
                               )}>
                                 {isDeposit ? "DEPOSIT" : "WITHDRAW"}
                               </span>
@@ -1161,7 +1161,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                                 href={`https://polygonscan.com/tx/${tx.txHash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[10px] text-wild-trade hover:underline flex items-center gap-1 mt-1"
+                                className="text-[10px] text-dash-accent hover:underline flex items-center gap-1 mt-1"
                               >
                                 {tx.txHash.slice(0, 10)}...{tx.txHash.slice(-6)}
                                 <ExternalLink className="w-2.5 h-2.5" />
@@ -1171,7 +1171,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                           <div className="text-right shrink-0">
                             <div className={cn(
                               "text-sm font-mono font-bold",
-                              isDeposit ? "text-wild-scout" : "text-wild-gold"
+                              isDeposit ? "text-dash-positive" : "text-dash-action"
                             )}>
                               {isDeposit ? "+" : "-"}${amount.toFixed(2)}
                             </div>
@@ -1199,7 +1199,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
         {wallet && wallet.usdcBalance > 0 && (
           <div className="bg-[var(--card-bg)] border border-[var(--border-primary)] rounded-md overflow-hidden">
             <div className="p-3 border-b border-[var(--border-primary)] flex items-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 text-wild-gold" />
+              <ArrowDownToLine className="w-4 h-4 text-dash-action" />
               <h3 className="text-xs font-bold text-[var(--text-secondary)] tracking-wider">WITHDRAW</h3>
             </div>
             <div className="p-3 space-y-3">
@@ -1277,7 +1277,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                           setWithdrawAmount(e.target.value);
                           setWithdrawQuote(null);
                         }}
-                        className={`w-full bg-[var(--page-bg)] border rounded px-3 py-2 text-sm font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none ${isAmountBelowMin ? 'border-rose-500 focus:border-rose-500' : 'border-[var(--border-primary)] focus:border-wild-gold'}`}
+                        className={`w-full bg-[var(--page-bg)] border rounded px-3 py-2 text-sm font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none ${isAmountBelowMin ? 'border-rose-500 focus:border-rose-500' : 'border-[var(--border-primary)] focus:border-dash-action'}`}
                         data-testid="input-withdraw-amount"
                       />
                       {isAmountBelowMin && (
@@ -1296,7 +1296,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   placeholder="0x..."
                   value={withdrawTo}
                   onChange={(e) => setWithdrawTo(e.target.value)}
-                  className="w-full bg-[var(--page-bg)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-wild-gold"
+                  className="w-full bg-[var(--page-bg)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-dash-action"
                   data-testid="input-withdraw-address"
                 />
               </div>
@@ -1311,7 +1311,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-[var(--text-secondary)]">You'll Receive</span>
-                        <span className="text-wild-scout font-mono">{withdrawQuote.output}</span>
+                        <span className="text-dash-positive font-mono">{withdrawQuote.output}</span>
                       </div>
                     </div>
                   ) : (
@@ -1333,7 +1333,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
               )}
               
               <Button
-                className="w-full bg-wild-gold border-wild-gold text-zinc-950"
+                className="w-full bg-dash-action border-dash-action text-zinc-950"
                 disabled={!withdrawAmount || !withdrawTo || withdrawMutation.isPending || (withdrawChain !== "polygon" && (!withdrawQuote || !withdrawToken)) || parseFloat(withdrawAmount || "0") < (withdrawChain === "polygon" ? 1 : (getTokensForChain(withdrawChain).find(t => t.token.address === withdrawToken)?.minCheckoutUsd || 2))}
                 onClick={() => withdrawMutation.mutate({ 
                   amount: parseFloat(withdrawAmount), 
@@ -1352,10 +1352,10 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 )}
               </Button>
               {withdrawMutation.isSuccess && (
-                <div className="p-3 rounded-md bg-wild-scout/10 border border-wild-scout/30">
+                <div className="p-3 rounded-md bg-dash-positive/10 border border-dash-positive/30">
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="w-4 h-4 text-wild-scout" />
-                    <p className="text-xs text-wild-scout font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-dash-positive" />
+                    <p className="text-xs text-dash-positive font-medium">
                       {withdrawChain === "polygon" ? "Withdrawal successful!" : "Bridge transfer initiated!"}
                     </p>
                   </div>
@@ -1366,7 +1366,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                         href={`https://polygonscan.com/tx/${withdrawMutation.data.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-wild-trade hover:underline flex items-center gap-1"
+                        className="text-dash-accent hover:underline flex items-center gap-1"
                       >
                         {withdrawMutation.data.txHash.slice(0, 10)}...{withdrawMutation.data.txHash.slice(-8)}
                         <ExternalLink className="w-3 h-3" />
@@ -1381,7 +1381,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 </div>
               )}
               {withdrawMutation.isError && (
-                <p className="text-xs text-wild-brand text-center">
+                <p className="text-xs text-dash-negative text-center">
                   {withdrawMutation.error instanceof Error ? withdrawMutation.error.message : "Withdrawal failed"}
                 </p>
               )}
@@ -1394,12 +1394,12 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
       {/* Sell Position Panel - BetSlip Style */}
       {sellModalOpen && sellPosition && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-wild-gold/50 rounded-t-xl p-4 animate-slide-up">
+          <div className="w-full max-w-[430px] bg-[var(--card-bg)] border-t border-dash-action/50 rounded-t-xl p-4 animate-slide-up">
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
-                  <DollarSign className="w-3 h-3 text-wild-gold" />
+                  <DollarSign className="w-3 h-3 text-dash-action" />
                   Sell Position
                 </p>
                 <h3 className="font-bold text-[var(--text-primary)] text-lg">
@@ -1444,7 +1444,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     </span>
                   ) : bestBid ? (
                     <span className={cn("text-sm font-mono font-semibold",
-                      bestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-brand"
+                      bestBid >= sellPosition.avgPrice ? "text-dash-positive" : "text-dash-negative"
                     )}>
                       ${bestBid.toFixed(2)}
                     </span>
@@ -1474,7 +1474,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                 <div className="text-right">
                   <p className="text-xs text-[var(--text-muted)]">Best Bid</p>
                   <p className={cn("text-2xl font-black font-mono",
-                    bestBid && bestBid >= sellPosition.avgPrice ? "text-wild-scout" : "text-wild-gold"
+                    bestBid && bestBid >= sellPosition.avgPrice ? "text-dash-positive" : "text-dash-action"
                   )}>
                     {bestBid ? `$${bestBid.toFixed(2)}` : "—"}
                   </p>
@@ -1490,7 +1490,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     className={cn(
                       "flex-1 py-2 text-sm font-mono rounded transition-colors",
                       sellAmount === (sellPosition.size * pct / 100).toFixed(2)
-                        ? "bg-wild-gold/20 text-wild-gold border border-wild-gold/30"
+                        ? "bg-dash-action/20 text-dash-action border border-dash-action/30"
                         : "bg-[var(--card-bg-elevated)] hover:bg-[var(--card-bg-hover)] text-[var(--text-secondary)]"
                     )}
                     disabled={isSelling}
@@ -1504,8 +1504,8 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   className={cn(
                     "flex-1 py-2 text-sm font-bold rounded transition-colors border",
                     sellAmount === sellPosition.size.toFixed(2)
-                      ? "bg-wild-gold/30 text-wild-gold border-wild-gold/50"
-                      : "bg-wild-gold/20 hover:bg-wild-gold/30 text-wild-gold border-wild-gold/30"
+                      ? "bg-dash-action/30 text-dash-action border-dash-action/50"
+                      : "bg-dash-action/20 hover:bg-dash-action/30 text-dash-action border-dash-action/30"
                   )}
                   disabled={isSelling}
                   data-testid="button-sell-100pct"
@@ -1525,7 +1525,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--text-secondary)]">Estimated return</span>
-                    <span className="font-mono font-bold text-wild-gold">
+                    <span className="font-mono font-bold text-dash-action">
                       ~${(parseFloat(sellAmount) * (bestBid || sellPosition.avgPrice)).toFixed(2)}
                     </span>
                   </div>
@@ -1533,7 +1533,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                     <div className="flex justify-between text-sm border-t border-[var(--border-secondary)] pt-2 mt-2">
                       <span className="text-[var(--text-secondary)]">Estimated P&L</span>
                       <span className={cn("font-mono font-semibold",
-                        (bestBid - sellPosition.avgPrice) >= 0 ? "text-wild-scout" : "text-wild-brand"
+                        (bestBid - sellPosition.avgPrice) >= 0 ? "text-dash-positive" : "text-dash-negative"
                       )}>
                         {(bestBid - sellPosition.avgPrice) >= 0 ? "+" : ""}
                         ${((parseFloat(sellAmount) * bestBid) - (parseFloat(sellAmount) * sellPosition.avgPrice)).toFixed(2)}
@@ -1548,7 +1548,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
               {/* Error Message */}
               {sellError && (
-                <div className="flex items-center gap-2 text-wild-brand text-sm bg-wild-brand/10 rounded p-2">
+                <div className="flex items-center gap-2 text-dash-negative text-sm bg-dash-negative/10 rounded p-2">
                   <AlertTriangle className="w-4 h-4" />
                   <span>{sellError}</span>
                 </div>
@@ -1556,7 +1556,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
 
               {/* Success Message */}
               {sellSuccess && (
-                <div className="flex items-center gap-2 text-wild-scout text-sm bg-wild-scout/10 rounded p-2">
+                <div className="flex items-center gap-2 text-dash-positive text-sm bg-dash-positive/10 rounded p-2">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Position sold successfully!</span>
                 </div>
@@ -1577,7 +1577,7 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
                   onClick={handleExecuteSell}
                   disabled={isSelling || sellSuccess || !sellAmount || parseFloat(sellAmount) <= 0}
                   size="lg"
-                  className="flex-1 bg-wild-gold text-zinc-950 font-bold text-lg"
+                  className="flex-1 bg-dash-action text-zinc-950 font-bold text-lg"
                   data-testid="button-confirm-sell"
                 >
                   {isSelling ? (
