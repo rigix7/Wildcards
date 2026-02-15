@@ -26,7 +26,7 @@ export default function useSafeDeployment(eoaAddress?: string) {
       console.log("[SafeDeployment] Derived Safe address using SDK deriveSafe:", safeAddress);
       return safeAddress;
     } catch (err) {
-      console.error("Error deriving Safe address:", err);
+      console.error("[SafeDeployment] CRITICAL: Failed to derive Safe address from EOA:", eoaAddress, "Error:", err);
       return undefined;
     }
   }, [eoaAddress]);

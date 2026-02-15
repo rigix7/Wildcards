@@ -180,19 +180,24 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   };
   
   useEffect(() => {
-    if (walletAddress) {
+    // Prefer safeAddress (Polymarket proxy wallet where positions live) over walletAddress
+    const fetchAddress = safeAddress || walletAddress;
+    if (fetchAddress) {
+      if (!safeAddress && walletAddress) {
+        console.warn("[DashboardView] safeAddress not available, falling back to walletAddress:", walletAddress);
+      }
       setPositionsLoading(true);
       setActivityLoading(true);
-      
-      fetchPositions(walletAddress)
+
+      fetchPositions(fetchAddress)
         .then(setPositions)
         .finally(() => setPositionsLoading(false));
-      
-      fetchActivity(walletAddress)
+
+      fetchActivity(fetchAddress)
         .then(setActivity)
         .finally(() => setActivityLoading(false));
     }
-  }, [walletAddress]);
+  }, [safeAddress, walletAddress]);
 
   useEffect(() => {
     if (safeAddress) {
@@ -208,15 +213,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   }, [safeAddress, getBridgeHistory]);
 
   const refreshPositions = async () => {
-    if (walletAddress) {
+    const fetchAddress = safeAddress || walletAddress;
+    if (fetchAddress) {
       setPositionsLoading(true);
       setActivityLoading(true);
-      
+
       const [pos, act] = await Promise.all([
-        fetchPositions(walletAddress),
-        fetchActivity(walletAddress)
+        fetchPositions(fetchAddress),
+        fetchActivity(fetchAddress)
       ]);
-      
+
       setPositions(pos);
       setActivity(act);
       setPositionsLoading(false);
