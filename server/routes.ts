@@ -1504,32 +1504,58 @@ export async function registerRoutes(
         return res.status(400).json({ error: "address required" });
       }
       
-      // Use public Data API endpoint (no authentication required)
-      const dataApiUrl = `https://data-api.polymarket.com/positions?user=${address}`;
-      
-      console.log(`[Positions] Fetching from Data API for ${address}`);
-      
-      const response = await fetch(dataApiUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Positions] Data API error: ${response.status} - ${errorText}`);
-        
-        // Fall back to local database positions
+      // Fetch positions from Polymarket Data API with two parallel calls:
+      // 1. Active positions sorted by current value (for Open tab)
+      // 2. Redeemable positions (for Resolved tab — won/claimable)
+      // API defaults are restrictive (limit=100, sizeThreshold=1, sortBy=TOKENS)
+      // which causes newer/smaller positions to be cut off
+      const baseUrl = `https://data-api.polymarket.com/positions`;
+      const commonParams = `user=${address}&sizeThreshold=0&limit=500&sortBy=CURRENT&sortDirection=DESC`;
+
+      console.log(`[Positions] Fetching from Data API for ${address} (active + redeemable)`);
+
+      const [activeRes, redeemableRes] = await Promise.all([
+        fetch(`${baseUrl}?${commonParams}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }),
+        fetch(`${baseUrl}?${commonParams}&redeemable=true`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }),
+      ]);
+
+      if (!activeRes.ok) {
+        const errorText = await activeRes.text();
+        console.error(`[Positions] Data API error: ${activeRes.status} - ${errorText}`);
         const localPositions = await storage.getPolymarketPositions(address);
         return res.json(localPositions);
       }
-      
-      const data = await response.json();
-      // Data API returns positions directly as array or wrapped in object
-      const rawPositions = Array.isArray(data) ? data : (data.positions || []);
-      console.log(`[Positions] Found ${rawPositions.length} positions for ${address}`);
-      
+
+      const activeData = await activeRes.json();
+      const activePositions = Array.isArray(activeData) ? activeData : (activeData.positions || []);
+
+      // Parse redeemable response (non-fatal if it fails — active positions still work)
+      let redeemablePositions: any[] = [];
+      if (redeemableRes.ok) {
+        const redeemableData = await redeemableRes.json();
+        redeemablePositions = Array.isArray(redeemableData) ? redeemableData : (redeemableData.positions || []);
+      } else {
+        console.warn(`[Positions] Redeemable fetch failed: ${redeemableRes.status}`);
+      }
+
+      // Merge and deduplicate by asset/tokenId
+      const seen = new Set<string>();
+      const rawPositions: any[] = [];
+      for (const p of [...activePositions, ...redeemablePositions]) {
+        const key = p.asset || p.tokenId;
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          rawPositions.push(p);
+        }
+      }
+      console.log(`[Positions] Found ${rawPositions.length} positions for ${address} (${activePositions.length} active + ${redeemablePositions.length} redeemable, after dedup)`);
+
       // Log raw position data for debugging
       for (const p of rawPositions.slice(0, 5)) {
         console.log(`[Positions] Raw: title="${p.title?.substring(0, 40)}", curPrice=${p.curPrice}, redeemable=${p.redeemable}, size=${p.size}`);

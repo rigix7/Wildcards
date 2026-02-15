@@ -84,17 +84,24 @@ export interface PolymarketPosition {
 }
 
 export async function fetchPositions(walletAddress: string): Promise<PolymarketPosition[]> {
-  if (!walletAddress) return [];
-  
+  if (!walletAddress) {
+    console.warn("[Positions] fetchPositions called with empty address");
+    return [];
+  }
+
+  console.log("[Positions] Fetching for address:", walletAddress);
+
   try {
     const response = await fetch(`/api/polymarket/positions/${walletAddress}`);
     if (!response.ok) {
-      console.error("[Positions] Failed to fetch:", response.status);
+      console.error("[Positions] Failed to fetch:", response.status, "for address:", walletAddress);
       return [];
     }
-    return response.json();
+    const positions = await response.json();
+    console.log("[Positions] Received", positions.length, "positions for", walletAddress);
+    return positions;
   } catch (error) {
-    console.error("[Positions] Error:", error);
+    console.error("[Positions] Error fetching for", walletAddress, ":", error);
     return [];
   }
 }

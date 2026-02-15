@@ -179,15 +179,21 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   };
   
+  // Fetch positions using Safe address (where Polymarket positions live)
   useEffect(() => {
-    if (walletAddress) {
+    const positionAddress = safeAddress || walletAddress;
+    if (positionAddress) {
       setPositionsLoading(true);
-      setActivityLoading(true);
-      
-      fetchPositions(walletAddress)
+      fetchPositions(positionAddress)
         .then(setPositions)
         .finally(() => setPositionsLoading(false));
-      
+    }
+  }, [safeAddress, walletAddress]);
+
+  // Fetch activity separately using walletAddress (activity is indexed by user profile)
+  useEffect(() => {
+    if (walletAddress) {
+      setActivityLoading(true);
       fetchActivity(walletAddress)
         .then(setActivity)
         .finally(() => setActivityLoading(false));
@@ -208,15 +214,18 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   }, [safeAddress, getBridgeHistory]);
 
   const refreshPositions = async () => {
-    if (walletAddress) {
+    const positionAddress = safeAddress || walletAddress;
+    const activityAddress = walletAddress;
+
+    if (positionAddress || activityAddress) {
       setPositionsLoading(true);
       setActivityLoading(true);
-      
+
       const [pos, act] = await Promise.all([
-        fetchPositions(walletAddress),
-        fetchActivity(walletAddress)
+        positionAddress ? fetchPositions(positionAddress) : Promise.resolve(positions),
+        activityAddress ? fetchActivity(activityAddress) : Promise.resolve(activity),
       ]);
-      
+
       setPositions(pos);
       setActivity(act);
       setPositionsLoading(false);
