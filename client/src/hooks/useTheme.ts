@@ -8,7 +8,7 @@ interface ThemeApiResponse {
 }
 
 export function useTheme() {
-  const { data } = useQuery<ThemeApiResponse>({
+  const { data, isLoading } = useQuery<ThemeApiResponse>({
     queryKey: ["/api/config/theme"],
     refetchInterval: 30000,
   });
@@ -18,6 +18,7 @@ export function useTheme() {
   const pointsEnabled = data?.pointsConfig?.enabled ?? true;
   const logoUrl = data?.themeConfig?.brand?.logoUrl;
   const logoIcon = data?.themeConfig?.brand?.logoIcon;
+  const showPoweredBy = (data?.themeConfig?.brand as Record<string, unknown>)?.showPoweredBy !== false;
 
   return {
     brandName,
@@ -25,6 +26,8 @@ export function useTheme() {
     pointsEnabled,
     logoUrl,
     logoIcon,
+    showPoweredBy,
+    isLoading,
     themeConfig: data?.themeConfig ?? null,
   };
 }

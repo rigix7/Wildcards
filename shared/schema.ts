@@ -200,6 +200,7 @@ export const themeConfigSchema = z.object({
     logoIcon: z.string().optional(),
     primaryColor: z.string().default("#f43f5e"),
     accentColor: z.string().default("#fbbf24"),
+    showPoweredBy: z.boolean().default(true),
   }).default({}),
   header: z.object({
     backgroundColor: z.string().default("#09090b"),

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/terminal/EmptyState";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/useTheme";
 import type { Market, Futures, AdminSettings, FuturesCategory } from "@shared/schema";
 import type { DisplayEvent, ParsedMarket, MarketGroup } from "@/lib/polymarket";
 import { prefetchTeams } from "@/lib/polymarket";
@@ -1497,6 +1498,7 @@ export function PredictView({
   walletAddress,
   isConnected = false,
 }: PredictViewProps) {
+  const { showPoweredBy } = useTheme();
   const [activeSubTab, setActiveSubTab] = useState<PredictSubTab>("matchday");
   const [selectedLeagues, setSelectedLeagues] = useState<Set<string>>(new Set());
   const [selectedFuturesCategory, setSelectedFuturesCategory] = useState<number | null>(null);
@@ -1894,31 +1896,33 @@ export function PredictView({
         )}
         </div>
         
-        {/* Powered by Polymarket attribution */}
-        <div className="shrink-0 py-3 px-4 border-t border-[var(--border-primary)] bg-[var(--page-bg)] flex justify-center" data-testid="container-polymarket-attribution">
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-          >
-            <a 
-              href="https://polymarket.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[var(--text-muted)]"
-              data-testid="link-polymarket-attribution"
+        {/* Powered by Polymarket attribution (toggleable from admin) */}
+        {showPoweredBy && (
+          <div className="shrink-0 py-3 px-4 border-t border-[var(--border-primary)] bg-[var(--page-bg)] flex justify-center" data-testid="container-polymarket-attribution">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
             >
-              <span className="text-xs font-medium">Powered by</span>
-              <img 
-                src="https://polymarket.com/images/brand/icon-white.png" 
-                alt="Polymarket" 
-                className="h-4 w-4 opacity-60"
-                data-testid="img-polymarket-logo"
-              />
-              <span className="text-xs font-bold tracking-wide">POLYMARKET</span>
-            </a>
-          </Button>
-        </div>
+              <a
+                href="https://polymarket.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-[var(--text-muted)]"
+                data-testid="link-polymarket-attribution"
+              >
+                <span className="text-xs font-medium">Powered by</span>
+                <img
+                  src="https://polymarket.com/images/brand/icon-white.png"
+                  alt="Polymarket"
+                  className="h-4 w-4 opacity-60"
+                  data-testid="img-polymarket-logo"
+                />
+                <span className="text-xs font-bold tracking-wide">POLYMARKET</span>
+              </a>
+            </Button>
+          </div>
+        )}
       </div>
   );
 }
