@@ -179,25 +179,26 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
     }
   };
   
+  // Fetch positions using Safe address (where Polymarket positions live)
   useEffect(() => {
-    // Prefer safeAddress (Polymarket proxy wallet where positions live) over walletAddress
-    const fetchAddress = safeAddress || walletAddress;
-    if (fetchAddress) {
-      if (!safeAddress && walletAddress) {
-        console.warn("[DashboardView] safeAddress not available, falling back to walletAddress:", walletAddress);
-      }
+    const positionAddress = safeAddress || walletAddress;
+    if (positionAddress) {
       setPositionsLoading(true);
-      setActivityLoading(true);
-
-      fetchPositions(fetchAddress)
+      fetchPositions(positionAddress)
         .then(setPositions)
         .finally(() => setPositionsLoading(false));
+    }
+  }, [safeAddress, walletAddress]);
 
-      fetchActivity(fetchAddress)
+  // Fetch activity separately using walletAddress (activity is indexed by user profile)
+  useEffect(() => {
+    if (walletAddress) {
+      setActivityLoading(true);
+      fetchActivity(walletAddress)
         .then(setActivity)
         .finally(() => setActivityLoading(false));
     }
-  }, [safeAddress, walletAddress]);
+  }, [walletAddress]);
 
   useEffect(() => {
     if (safeAddress) {
@@ -213,14 +214,16 @@ export function DashboardView({ wallet, bets, trades, isLoading, walletAddress, 
   }, [safeAddress, getBridgeHistory]);
 
   const refreshPositions = async () => {
-    const fetchAddress = safeAddress || walletAddress;
-    if (fetchAddress) {
+    const positionAddress = safeAddress || walletAddress;
+    const activityAddress = walletAddress;
+
+    if (positionAddress || activityAddress) {
       setPositionsLoading(true);
       setActivityLoading(true);
 
       const [pos, act] = await Promise.all([
-        fetchPositions(fetchAddress),
-        fetchActivity(fetchAddress)
+        positionAddress ? fetchPositions(positionAddress) : Promise.resolve(positions),
+        activityAddress ? fetchActivity(activityAddress) : Promise.resolve(activity),
       ]);
 
       setPositions(pos);
