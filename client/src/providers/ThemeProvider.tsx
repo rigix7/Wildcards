@@ -52,6 +52,61 @@ function hexToRgb(hex: string): string {
   return `${r} ${g} ${b}`;
 }
 
+/** Render a Lucide icon SVG path onto a 32×32 canvas and return a data URL for use as favicon */
+function renderIconToFavicon(iconName: string, color: string): string | null {
+  const ICON_PATHS: Record<string, string> = {
+    zap: 'M13 2L3 14h9l-1 10 10-12h-9l1-10z',
+    flame: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14 0-5.5 2.5-7.5 0 0 1.5 3 1.5 5 0 1-0.5 2-1 3s-1 2.5 0 4c0.5 0.75 1.5 1 2.5 0.5s1.5-1.5 1-3c-.5-1.5-1-2.5-0.5-4S18 3 18 3c2.5 3 3.5 6 2 9.5S16 18 13.5 18 9 16.5 8.5 14.5z',
+    target: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4z',
+    trophy: 'M6 9H3.5a2.5 2.5 0 0 1 0-5H6m12 5h2.5a2.5 2.5 0 0 0 0-5H18M6 9V4h12v5m-6 4v4m-4 0h8m-4 0v3',
+    crown: 'M2 4l3 12h14l3-12-6 7-4-9-4 9-6-7z',
+    shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+    rocket: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3 7.5-7.5a2.12 2.12 0 0 1 3 3L12 15z',
+    gem: 'M6 3h12l4 6-10 13L2 9z',
+    heart: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z',
+    sparkles: 'M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5z',
+    star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+  };
+
+  const pathData = ICON_PATHS[iconName];
+  if (!pathData) return null;
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${pathData}"/></svg>`;
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 32, 32);
+      URL.revokeObjectURL(url);
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) link.href = canvas.toDataURL('image/png');
+    };
+    img.src = url;
+  } catch {
+    // Favicon rendering failed silently
+  }
+  return null;
+}
+
+function applyFavicon(theme: ThemeConfig) {
+  const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+  if (!link) return;
+
+  if (theme.brand?.logoUrl) {
+    link.href = theme.brand.logoUrl;
+  } else if (theme.brand?.logoIcon && theme.brand.logoIcon !== 'none') {
+    renderIconToFavicon(theme.brand.logoIcon, theme.brand.primaryColor || '#f43f5e');
+  }
+}
+
 function applyTheme(theme: ThemeConfig) {
   const root = document.documentElement;
 
@@ -59,6 +114,9 @@ function applyTheme(theme: ThemeConfig) {
   if (theme.brand?.name) {
     document.title = theme.brand.name;
   }
+
+  // Dynamic favicon
+  applyFavicon(theme);
 
   // General-purpose semantic variables (derived from theme sections)
   // These map the widespread bg-zinc-*/text-zinc-*/border-zinc-* patterns

@@ -56,6 +56,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -1357,6 +1358,17 @@ function WhiteLabelSection({
             </div>
             <ColorPicker label="Primary Color" value={localTheme.brand?.primaryColor || "#f43f5e"} onChange={(v) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, primaryColor: v } })} />
             <ColorPicker label="Accent Color" value={localTheme.brand?.accentColor || "#fbbf24"} onChange={(v) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, accentColor: v } })} />
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg border border-zinc-800 bg-zinc-900">
+            <div>
+              <Label className="text-sm font-medium text-white">Show "Powered by Polymarket"</Label>
+              <p className="text-xs text-zinc-500 mt-0.5">Display attribution link at the bottom of the Predict tab</p>
+            </div>
+            <Switch
+              checked={(localTheme.brand as Record<string, unknown>)?.showPoweredBy !== false}
+              onCheckedChange={(checked: boolean) => setLocalTheme({ ...localTheme, brand: { ...localTheme.brand, showPoweredBy: checked } })}
+            />
           </div>
 
           <Button onClick={onSave} disabled={isSaving}>

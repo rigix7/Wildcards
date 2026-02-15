@@ -15,7 +15,7 @@ interface HeaderProps {
 }
 
 export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = false }: HeaderProps) {
-  const { brandName, pointsName, pointsEnabled, logoUrl, logoIcon } = useTheme();
+  const { brandName, pointsName, pointsEnabled, logoUrl, logoIcon, isLoading } = useTheme();
   const formatBalance = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
@@ -29,14 +29,20 @@ export function Header({ usdcBalance, wildBalance, onWalletClick, isConnected = 
       style={{ backgroundColor: 'var(--header-bg, #09090b)' }}
     >
       <div className="flex items-center gap-2" style={{ color: 'var(--header-accent, #fb7185)' }}>
-        {logoUrl ? (
-          <img src={logoUrl} alt={brandName} className="h-6 w-auto" />
-        ) : logoIcon && logoIcon !== "none" && IconMap[logoIcon] ? (
-          (() => { const Icon = IconMap[logoIcon]; return <Icon className="w-5 h-5 fill-current" />; })()
+        {isLoading ? (
+          <div className="w-24 h-5 bg-zinc-800 animate-pulse rounded" />
         ) : (
-          <Zap className="w-5 h-5 fill-current" />
+          <>
+            {logoUrl ? (
+              <img src={logoUrl} alt={brandName} className="h-6 w-auto" />
+            ) : logoIcon && logoIcon !== "none" && IconMap[logoIcon] ? (
+              (() => { const Icon = IconMap[logoIcon]; return <Icon className="w-5 h-5 fill-current" />; })()
+            ) : (
+              <Zap className="w-5 h-5 fill-current" />
+            )}
+            <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>{brandName}</span>
+          </>
         )}
-        <span className="font-black italic tracking-tighter text-lg" style={{ color: 'var(--header-text, #ffffff)' }}>{brandName}</span>
       </div>
       {isConnected ? (
         <Button
