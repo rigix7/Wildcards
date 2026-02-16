@@ -1396,16 +1396,53 @@ function getShortOutcomeLabel(label: string): string {
   return cleaned;
 }
 
-function FuturesCard({ future, onPlaceBet, selectedOutcome }: { 
-  future: Futures; 
-  onPlaceBet: (marketId: string, outcomeId: string, odds: number) => void;
+function FuturesCard({ future, onPlaceBet, selectedOutcome, livePrices }: {
+  future: Futures;
+  onPlaceBet: PredictViewProps["onPlaceBet"];
   selectedOutcome?: string;
+  livePrices?: LivePricesMap;
 }) {
   const [showAll, setShowAll] = useState(false);
   const outcomes = future.marketData?.outcomes || [];
   const displayedOutcomes = showAll ? outcomes : outcomes.slice(0, 6);
   const hasMore = outcomes.length > 6;
-  
+  const negRisk = future.marketData?.negRisk ?? false;
+  const orderMinSize = future.marketData?.orderMinSize;
+
+  const handleOutcomeClick = (outcome: typeof outcomes[0], index: number) => {
+    // Use the outcome's tokenId (the "Yes" token for this outcome's sub-market)
+    const selectedTokenId = outcome.tokenId;
+    // For multi-outcome (negRisk) events, each outcome is a separate market
+    // The "No" token is clobTokenIds[1] if available
+    const noTokenId = outcome.clobTokenIds?.[1];
+
+    // Use live price if available, fall back to static probability
+    const staticPrice = outcome.probability;
+    const execPrice = getLivePrice(selectedTokenId, staticPrice, livePrices);
+    const odds = execPrice > 0 ? 1 / execPrice : 99;
+
+    // Use tokenId as outcomeId for bet placement (same pattern as handleSelectAdditionalMarket)
+    const outcomeId = selectedTokenId || outcome.conditionId || outcome.marketId || `${future.id}-${index}`;
+
+    onPlaceBet(
+      outcome.marketId || future.id,
+      outcomeId,
+      odds,
+      future.title, // marketTitle
+      outcome.label, // outcomeLabel
+      "futures", // marketType
+      "yes", // direction - always "yes", selected token goes as yesTokenId
+      selectedTokenId, // yesTokenId
+      noTokenId, // noTokenId
+      execPrice, // yesPrice
+      noTokenId ? (1 - execPrice) : undefined, // noPrice
+      orderMinSize, // orderMinSize
+      future.marketData?.question || future.title, // question
+      false, // isSoccer3Way
+      negRisk // negRisk
+    );
+  };
+
   return (
     <Card className="p-4 space-y-3" data-testid={`futures-card-${future.id}`}>
       <div className="flex items-start justify-between gap-2">
@@ -1420,34 +1457,36 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
           {outcomes.length} teams
         </Badge>
       </div>
-      
+
       {outcomes.length > 0 && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
             {displayedOutcomes.map((outcome, index) => {
-              const outcomeId = outcome.marketId || outcome.conditionId || `${future.id}-${index}`;
+              const outcomeId = outcome.tokenId || outcome.marketId || outcome.conditionId || `${future.id}-${index}`;
               const isSelected = selectedOutcome === outcomeId;
-              const probability = outcome.probability * 100;
-              
+              // Use live price from WebSocket if available, fall back to static probability
+              const staticPrice = outcome.probability;
+              const livePrice = getLivePrice(outcome.tokenId, staticPrice, livePrices);
+              const priceInCents = Math.round(livePrice * 100);
+
               return (
                 <button
                   key={index}
-                  onClick={() => onPlaceBet(future.id, outcomeId, outcome.odds)}
+                  onClick={() => handleOutcomeClick(outcome, index)}
                   className={`flex items-center justify-between gap-2 px-3 py-2 rounded-md border transition-colors ${
-                    isSelected 
-                      ? "border-wild-brand bg-wild-brand/10" 
+                    isSelected
+                      ? "border-wild-brand bg-wild-brand/10"
                       : "border-[var(--border-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--card-bg)]/50"
                   }`}
                   data-testid={`futures-outcome-${future.id}-${index}`}
                 >
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-sm truncate font-medium">{getShortOutcomeLabel(outcome.label)}</span>
-                    <span className="text-xs text-[var(--text-muted)]">{probability.toFixed(0)}%</span>
                   </div>
                   <span className={`font-mono text-base font-bold shrink-0 ${
                     isSelected ? "text-wild-brand" : "text-wild-gold"
                   }`}>
-                    {outcome.odds.toFixed(2)}
+                    {priceInCents}¢
                   </span>
                 </button>
               );
@@ -1464,7 +1503,7 @@ function FuturesCard({ future, onPlaceBet, selectedOutcome }: {
           )}
         </div>
       )}
-      
+
       {future.marketData && (
         <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border-primary)]">
           <div className="flex items-center gap-1">
@@ -1506,9 +1545,10 @@ export function PredictView({
     prefetchTeams();
   }, []);
   
-  // Extract all token IDs from visible events for WebSocket subscription
+  // Extract all token IDs from visible events AND futures for WebSocket subscription
   const allTokenIds = useMemo(() => {
     const tokenIds: string[] = [];
+    // Match Day events
     for (const event of displayEvents) {
       for (const group of event.marketGroups) {
         for (const market of group.markets) {
@@ -1523,9 +1563,22 @@ export function PredictView({
         }
       }
     }
+    // Futures outcomes
+    for (const future of futures) {
+      if (future.marketData?.outcomes) {
+        for (const outcome of future.marketData.outcomes) {
+          if (outcome.tokenId) {
+            tokenIds.push(outcome.tokenId);
+          }
+          if (outcome.clobTokenIds) {
+            tokenIds.push(...outcome.clobTokenIds);
+          }
+        }
+      }
+    }
     // Remove duplicates
     return [...new Set(tokenIds)];
-  }, [displayEvents]);
+  }, [displayEvents, futures]);
   
   // Subscribe to live prices for visible markets
   // Using a stable string representation to avoid re-runs due to array reference changes
@@ -1860,16 +1913,20 @@ export function PredictView({
                 <MarketCardSkeleton />
               </>
             ) : filteredFutures.length > 0 ? (
-              filteredFutures.map((future) => (
-                <FuturesCard
-                  key={future.id}
-                  future={future}
-                  onPlaceBet={onPlaceBet}
-                  selectedOutcome={
-                    selectedBet?.marketId === future.id ? selectedBet.outcomeId : undefined
-                  }
-                />
-              ))
+              filteredFutures.map((future) => {
+                // Match selected bet by checking if the selected marketId matches any outcome's marketId or the future's id
+                const futureMarketIds = new Set((future.marketData?.outcomes || []).map(o => o.marketId).filter(Boolean));
+                const isThisFuture = selectedBet?.marketId === future.id || (selectedBet?.marketId && futureMarketIds.has(selectedBet.marketId));
+                return (
+                  <FuturesCard
+                    key={future.id}
+                    future={future}
+                    onPlaceBet={onPlaceBet}
+                    selectedOutcome={isThisFuture ? selectedBet?.outcomeId : undefined}
+                    livePrices={livePrices?.prices}
+                  />
+                );
+              })
             ) : futures.length > 0 ? (
               <EmptyState
                 icon={Lock}
