@@ -2256,6 +2256,9 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
         const markets = eventData.markets || [];
         let marketData = undefined;
 
+        // Determine negRisk from event-level data (winner-take-all markets)
+        const eventNegRisk = eventData.negRisk ?? eventData.enableNegRisk ?? false;
+
         if (markets.length > 0) {
           try {
             const allOutcomes: Array<{
@@ -2264,15 +2267,29 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
               odds: number;
               marketId?: string;
               conditionId?: string;
+              tokenId?: string;
+              clobTokenIds?: string[];
             }> = [];
             let totalVolume = 0;
             let totalLiquidity = 0;
+            let firstOrderMinSize: number | undefined;
 
             for (const market of markets) {
               const prices = JSON.parse(market.outcomePrices || "[]");
               const outcomes = JSON.parse(market.outcomes || "[]");
+              // Parse clobTokenIds from the market (JSON string array)
+              let marketClobTokenIds: string[] = [];
+              try {
+                marketClobTokenIds = JSON.parse(market.clobTokenIds || "[]");
+              } catch { /* ignore parse errors */ }
+
               totalVolume += parseFloat(market.volume || "0");
               totalLiquidity += parseFloat(market.liquidity || "0");
+
+              // Capture orderMinSize from first market
+              if (firstOrderMinSize === undefined && market.orderMinSize) {
+                firstOrderMinSize = parseFloat(market.orderMinSize);
+              }
 
               outcomes.forEach((outcomeName: string, i: number) => {
                 const prob = parseFloat(prices[i] || "0");
@@ -2304,6 +2321,9 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
                         : 99,
                     marketId: market.id,
                     conditionId: market.conditionId,
+                    // For multi-market events (winner-take-all), the "Yes" outcome token is clobTokenIds[0]
+                    tokenId: marketClobTokenIds[i] || marketClobTokenIds[0],
+                    clobTokenIds: marketClobTokenIds.length > 0 ? marketClobTokenIds : undefined,
                   });
                 }
               });
@@ -2317,6 +2337,8 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
               volume: totalVolume,
               liquidity: totalLiquidity,
               conditionId: markets[0]?.conditionId || "",
+              negRisk: eventNegRisk,
+              orderMinSize: firstOrderMinSize,
             };
           } catch (e) {
             console.error("Failed to parse market data:", e);
@@ -2338,6 +2360,11 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
         try {
           const prices = JSON.parse(eventData.outcomePrices || "[]");
           const outcomes = JSON.parse(eventData.outcomes || "[]");
+          let marketClobTokenIds: string[] = [];
+          try {
+            marketClobTokenIds = JSON.parse(eventData.clobTokenIds || "[]");
+          } catch { /* ignore */ }
+
           marketData = {
             question: eventData.question,
             outcomes: outcomes.map((label: string, i: number) => {
@@ -2346,11 +2373,15 @@ function AuthenticatedAdminPanel({ onLogout }: { onLogout: () => void }) {
                 label,
                 probability: prob,
                 odds: prob > 0 ? Math.round((1 / prob) * 100) / 100 : 99,
+                tokenId: marketClobTokenIds[i],
+                clobTokenIds: marketClobTokenIds.length > 0 ? marketClobTokenIds : undefined,
               };
             }),
             volume: parseFloat(eventData.volume || "0"),
             liquidity: parseFloat(eventData.liquidity || "0"),
             conditionId: eventData.conditionId || "",
+            negRisk: eventData.negRisk ?? eventData.enableNegRisk ?? false,
+            orderMinSize: eventData.orderMinSize ? parseFloat(eventData.orderMinSize) : undefined,
           };
         } catch (e) {
           console.error("Failed to parse market data:", e);

@@ -128,10 +128,12 @@ export const futures = pgTable("futures", {
   tags: jsonb("tags").$type<Array<{ id: string; label: string; slug: string }>>(),
   marketData: jsonb("market_data").$type<{
     question: string;
-    outcomes: Array<{ label: string; probability: number; odds: number; marketId?: string; conditionId?: string }>;
+    outcomes: Array<{ label: string; probability: number; odds: number; marketId?: string; conditionId?: string; tokenId?: string; clobTokenIds?: string[] }>;
     volume: number;
     liquidity: number;
     conditionId: string;
+    negRisk?: boolean;
+    orderMinSize?: number;
   }>(),
   createdAt: text("created_at").notNull(),
 });
