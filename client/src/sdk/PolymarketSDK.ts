@@ -9,10 +9,10 @@ import {
   keccak256,
   encodeAbiParameters,
   createPublicClient,
-  http,
   type Address,
 } from "viem";
 import { polygon } from "viem/chains";
+import { polygonTransport } from "@/constants/polymarket";
 
 import type {
   SDKConfig,
@@ -64,7 +64,7 @@ function deriveSafe(address: string, safeFactory: string): string {
 
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http("https://polygon-rpc.com"),
+  transport: polygonTransport,
 });
 
 async function queryCTFBalance(
