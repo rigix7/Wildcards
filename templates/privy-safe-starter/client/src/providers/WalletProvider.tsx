@@ -3,18 +3,17 @@ import {
   createWalletClient,
   createPublicClient,
   custom,
-  http,
   type WalletClient,
 } from "viem";
 import { providers } from "ethers";
 import { PrivyProvider, useWallets, usePrivy } from "@privy-io/react-auth";
-import { POLYGON_RPC_URL } from "../constants/polymarket";
+import { polygonTransport } from "../constants/polymarket";
 import { polygon } from "viem/chains";
 import { WalletContext } from "./WalletContext";
 
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http(POLYGON_RPC_URL),
+  transport: polygonTransport,
 });
 
 function WalletContextProvider({ children }: { children: ReactNode }) {

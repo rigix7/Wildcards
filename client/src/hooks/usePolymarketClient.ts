@@ -13,7 +13,6 @@ import {
   keccak256,
   encodeAbiParameters,
   createPublicClient,
-  http,
   type Address,
 } from "viem";
 
@@ -30,6 +29,7 @@ function deriveSafe(address: string, safeFactory: string): string {
 }
 import { polygon } from "viem/chains";
 import { useWallet } from "@/providers/WalletContext";
+import { polygonTransport } from "@/constants/polymarket";
 import useFeeCollection from "@/hooks/useFeeCollection";
 
 interface ApiKeyCreds {
@@ -201,7 +201,7 @@ const NEG_RISK_ADAPTER_ADDRESS = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296" as
 // Public client for read operations (balance queries)
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http("https://polygon-rpc.com"),
+  transport: polygonTransport,
 });
 
 // Query CTF token balances for a specific position

@@ -1,5 +1,6 @@
-import { createPublicClient, http, formatUnits } from "viem";
+import { createPublicClient, formatUnits } from "viem";
 import { polygon } from "viem/chains";
+import { polygonTransport } from "@/constants/polymarket";
 
 const USDC_ADDRESS = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174" as const;
 
@@ -22,7 +23,7 @@ const USDC_ABI = [
 
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http(),
+  transport: polygonTransport,
 });
 
 export async function getUSDCBalance(address: string): Promise<number> {
